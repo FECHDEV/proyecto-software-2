@@ -1,0 +1,32 @@
+# La aplicación en un servidor con HTTPS: se suma a docker-compose.yml.
+#   docker compose -f docker-compose.yml -f docker-compose.nube.yml up -d --build
+# Caddy publica los puertos 80 y 443 y sirve el sitio en https://TIENDA_DOMINIO. Nada más queda publicado.
+
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    environment:
+      TIENDA_DOMINIO: ${TIENDA_DOMINIO:?Falta TIENDA_DOMINIO en .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nube/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-datos:/data
+      - caddy-config:/config
+
+  # Detrás de Caddy: sin puertos propios en la máquina
+  frontend:
+    ports: !reset []
+
+  backend:
+    environment:
+      TIENDA_SITIO_URL: https://${TIENDA_DOMINIO}
+      TIENDA_CORS_ORIGENES: https://${TIENDA_DOMINIO}
+
+volumes:
+  caddy-datos:
+  caddy-config:

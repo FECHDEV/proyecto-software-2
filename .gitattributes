@@ -1,0 +1,3 @@
+# Scripts y configuración que corren en el servidor Linux: siempre con fin de línea LF
+*.sh text eol=lf
+nube/* text eol=lf

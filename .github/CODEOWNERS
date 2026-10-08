@@ -1,0 +1,8 @@
+# El código lo aprueba su dueño: un PR que toca backend/ o frontend/ necesita su
+# revisión. Con el ruleset de main pidiendo la aprobación del dueño, el dueño
+# va como «bypass» (sus propios PR no los puede aprobar él). La documentación del equipo
+# (docs/proyecto/) no tiene dueño: entra por PR con el CI en verde.
+# Al crear el proyecto, poner acá el usuario de GitHub de quien programa.
+/backend/   @FECHDEV
+/frontend/  @FECHDEV
+/.github/   @FECHDEV

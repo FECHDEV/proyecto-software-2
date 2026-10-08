@@ -1,0 +1,223 @@
+// Piezas visuales que comparten las pantallas de administración con una lista
+// por páginas (como usuarios): tabla, paginación, botón secundario, avisos
+// y estados vacíos. Se incluye con @use desde el .scss de cada componente, así
+// los estilos siguen alcanzando solo a ese componente. Las columnas, los
+// filtros y los estados propios de cada lista quedan en su pantalla.
+// Tabla sobre fondo oscuro: interlineado holgado, nada de pesos finos y filas
+// bien separadas (decisiones.md → Dirección visual). Todo sale de _tokens.scss.
+
+h1 {
+	font-size: 26px;
+	font-weight: 700;
+}
+
+.campo {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-1);
+	min-width: 0;
+}
+
+label {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+input,
+select {
+	font: inherit;
+	font-size: 14px;
+	min-height: 44px;
+	padding: var(--app-espacio-2) var(--app-espacio-3);
+	border: 1px solid var(--app-borde-control);
+	border-radius: var(--app-radio-control);
+	background-color: var(--app-fondo);
+	color: var(--app-texto);
+	width: 100%;
+}
+
+.contenedor-tabla {
+	overflow-x: auto;
+	border: 1px solid var(--app-borde);
+	border-radius: var(--app-radio);
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+}
+
+thead th {
+	background: var(--app-superficie);
+	color: var(--app-texto-suave);
+	font-size: 13px;
+	font-weight: 600;
+	text-align: left;
+}
+
+th,
+td {
+	padding: var(--app-espacio-3) var(--app-espacio-4);
+	border-bottom: 1px solid var(--app-borde);
+	vertical-align: middle;
+}
+
+tbody tr:last-child > * {
+	border-bottom: none;
+}
+
+tbody th {
+	font-weight: 500;
+	text-align: left;
+}
+
+.numero {
+	font-variant-numeric: tabular-nums;
+}
+
+.paginacion {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--app-espacio-3);
+}
+
+.paginacion p {
+	margin: 0;
+	color: var(--app-texto-suave);
+	font-size: 14px;
+}
+
+.secundario {
+	font: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	min-height: 44px;
+	padding: var(--app-espacio-2) var(--app-espacio-4);
+	border: 1px solid var(--app-borde-control);
+	border-radius: var(--app-radio-control);
+	background: transparent;
+	color: var(--app-texto);
+	cursor: pointer;
+	transition: background-color var(--app-transicion), border-color var(--app-transicion);
+}
+
+.secundario:hover:not([disabled]) {
+	border-color: var(--app-texto-suave);
+	background: var(--app-superficie-alta);
+}
+
+.secundario[disabled] {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.vacio,
+.cargando {
+	margin: 0;
+	color: var(--app-texto-suave);
+}
+
+div.vacio {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--app-espacio-3);
+}
+
+div.vacio p {
+	margin: 0;
+}
+
+.tarjeta-error {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--app-espacio-3);
+}
+
+.aviso {
+	margin: 0;
+	padding: var(--app-espacio-3);
+	border: 1px solid var(--app-error);
+	border-left-width: 4px;
+	border-radius: var(--app-radio-control);
+	background: var(--app-error-fondo);
+	color: var(--app-error);
+	font-size: 14px;
+}
+
+// Sin avisos, las regiones salen del flujo para no sumar un hueco, pero no se
+// ocultan: con display: none salen del árbol de accesibilidad y el lector de
+// pantalla podría no anunciar el aviso cuando aparece
+.avisos:not(:has(.aviso)) {
+	position: absolute;
+}
+
+.avisos {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-2);
+}
+
+.aviso.exito {
+	border-color: var(--app-exito);
+	background: var(--app-exito-fondo);
+	color: var(--app-exito);
+}
+
+.solo-lectores {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+// En un celular cada fila es un bloque con la etiqueta de cada dato
+@media (max-width: 640px) {
+	.contenedor-tabla {
+		border: none;
+	}
+
+	thead {
+		display: none;
+	}
+
+	table,
+	tbody,
+	tr,
+	th,
+	td {
+		display: block;
+	}
+
+	tbody tr {
+		margin-bottom: var(--app-espacio-3);
+		padding: var(--app-espacio-3) var(--app-espacio-4);
+		border: 1px solid var(--app-borde);
+		border-radius: var(--app-radio);
+		background: var(--app-superficie);
+	}
+
+	tbody th,
+	tbody td {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--app-espacio-3);
+		padding: var(--app-espacio-1) 0;
+		border: none;
+		text-align: right;
+	}
+
+	tbody th::before,
+	tbody td::before {
+		content: attr(data-etiqueta);
+		color: var(--app-texto-suave);
+		font-weight: 400;
+		text-align: left;
+	}
+}

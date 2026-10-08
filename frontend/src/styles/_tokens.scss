@@ -1,0 +1,86 @@
+// Sistema de diseño de la aplicación. Los valores y su motivo están en
+// docs/decisiones.md → "Sistema de diseño (frontend)".
+// Ningún componente escribe un color a mano: todos salen de acá.
+//
+// Dos modos: el oscuro, por defecto, en :root, y el claro, que lo pisa con
+// data-tema="claro" en <html> (core/tema). El claro tiene su propia paleta, con
+// el contraste medido; no es el oscuro invertido.
+
+:root {
+	// Color
+	--app-fondo: #0b1020;
+	--app-superficie: #151b2e;
+	--app-superficie-alta: #1c2440;
+	--app-texto: #f4f6ff;
+	--app-texto-suave: #a7b0cc;
+	--app-ambar: #f5b301;
+	--app-ambar-fuerte: #d99a00;
+	--app-borde: #2b3350;
+	--app-borde-control: #6b7799;
+	--app-exito: #4ade80;
+	--app-aviso: #fbbf24;
+	--app-error: #fca5a5;
+	--app-neutro: #94a3b8;
+	// El texto sobre un fondo ámbar (botones principales, logotipo)
+	--app-sobre-ambar: #0b1020;
+	// Lo que oscurece la página detrás de un diálogo
+	--app-velo: rgb(11 16 32 / 0.75);
+
+	// Fondos tenues de las etiquetas de estado
+	--app-exito-fondo: #0e2418;
+	--app-aviso-fondo: #2a2008;
+	--app-error-fondo: #2a1620;
+
+	// El código QR: oscuro sobre claro, como piden los lectores, sea cual sea el
+	// tema de la interfaz
+	--app-qr-claro: #ffffff;
+	--app-qr-oscuro: #000000;
+
+	// Espaciado, en múltiplos de 4 px
+	--app-espacio-1: 4px;
+	--app-espacio-2: 8px;
+	--app-espacio-3: 12px;
+	--app-espacio-4: 16px;
+	--app-espacio-6: 24px;
+	--app-espacio-8: 32px;
+	--app-espacio-12: 48px;
+
+	// Forma
+	--app-radio: 10px;
+	--app-radio-control: 8px;
+	--app-ancho-maximo: 1120px;
+	--app-ancho-formulario: 420px;
+
+	// Tipografía
+	--app-familia-titulos: Sora, system-ui, -apple-system, sans-serif;
+	--app-familia-texto: Inter, system-ui, -apple-system, sans-serif;
+
+	// Movimiento
+	--app-transicion: 180ms ease;
+}
+
+// Modo claro: solo cambian los colores. El ámbar se oscurece porque el del modo
+// oscuro no llega a 4.5:1 sobre blanco, y entonces el texto sobre él va blanco
+:root[data-tema='claro'] {
+	color-scheme: light;
+
+	--app-fondo: #f6f7fb;
+	--app-superficie: #ffffff;
+	--app-superficie-alta: #eef1f8;
+	--app-texto: #141a2e;
+	--app-texto-suave: #4a5370;
+	--app-ambar: #a84b06;
+	--app-ambar-fuerte: #92400e;
+	--app-borde: #dde2ee;
+	--app-borde-control: #7a849e;
+	--app-exito: #166534;
+	--app-aviso: #854d0e;
+	--app-error: #b91c1c;
+	--app-neutro: #5b6577;
+	--app-sobre-ambar: #ffffff;
+	--app-velo: rgb(20 26 46 / 0.45);
+
+	--app-exito-fondo: #dcfce7;
+	--app-aviso-fondo: #fef3c7;
+	--app-error-fondo: #fee2e2;
+}

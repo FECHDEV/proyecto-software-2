@@ -1,0 +1,13 @@
+// Pantallas, pestañas y formularios más angostos que la columna de contenido:
+// el ancho máximo y el centrado van siempre juntos, para que ninguna quede
+// pegada a la izquierda (decisiones.md → Sistema de diseño).
+//
+// Uso, en el :host de la pantalla:
+//   @use '<ruta>/styles/pagina';
+//   :host { @include pagina.pagina-angosta(720px); }
+
+@mixin pagina-angosta($ancho) {
+	width: 100%;
+	max-width: $ancho;
+	margin-inline: auto;
+}

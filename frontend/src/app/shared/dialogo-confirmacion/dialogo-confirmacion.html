@@ -1,0 +1,17 @@
+<dialog
+  #dialogo
+  [attr.aria-labelledby]="id + '-titulo'"
+  [attr.aria-describedby]="id + '-mensaje'"
+  (close)="alCerrar()"
+>
+  <h2 [id]="id + '-titulo'">{{ pedido().titulo }}</h2>
+  <p [id]="id + '-mensaje'">{{ pedido().mensaje }}</p>
+
+  <div class="botones">
+    <!-- Cancelar va primero: es lo que recibe el foco al abrir, la opción segura -->
+    <button type="button" class="secundario" (click)="responder(false)">
+      {{ pedido().desistir ?? 'Cancelar' }}
+    </button>
+    <button type="button" class="principal" (click)="responder(true)">{{ pedido().confirmar }}</button>
+  </div>
+</dialog>

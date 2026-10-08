@@ -1,0 +1,78 @@
+// La tabla, la paginación, los avisos y el botón secundario vienen de
+// _lista.scss; acá quedan los filtros, el estado de la cuenta y las acciones
+@use '../../../styles/lista';
+
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-6);
+}
+
+.filtros {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+	gap: var(--app-espacio-4);
+	align-items: end;
+}
+
+.correo {
+	overflow-wrap: anywhere;
+	color: var(--app-texto-suave);
+}
+
+// El estado no depende solo del color: círculo para activa, cuadrado para
+// desactivada, y siempre con su texto (decisiones.md → Reglas)
+.estado {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--app-espacio-2);
+	color: var(--app-exito);
+	white-space: nowrap;
+}
+
+.estado::before {
+	content: '';
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: currentColor;
+}
+
+.estado.desactivada {
+	color: var(--app-error);
+}
+
+.estado.desactivada::before {
+	border-radius: 1px;
+}
+
+.acciones {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-2);
+}
+
+.acciones select {
+	width: auto;
+	min-width: 0;
+}
+
+.acciones select[disabled] {
+	opacity: 0.5;
+}
+
+.propia {
+	color: var(--app-texto-suave);
+}
+
+.ayuda {
+	margin: var(--app-espacio-1) 0 0;
+	color: var(--app-texto-suave);
+	font-size: 12.5px;
+}
+
+@media (max-width: 640px) {
+	.filtros {
+		grid-template-columns: 1fr;
+	}
+}

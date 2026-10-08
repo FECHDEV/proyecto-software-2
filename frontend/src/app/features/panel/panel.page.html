@@ -1,0 +1,18 @@
+<h1>Hola, {{ nombre() }}</h1>
+
+<ul class="accesos">
+  <li>
+    <a class="acceso" routerLink="/mis-datos">
+      <span class="titulo">Mis datos</span>
+      <span class="detalle">Tu nombre, tu teléfono y tu contraseña.</span>
+    </a>
+  </li>
+  @if (esAdministrador()) {
+    <li>
+      <a class="acceso" routerLink="/usuarios">
+        <span class="titulo">Usuarios</span>
+        <span class="detalle">Tipos de cuenta y estado de las cuentas.</span>
+      </a>
+    </li>
+  }
+</ul>

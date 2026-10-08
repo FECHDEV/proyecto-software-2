@@ -1,0 +1,44 @@
+<section class="tarjeta">
+  <h1>Recuperar contraseña</h1>
+
+  @if (pedida()) {
+    <p class="aviso exito" role="status" tabindex="-1">
+      Si ese correo tiene una cuenta, te enviamos las instrucciones para recuperarla. Revisa tu
+      bandeja de entrada.
+    </p>
+  } @else {
+    <p class="bajada">
+      Escribe el correo de tu cuenta y te enviamos un enlace para elegir una contraseña nueva.
+    </p>
+
+    @if (avisoDeError()) {
+      <p class="aviso" role="alert">{{ avisoDeError() }}</p>
+    }
+
+    <form (submit)="enviar($event)" novalidate>
+      <div class="campo">
+        @let estado = formulario.correo();
+        @let errorCorreo = estado.touched() && estado.invalid() ? primerMensaje(estado.errors()) : '';
+        <label for="correo">Correo</label>
+        <input
+          id="correo"
+          type="email"
+          autocomplete="email"
+          spellcheck="false"
+          [formField]="formulario.correo"
+          [attr.aria-invalid]="errorCorreo ? 'true' : null"
+          [attr.aria-describedby]="errorCorreo ? 'error-correo' : null"
+        />
+        @if (errorCorreo) {
+          <p class="error" id="error-correo">{{ errorCorreo }}</p>
+        }
+      </div>
+
+      <button type="submit" class="boton" [disabled]="enviando()">
+        {{ enviando() ? 'Enviando…' : 'Enviar instrucciones' }}
+      </button>
+    </form>
+  }
+
+  <p class="enlace-cruzado"><a routerLink="/inicio-sesion">Volver a iniciar sesión</a></p>
+</section>

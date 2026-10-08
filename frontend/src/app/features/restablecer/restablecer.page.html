@@ -1,0 +1,41 @@
+<section class="tarjeta">
+  <h1>Elegir contraseña nueva</h1>
+
+  @if (hayToken) {
+    @if (avisoDeError()) {
+      <p class="aviso" role="alert">{{ avisoDeError() }}</p>
+    }
+
+    <form (submit)="enviar($event)" novalidate>
+      <div class="campo">
+        @let error = mensajeDelCampo();
+        <label for="contrasena">Contraseña nueva</label>
+        <input
+          id="contrasena"
+          type="password"
+          autocomplete="new-password"
+          [formField]="formulario.contrasena"
+          [attr.aria-invalid]="error ? 'true' : null"
+          [attr.aria-describedby]="error ? 'error-contrasena' : ayuda() ? 'ayuda-contrasena' : null"
+        />
+        @if (error) {
+          <p class="error" id="error-contrasena">{{ error }}</p>
+        } @else if (ayuda()) {
+          <p class="ayuda" id="ayuda-contrasena">Al menos 8 caracteres.</p>
+        }
+      </div>
+
+      <button type="submit" class="boton" [disabled]="enviando()">
+        {{ enviando() ? 'Guardando…' : 'Guardar contraseña' }}
+      </button>
+    </form>
+  } @else {
+    <!-- Texto normal, no una región en vivo: un role="alert" que ya está al
+         cargar la página no lo anuncia ningún lector de pantalla -->
+    <p class="aviso">{{ avisoDeError() }}</p>
+  }
+
+  <p class="enlace-cruzado"><a routerLink="/recuperacion">Pedir un enlace nuevo</a></p>
+
+  <p class="enlace-cruzado"><a routerLink="/inicio-sesion">Volver a iniciar sesión</a></p>
+</section>

@@ -1,0 +1,67 @@
+dialog {
+	// En el celular, desplazarse dentro del diálogo no mueve la página de atrás
+	overscroll-behavior: contain;
+	width: min(100% - 2 * var(--app-espacio-4), 440px);
+	padding: var(--app-espacio-6);
+	border: 1px solid var(--app-borde-control);
+	border-radius: var(--app-radio);
+	background: var(--app-superficie);
+	color: var(--app-texto);
+}
+
+// Los navegadores anteriores a 2024 no heredan las variables en ::backdrop:
+// ahí queda el velo del modo oscuro, que también sirve sobre el claro
+dialog::backdrop {
+	background: var(--app-velo, rgb(11 16 32 / 0.75));
+}
+
+h2 {
+	margin: 0 0 var(--app-espacio-3);
+	font-size: 18px;
+	text-wrap: balance;
+}
+
+p {
+	margin: 0 0 var(--app-espacio-6);
+	color: var(--app-texto-suave);
+	overflow-wrap: anywhere;
+}
+
+.botones {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: var(--app-espacio-3);
+}
+
+button {
+	font: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	min-height: 44px;
+	padding: var(--app-espacio-2) var(--app-espacio-4);
+	border-radius: var(--app-radio-control);
+	cursor: pointer;
+	transition: background-color var(--app-transicion), border-color var(--app-transicion);
+}
+
+.secundario {
+	border: 1px solid var(--app-borde-control);
+	background: transparent;
+	color: var(--app-texto);
+}
+
+.secundario:hover {
+	border-color: var(--app-texto-suave);
+	background: var(--app-superficie-alta);
+}
+
+.principal {
+	border: 1px solid transparent;
+	background: var(--app-ambar);
+	color: var(--app-sobre-ambar);
+}
+
+.principal:hover {
+	background: var(--app-ambar-fuerte);
+}

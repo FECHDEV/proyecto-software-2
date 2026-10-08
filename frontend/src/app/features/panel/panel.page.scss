@@ -1,0 +1,63 @@
+:host {
+	display: block;
+	max-width: var(--app-ancho-maximo);
+}
+
+h1 {
+	margin-bottom: var(--app-espacio-6);
+	font-size: 26px;
+	font-weight: 700;
+}
+
+.accesos {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: var(--app-espacio-3);
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.accesos li {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-1);
+	padding: var(--app-espacio-4);
+	background: var(--app-superficie);
+	border: 1px solid var(--app-borde);
+	border-radius: var(--app-radio);
+}
+
+// Un acceso que ya tiene pantalla ocupa toda la tarjeta
+.accesos li:has(.acceso) {
+	padding: 0;
+}
+
+.acceso {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-1);
+	padding: var(--app-espacio-4);
+	border-radius: var(--app-radio);
+	color: inherit;
+	text-decoration: none;
+	transition: background-color var(--app-transicion);
+}
+
+.acceso:hover {
+	background: var(--app-fondo);
+}
+
+.acceso:hover .titulo {
+	color: var(--app-ambar);
+}
+
+.titulo {
+	font-family: var(--app-familia-titulos);
+	font-weight: 600;
+}
+
+.detalle {
+	color: var(--app-texto-suave);
+	font-size: 13px;
+}

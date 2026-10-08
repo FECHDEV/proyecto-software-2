@@ -1,0 +1,94 @@
+@use './styles/tokens';
+
+// Sora para títulos e Inter para el texto (decisiones.md → Sistema de diseño).
+// Se cargan desde index.html; cada familia lleva su reserva del sistema en
+// _tokens.scss por si la fuente no carga.
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	// El modo oscuro es el de por defecto: así los controles nativos, el
+	// autocompletado y las barras de desplazamiento también se pintan oscuros.
+	// El modo claro lo cambia a light (styles/_tokens.scss)
+	color-scheme: dark;
+}
+
+html,
+body {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--app-fondo);
+	color: var(--app-texto);
+	font-family: var(--app-familia-texto);
+	font-size: 16px;
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+	font-family: var(--app-familia-titulos);
+	line-height: 1.15;
+	text-wrap: balance;
+	margin: 0;
+}
+
+// Sobre fondo oscuro el texto fino se deshace: el cuerpo no baja de 400
+strong {
+	font-weight: 600;
+}
+
+a {
+	color: var(--app-ambar);
+}
+
+button,
+input,
+a {
+	// Quita el retardo de 300 ms y el destello gris al tocar en móvil
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+	outline: 2px solid var(--app-ambar);
+	outline-offset: 2px;
+}
+
+// Para quien navega con teclado: primer tabulador de la página
+.salto-al-contenido {
+	position: absolute;
+	left: var(--app-espacio-4);
+	top: var(--app-espacio-4);
+	z-index: 10;
+	padding: var(--app-espacio-2) var(--app-espacio-3);
+	border-radius: var(--app-radio-control);
+	background: var(--app-ambar);
+	color: var(--app-sobre-ambar);
+	font-weight: 600;
+	text-decoration: none;
+	transform: translateY(-200%);
+}
+
+.salto-al-contenido:focus-visible {
+	transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}

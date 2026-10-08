@@ -1,0 +1,55 @@
+@use '../../../styles/formulario';
+@use '../../../styles/pagina';
+
+:host {
+	@include pagina.pagina-angosta(var(--app-ancho-formulario));
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-4);
+}
+
+.tarjeta {
+	width: 100%;
+}
+
+h2 {
+	font-size: 17px;
+	font-weight: 700;
+	text-wrap: balance;
+}
+
+// Los datos que se ven pero no se editan
+.fijos {
+	margin: 0;
+	display: grid;
+	gap: var(--app-espacio-2);
+}
+
+.fijos div {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: var(--app-espacio-2);
+	font-size: 14px;
+}
+
+.fijos dt {
+	color: var(--app-texto-suave);
+}
+
+.fijos dd {
+	margin: 0;
+	font-weight: 500;
+	overflow-wrap: anywhere;
+}
+
+.cargando {
+	margin: 0;
+	color: var(--app-texto-suave);
+}
+
+.ayuda {
+	margin: 0;
+	color: var(--app-texto-suave);
+	font-size: 12.5px;
+}

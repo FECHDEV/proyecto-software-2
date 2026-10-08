@@ -1,0 +1,164 @@
+<h1>Usuarios</h1>
+
+<form class="filtros" role="search" aria-label="Filtrar usuarios" (submit)="$event.preventDefault()">
+  <div class="campo busqueda">
+    <label for="filtro-texto">Buscar</label>
+    <input
+      id="filtro-texto"
+      name="texto"
+      type="search"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Nombre, apellido o correo…"
+      [value]="textoEscrito()"
+      (input)="alEscribir($any($event.target).value)"
+    />
+  </div>
+
+  <div class="campo">
+    <label for="filtro-rol">Tipo de cuenta</label>
+    <select id="filtro-rol" name="rol" (change)="alElegirRol($any($event.target).value)">
+      <option value="" [selected]="filtros().rol === null">Todos</option>
+      @for (rol of roles; track rol) {
+        <option [value]="rol" [selected]="filtros().rol === rol">{{ nombresDeRol[rol] }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="filtro-estado">Estado</label>
+    <select id="filtro-estado" name="estado" (change)="alElegirEstado($any($event.target).value)">
+      <option value="" [selected]="filtros().estado === null">Todos</option>
+      @for (estado of estados; track estado) {
+        <option [value]="estado" [selected]="filtros().estado === estado">
+          {{ nombresDeEstado[estado] }}
+        </option>
+      }
+    </select>
+  </div>
+</form>
+
+<!-- Regiones siempre presentes: un lector de pantalla anuncia lo que aparece
+     dentro, pero no una región que se crea junto con su texto -->
+<div class="avisos">
+  <div role="alert">
+    @if (avisoDeError()) {
+      <p class="aviso">{{ avisoDeError() }}</p>
+    }
+  </div>
+  <div role="status">
+    @if (avisoDeExito()) {
+      <p class="aviso exito">{{ avisoDeExito() }}</p>
+    }
+  </div>
+</div>
+
+@if (pagina(); as pagina) {
+  @if (pagina.contenido.length === 0 && pagina.pagina > 0 && pagina.totalElementos > 0) {
+    <div class="vacio" role="status">
+      <p>Esta página no existe.</p>
+      <button type="button" class="secundario" (click)="irAPagina(0)">Ir a la primera página</button>
+    </div>
+  } @else if (pagina.contenido.length === 0) {
+    <p class="vacio" role="status">No hay usuarios con esos filtros.</p>
+  } @else {
+    <div class="contenedor-tabla">
+      <table>
+        <caption class="solo-lectores">Usuarios registrados</caption>
+        <thead>
+          <tr>
+            <th scope="col">Nombre</th>
+            <th scope="col">Correo</th>
+            <th scope="col">Tipo de cuenta</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Alta</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (usuario of pagina.contenido; track usuario.idUsuario) {
+            <tr>
+              <th scope="row" data-etiqueta="Nombre">{{ usuario.nombre }} {{ usuario.apellido }}</th>
+              <td data-etiqueta="Correo" class="correo">{{ usuario.correo }}</td>
+              <td data-etiqueta="Tipo de cuenta">{{ nombresDeRol[usuario.rol] }}</td>
+              <td data-etiqueta="Estado">
+                <span class="estado" [class.desactivada]="usuario.estado === 'DESACTIVADA'">
+                  {{ nombresDeEstado[usuario.estado] }}
+                </span>
+              </td>
+              <td data-etiqueta="Alta" class="numero">{{ fecha(usuario.fechaRegistro) }}</td>
+              <td data-etiqueta="Acciones">
+                @if (usuario.idUsuario === idPropio()) {
+                  <span class="propia">Tú</span>
+                } @else {
+                  @let desactivada = usuario.estado === 'DESACTIVADA';
+                  @let ocupada = procesando().has(usuario.idUsuario);
+                  <div class="acciones">
+                    <select
+                      [name]="'rol-' + usuario.idUsuario"
+                      autocomplete="off"
+                      [attr.aria-label]="'Tipo de cuenta de ' + nombreDe(usuario)"
+                      [attr.aria-describedby]="desactivada ? 'ayuda-rol-' + usuario.idUsuario : null"
+                      [disabled]="desactivada || ocupada"
+                      (change)="alElegirRolDe(usuario, $any($event.target))"
+                    >
+                      @for (rol of roles; track rol) {
+                        <option [value]="rol" [selected]="usuario.rol === rol">{{ nombresDeRol[rol] }}</option>
+                      }
+                    </select>
+                    <button
+                      type="button"
+                      class="secundario"
+                      [attr.aria-label]="(desactivada ? 'Reactivar a ' : 'Desactivar a ') + nombreDe(usuario)"
+                      [disabled]="ocupada"
+                      (click)="alCambiarEstadoDe(usuario)"
+                    >
+                      {{ desactivada ? 'Reactivar' : 'Desactivar' }}
+                    </button>
+                  </div>
+                  @if (desactivada) {
+                    <p class="ayuda" [id]="'ayuda-rol-' + usuario.idUsuario">
+                      Reactívala para cambiar su tipo de cuenta.
+                    </p>
+                  }
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <nav class="paginacion" aria-label="Páginas de la lista">
+    <button
+      type="button"
+      class="secundario"
+      [disabled]="pagina.pagina === 0"
+      (click)="irAPagina(pagina.pagina - 1)"
+    >
+      Anterior
+    </button>
+    <p class="numero">
+      Página {{ pagina.pagina + 1 }} de {{ pagina.totalPaginas || 1 }} ·
+      {{ pagina.totalElementos }} {{ pagina.totalElementos === 1 ? 'usuario' : 'usuarios' }}
+    </p>
+    <button
+      type="button"
+      class="secundario"
+      [disabled]="pagina.pagina + 1 >= pagina.totalPaginas"
+      (click)="irAPagina(pagina.pagina + 1)"
+    >
+      Siguiente
+    </button>
+  </nav>
+} @else if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="listado.reload()">Reintentar</button>
+  </div>
+} @else {
+  <p class="cargando" role="status">Cargando usuarios…</p>
+}
+
+<app-dialogo-confirmacion />

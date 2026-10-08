@@ -1,0 +1,8 @@
+# HTTPS en un servidor: Caddy saca y renueva solo el certificado de Let's Encrypt.
+# TIENDA_DOMINIO llega del .env: un dominio propio o uno de sslip.io armado con
+# la IP del servidor (64-176-27-4.sslip.io), que no necesita DNS.
+
+{$TIENDA_DOMINIO} {
+	encode gzip
+	reverse_proxy frontend:80
+}

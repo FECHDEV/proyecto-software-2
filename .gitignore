@@ -1,0 +1,47 @@
+# Java / Maven
+target/
+*.class
+*.jar
+!**/src/main/**/*.jar
+!.mvn/wrapper/maven-wrapper.jar
+# Imagenes subidas en desarrollo (TIENDA_IMAGENES_DIRECTORIO)
+backend/datos/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+# Material de proveedores (manuales en PDF): se consulta en local, no se versiona
+referencias/
+
+# Configuracion local con credenciales
+application-local.properties
+application-local.yml
+.env
+
+# Logs
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Sistema operativo
+Thumbs.db
+Desktop.ini
+
+# Skills de agentes (instalados localmente, no forman parte del sistema)
+.agents/
+.claude/skills/
+.claude/settings.local.json
+skills-lock.json
+.superpowers/
+
+# Documentación académica: se trabaja fuera del repositorio
+/documentacion/

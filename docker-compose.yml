@@ -1,0 +1,63 @@
+# La aplicación en Docker: MySQL, la API y el cliente web detrás de nginx.
+#   cp .env.example .env    (y completar los valores)
+#   docker compose up -d --build
+# El sitio queda en http://localhost (o el puerto de TIENDA_PUERTO).
+
+services:
+  base:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: tienda_db
+      MYSQL_USER: tienda_app
+      MYSQL_PASSWORD: ${TIENDA_DB_PASSWORD:?Falta TIENDA_DB_PASSWORD en .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Falta MYSQL_ROOT_PASSWORD en .env}
+      TZ: America/La_Paz
+    # utf8mb4 para nombres con tildes y ñ, como en la base de desarrollo (README)
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - datos-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    # Sin puertos publicados: solo la API llega a la base, por la red interna
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      base:
+        condition: service_healthy
+    environment:
+      TIENDA_DB_HOST: base
+      TIENDA_DB_PASSWORD: ${TIENDA_DB_PASSWORD}
+      TIENDA_JWT_SECRETO: ${TIENDA_JWT_SECRETO:?Falta TIENDA_JWT_SECRETO en .env}
+      # El Administrador inicial se crea solo si todavía no hay ninguno (decisiones.md)
+      TIENDA_ADMIN_CORREO: ${TIENDA_ADMIN_CORREO:?Falta TIENDA_ADMIN_CORREO en .env}
+      TIENDA_ADMIN_PASSWORD: ${TIENDA_ADMIN_PASSWORD:?Falta TIENDA_ADMIN_PASSWORD en .env}
+      TIENDA_CORS_ORIGENES: ${TIENDA_CORS_ORIGENES:-http://localhost}
+      TIENDA_PAGO_PROVEEDOR: ${TIENDA_PAGO_PROVEEDOR:-simulador}
+      TIENDA_MARCA: ${TIENDA_MARCA:-Tienda Montero}
+      # Correo: simulador por defecto; smtp con Gmail (decisiones.md → Notificaciones)
+      TIENDA_CORREO_PROVEEDOR: ${TIENDA_CORREO_PROVEEDOR:-simulador}
+      TIENDA_CORREO_USUARIO: ${TIENDA_CORREO_USUARIO:-}
+      TIENDA_CORREO_CONTRASENA: ${TIENDA_CORREO_CONTRASENA:-}
+      TIENDA_CORREO_REMITENTE: ${TIENDA_MARCA:-Tienda Montero} <${TIENDA_CORREO_USUARIO:-no-responder@localhost}>
+      TIENDA_SITIO_URL: ${TIENDA_SITIO_URL:-http://localhost}
+    volumes:
+      - imagenes:/datos/imagenes
+    # Sin puertos publicados: se llega por nginx, bajo /api
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${TIENDA_PUERTO:-80}:80"
+
+volumes:
+  datos-mysql:
+  imagenes:

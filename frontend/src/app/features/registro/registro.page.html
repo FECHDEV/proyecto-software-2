@@ -1,0 +1,104 @@
+<section class="tarjeta">
+  <h1>Crear cuenta</h1>
+
+  @if (avisoDeError()) {
+    <p class="aviso" role="alert">{{ avisoDeError() }}</p>
+  }
+
+  <form (submit)="enviar($event)" novalidate>
+    <div class="campo">
+      @let errorNombre = mensaje(formulario.nombre(), 'nombre');
+      <label for="nombre">Nombre</label>
+      <input
+        id="nombre"
+        type="text"
+        autocomplete="given-name"
+        [formField]="formulario.nombre"
+        [attr.aria-invalid]="errorNombre ? 'true' : null"
+        [attr.aria-describedby]="errorNombre ? 'error-nombre' : null"
+      />
+      @if (errorNombre) {
+        <p class="error" id="error-nombre">{{ errorNombre }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      @let errorApellido = mensaje(formulario.apellido(), 'apellido');
+      <label for="apellido">Apellido</label>
+      <input
+        id="apellido"
+        type="text"
+        autocomplete="family-name"
+        [formField]="formulario.apellido"
+        [attr.aria-invalid]="errorApellido ? 'true' : null"
+        [attr.aria-describedby]="errorApellido ? 'error-apellido' : null"
+      />
+      @if (errorApellido) {
+        <p class="error" id="error-apellido">{{ errorApellido }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      @let errorCorreo = mensaje(formulario.correo(), 'correo');
+      <label for="correo">Correo</label>
+      <input
+        id="correo"
+        type="email"
+        autocomplete="email"
+        spellcheck="false"
+        [formField]="formulario.correo"
+        [attr.aria-invalid]="errorCorreo ? 'true' : null"
+        [attr.aria-describedby]="errorCorreo ? 'error-correo' : null"
+      />
+      @if (errorCorreo) {
+        <p class="error" id="error-correo">{{ errorCorreo }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      @let errorContrasena = mensaje(formulario.contrasena(), 'contrasena');
+      <label for="contrasena">Contraseña</label>
+      <input
+        id="contrasena"
+        type="password"
+        autocomplete="new-password"
+        [formField]="formulario.contrasena"
+        [attr.aria-invalid]="errorContrasena ? 'true' : null"
+        [attr.aria-describedby]="
+          errorContrasena ? 'error-contrasena' : ayudaContrasena() ? 'ayuda-contrasena' : null
+        "
+      />
+      @if (errorContrasena) {
+        <p class="error" id="error-contrasena">{{ errorContrasena }}</p>
+      } @else if (ayudaContrasena()) {
+        <p class="ayuda" id="ayuda-contrasena">Al menos 8 caracteres.</p>
+      }
+    </div>
+
+    <div class="campo">
+      @let errorTelefono = mensaje(formulario.telefono(), 'telefono');
+      <label for="telefono">Teléfono <span class="opcional">(opcional)</span></label>
+      <input
+        id="telefono"
+        type="tel"
+        autocomplete="tel"
+        inputmode="tel"
+        [formField]="formulario.telefono"
+        [attr.aria-invalid]="errorTelefono ? 'true' : null"
+        [attr.aria-describedby]="errorTelefono ? 'error-telefono' : null"
+      />
+      @if (errorTelefono) {
+        <p class="error" id="error-telefono">{{ errorTelefono }}</p>
+      }
+    </div>
+
+
+    <button type="submit" class="boton" [disabled]="enviando()">
+      {{ enviando() ? 'Creando cuenta…' : 'Crear cuenta' }}
+    </button>
+  </form>
+
+  <p class="enlace-cruzado">
+    ¿Ya tienes cuenta? <a routerLink="/inicio-sesion" [queryParams]="paraIniciarSesion">Inicia sesión</a>
+  </p>
+</section>

@@ -1,0 +1,132 @@
+// Piezas visuales que comparten las pantallas con formulario (inicio de sesión
+// y registro). Se incluye con @use desde el .scss de cada componente, así los
+// estilos siguen alcanzando solo a ese componente.
+// Todos los valores salen de _tokens.scss.
+@use 'pagina';
+
+.tarjeta {
+	@include pagina.pagina-angosta(var(--app-ancho-formulario));
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-4);
+	padding: var(--app-espacio-6);
+	background: var(--app-superficie);
+	border: 1px solid var(--app-borde);
+	border-radius: var(--app-radio);
+}
+
+h1 {
+	font-size: 22px;
+	font-weight: 700;
+	text-wrap: balance;
+}
+
+.bajada {
+	margin: 0;
+	color: var(--app-texto-suave);
+	font-size: 14px;
+}
+
+.aviso {
+	margin: 0;
+	padding: var(--app-espacio-3);
+	border: 1px solid var(--app-error);
+	border-left-width: 4px;
+	border-radius: var(--app-radio-control);
+	background: var(--app-error-fondo);
+	color: var(--app-error);
+	font-size: 14px;
+}
+
+.aviso.exito {
+	border-color: var(--app-exito);
+	background: var(--app-exito-fondo);
+	color: var(--app-exito);
+}
+
+form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-4);
+}
+
+.campo {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-1);
+}
+
+label {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.opcional {
+	color: var(--app-texto-suave);
+	font-weight: 400;
+}
+
+input {
+	font: inherit;
+	font-size: 14px;
+	min-height: 44px;
+	padding: var(--app-espacio-3);
+	border: 1px solid var(--app-borde-control);
+	border-radius: var(--app-radio-control);
+	background: var(--app-fondo);
+	color: var(--app-texto);
+	width: 100%;
+}
+
+input[aria-invalid='true'] {
+	border-color: var(--app-error);
+	border-width: 2px;
+}
+
+.error {
+	margin: 0;
+	color: var(--app-error);
+	font-size: 12.5px;
+	font-weight: 500;
+}
+
+.boton {
+	font: inherit;
+	font-weight: 600;
+	font-size: 14px;
+	min-height: 44px;
+	padding: var(--app-espacio-3) var(--app-espacio-4);
+	border: 1px solid transparent;
+	border-radius: var(--app-radio-control);
+	background: var(--app-ambar);
+	color: var(--app-sobre-ambar);
+	cursor: pointer;
+	transition: background-color var(--app-transicion);
+}
+
+.boton:hover:not([disabled]) {
+	background: var(--app-ambar-fuerte);
+}
+
+.boton[disabled] {
+	opacity: 0.6;
+	cursor: default;
+}
+
+// Enlace al otro lado del circuito: de iniciar sesión a registrarse y al revés
+.enlace-cruzado {
+	margin: 0;
+	text-align: center;
+	font-size: 14px;
+	color: var(--app-texto-suave);
+}
+
+.enlace-cruzado a {
+	color: var(--app-ambar);
+	font-weight: 600;
+}
+
+.enlace-cruzado a:hover {
+	color: var(--app-ambar-fuerte);
+	text-decoration: underline;
+}

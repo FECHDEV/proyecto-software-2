@@ -1,0 +1,149 @@
+<h1>Mis datos</h1>
+
+@if (usuario(); as usuario) {
+  <section class="tarjeta" aria-labelledby="titulo-datos">
+    <h2 id="titulo-datos">Tus datos</h2>
+
+    <dl class="fijos">
+      <div>
+        <dt>Correo</dt>
+        <dd>{{ usuario.correo }}</dd>
+      </div>
+      <div>
+        <dt>Tipo de cuenta</dt>
+        <dd>{{ nombreDeRol(usuario.rol) }}</dd>
+      </div>
+      <div>
+        <dt>Estado</dt>
+        <dd>{{ nombreDeEstado(usuario.estado) }}</dd>
+      </div>
+      <div>
+        <dt>Cuenta creada el</dt>
+        <dd>{{ fecha(usuario.fechaRegistro) }}</dd>
+      </div>
+    </dl>
+
+    @if (avisoDeDatos()) {
+      <p class="aviso" role="alert">{{ avisoDeDatos() }}</p>
+    }
+    @if (datosAlDia()) {
+      <p class="aviso exito" role="status">Datos guardados.</p>
+    }
+
+    <form id="formulario-datos" (submit)="guardarDatos($event)" novalidate>
+      <div class="campo">
+        @let errorNombre = mensajeDeDatos(formularioDeDatos.nombre(), 'nombre');
+        <label for="nombre">Nombre</label>
+        <input
+          id="nombre"
+          type="text"
+          autocomplete="given-name"
+          [formField]="formularioDeDatos.nombre"
+          [attr.aria-invalid]="errorNombre ? 'true' : null"
+          [attr.aria-describedby]="errorNombre ? 'error-nombre' : null"
+        />
+        @if (errorNombre) {
+          <p class="error" id="error-nombre">{{ errorNombre }}</p>
+        }
+      </div>
+
+      <div class="campo">
+        @let errorApellido = mensajeDeDatos(formularioDeDatos.apellido(), 'apellido');
+        <label for="apellido">Apellido</label>
+        <input
+          id="apellido"
+          type="text"
+          autocomplete="family-name"
+          [formField]="formularioDeDatos.apellido"
+          [attr.aria-invalid]="errorApellido ? 'true' : null"
+          [attr.aria-describedby]="errorApellido ? 'error-apellido' : null"
+        />
+        @if (errorApellido) {
+          <p class="error" id="error-apellido">{{ errorApellido }}</p>
+        }
+      </div>
+
+      <div class="campo">
+        @let errorTelefono = mensajeDeDatos(formularioDeDatos.telefono(), 'telefono');
+        <label for="telefono">Teléfono <span class="opcional">(opcional)</span></label>
+        <input
+          id="telefono"
+          type="tel"
+          autocomplete="tel"
+          inputmode="tel"
+          [formField]="formularioDeDatos.telefono"
+          [attr.aria-invalid]="errorTelefono ? 'true' : null"
+          [attr.aria-describedby]="errorTelefono ? 'error-telefono' : null"
+        />
+        @if (errorTelefono) {
+          <p class="error" id="error-telefono">{{ errorTelefono }}</p>
+        }
+      </div>
+
+      <button type="submit" class="boton" [disabled]="guardandoDatos()">
+        {{ guardandoDatos() ? 'Guardando…' : 'Guardar datos' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="tarjeta" aria-labelledby="titulo-contrasena">
+    <h2 id="titulo-contrasena">Cambiar contraseña</h2>
+    <p class="bajada">Al cambiarla se cierran tus sesiones en otros dispositivos.</p>
+
+    @if (avisoDeContrasena()) {
+      <p class="aviso" role="alert">{{ avisoDeContrasena() }}</p>
+    }
+    @if (contrasenaAlDia()) {
+      <p class="aviso exito" role="status">Contraseña actualizada.</p>
+    }
+
+    <form id="formulario-contrasena" (submit)="cambiarContrasena($event)" novalidate>
+      <div class="campo">
+        @let errorActual = mensajeDeContrasena(formularioDeContrasena.contrasenaActual(), 'contrasenaActual');
+        <label for="contrasenaActual">Contraseña actual</label>
+        <input
+          id="contrasenaActual"
+          type="password"
+          autocomplete="current-password"
+          [formField]="formularioDeContrasena.contrasenaActual"
+          [attr.aria-invalid]="errorActual ? 'true' : null"
+          [attr.aria-describedby]="errorActual ? 'error-contrasenaActual' : null"
+        />
+        @if (errorActual) {
+          <p class="error" id="error-contrasenaActual">{{ errorActual }}</p>
+        }
+      </div>
+
+      <div class="campo">
+        @let errorNueva = mensajeDeContrasena(formularioDeContrasena.contrasenaNueva(), 'contrasenaNueva');
+        <label for="contrasenaNueva">Contraseña nueva</label>
+        <input
+          id="contrasenaNueva"
+          type="password"
+          autocomplete="new-password"
+          [formField]="formularioDeContrasena.contrasenaNueva"
+          [attr.aria-invalid]="errorNueva ? 'true' : null"
+          [attr.aria-describedby]="
+            errorNueva ? 'error-contrasenaNueva' : ayudaContrasenaNueva() ? 'ayuda-contrasenaNueva' : null
+          "
+        />
+        @if (errorNueva) {
+          <p class="error" id="error-contrasenaNueva">{{ errorNueva }}</p>
+        } @else if (ayudaContrasenaNueva()) {
+          <p class="ayuda" id="ayuda-contrasenaNueva">Al menos 8 caracteres.</p>
+        }
+      </div>
+
+      <button type="submit" class="boton" [disabled]="cambiandoContrasena()">
+        {{ cambiandoContrasena() ? 'Cambiando…' : 'Cambiar contraseña' }}
+      </button>
+    </form>
+  </section>
+} @else if (cargaFallida()) {
+  <section class="tarjeta">
+    <p class="aviso" role="alert">No pudimos cargar tus datos. Revisa tu conexión y vuelve a intentar.</p>
+    <button type="button" class="boton reintentar" (click)="recurso.reload()">Reintentar</button>
+  </section>
+} @else {
+  <p class="cargando" role="status">Cargando tus datos…</p>
+}

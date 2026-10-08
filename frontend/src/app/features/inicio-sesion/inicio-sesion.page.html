@@ -1,0 +1,56 @@
+<section class="tarjeta">
+  <h1>Iniciar sesión</h1>
+
+  @if (aviso()) {
+    <p class="aviso exito" role="status">{{ aviso() }}</p>
+  }
+
+  @if (avisoDeError()) {
+    <p class="aviso" role="alert">{{ avisoDeError() }}</p>
+  }
+
+  <form (submit)="enviar($event)" novalidate>
+    <div class="campo">
+      <label for="correo">Correo</label>
+      <input
+        id="correo"
+        type="email"
+        autocomplete="email"
+        spellcheck="false"
+        [formField]="formulario.correo"
+        [attr.aria-invalid]="formulario.correo().touched() && formulario.correo().invalid()"
+        [attr.aria-describedby]="formulario.correo().touched() && formulario.correo().invalid() ? 'error-correo' : null"
+      />
+      @if (formulario.correo().touched() && formulario.correo().invalid()) {
+        <p class="error" id="error-correo">
+          {{ primerMensaje(formulario.correo().errors()) }}
+        </p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="contrasena">Contraseña</label>
+      <input
+        id="contrasena"
+        type="password"
+        autocomplete="current-password"
+        [formField]="formulario.contrasena"
+        [attr.aria-invalid]="formulario.contrasena().touched() && formulario.contrasena().invalid()"
+        [attr.aria-describedby]="formulario.contrasena().touched() && formulario.contrasena().invalid() ? 'error-contrasena' : null"
+      />
+      @if (formulario.contrasena().touched() && formulario.contrasena().invalid()) {
+        <p class="error" id="error-contrasena">
+          {{ primerMensaje(formulario.contrasena().errors()) }}
+        </p>
+      }
+    </div>
+
+    <button type="submit" class="boton" [disabled]="enviando()">
+      {{ enviando() ? 'Entrando…' : 'Entrar' }}
+    </button>
+  </form>
+
+  <p class="enlace-cruzado"><a routerLink="/recuperacion">¿Olvidaste tu contraseña?</a></p>
+
+  <p class="enlace-cruzado">¿No tienes cuenta? <a routerLink="/registro" [queryParams]="paraElRegistro">Crear cuenta</a></p>
+</section>
