@@ -42,32 +42,93 @@ cualquier cosa. El detalle del flujo para implementar una historia está en
 
 ## Rol: documentación
 
-Para quien documenta el proyecto (con opencode u otro agente).
+Para quien documenta el proyecto con opencode u otro agente. La mayor parte de
+la documentación del proyecto la escribe este rol: estas reglas mandan sobre lo
+que sugiera cualquier otra instrucción, salvo las de «Siempre».
 
-- **Dónde:** en Markdown, dentro de `docs/proyecto/`. Ahí se puede escribir
-  libremente: perfil del proyecto, metodología Scrum, actas de cada sprint
-  (planning, review y retro) y requisitos.
-- **De dónde sale lo que se escribe:** solo de los datos reales del
-  repositorio:
-  - las historias (`docs/historias/`);
-  - las decisiones (`docs/decisiones.md`);
-  - los issues y los PR de cada sprint (`gh issue list`, `gh pr list
-    --state merged`);
-  - el código, para describir la arquitectura.
+### Alcance
 
-  **No se inventan funciones** ni se describe algo que el repositorio no
-  muestre. Si falta un dato, se pregunta.
-- **Cómo entra:** por PR, desde una rama `docs/…`.
-- **Lo que no se toca:** `backend/`, `frontend/`, `CLAUDE.md`, `AGENTS.md`,
-  `docs/historias/`, `docs/planes/`, `docs/decisiones.md`, `docs/flujo-sdd.md`,
-  `.claude/` ni `.opencode/`. Un PR que los toque necesita la aprobación del
-  dueño del código (`.github/CODEOWNERS`).
-- **Comandos de opencode** (en `.opencode/commands/`):
-  - `/acta N`: escribe `docs/proyecto/sprints/sprint-N.md` (planning, review
-    y retro) con los issues y PR del sprint y lo que cuente el usuario.
-  - `/requisitos`: pasa los RF de `docs/historias/` a
-    `docs/proyecto/requisitos.md`, con su identificador «HU-XX RF-N».
+**Se escribe solo en `docs/proyecto/`**, en Markdown:
 
-  Los dos necesitan `gh` con la sesión iniciada (`gh auth login`).
-- **El Word:** al final se exporta `docs/proyecto/` con el formato de la
-  universidad (pandoc o un generador); el Markdown es la fuente.
+| Archivo | Contenido | Sale de |
+|---|---|---|
+| `perfil.md` | Problema, objetivos, alcance, fuera de alcance, equipo, plazo | `CLAUDE.md` → «Proyecto» y «Reglas de negocio»; backlog (issues) |
+| `metodologia.md` | Scrum en este proyecto: roles, eventos, artefactos, flujo SDD, Definition of Done, ramas y PR | `docs/flujo-sdd.md`, `CLAUDE.md` → «Forma de trabajo» |
+| `requisitos.md` | Requisitos funcionales («HU-XX RF-N») y no funcionales | `docs/historias/`, `CLAUDE.md`, `docs/decisiones.md` (comando `/requisitos`) |
+| `arquitectura.md` | Stack, capas, módulos, modelo de datos, API, seguridad, despliegue | El código (`backend/`, `frontend/`), `docker-compose*.yml`, `docs/decisiones.md` |
+| `backlog.md` | Historias por sprint y su estado | `gh issue list --state all` y el Project |
+| `sprints/sprint-N.md` | Acta de cada sprint: planning, review y retro | Issues, PR y lo que cuente el usuario (comando `/acta N`) |
+| `diagramas/` | Diagramas (casos de uso, clases, entidad-relación, secuencia, despliegue) en Mermaid dentro de Markdown | El código y las historias |
+
+Si la universidad pide otro capítulo o estructura, se agrega acá con el mismo
+criterio: cada archivo dice de dónde sale.
+
+**No se toca nada fuera de `docs/proyecto/`:** ni `backend/`, `frontend/`,
+`CLAUDE.md`, `AGENTS.md`, `docs/historias/`, `docs/planes/`,
+`docs/decisiones.md`, `docs/flujo-sdd.md`, `.claude/`, `.opencode/` ni
+`.github/`. Un PR que los toque necesita la aprobación del dueño del código
+(`.github/CODEOWNERS`).
+
+### Fuentes y veracidad
+
+- **Solo datos reales del repositorio:** historias, decisiones, issues, PR,
+  planes y código. **No se inventan funciones, pantallas, endpoints, fechas,
+  reuniones ni cifras.** Si falta un dato, se pregunta al usuario o se deja
+  «[FALTA DATO]».
+- **Implementado ≠ planificado.** Algo está implementado solo si su PR está
+  mergeado en `main`. Lo que está en el backlog se describe como planificado,
+  con su sprint; nunca como hecho.
+- **Si dos fuentes se contradicen** (una historia y el código, dos
+  decisiones), no se corrige ninguna ni se elige una: se avisa al usuario para
+  que lo resuelva quien programa.
+- Los RF se citan con su identificador completo («HU-XX RF-N») y **nunca se
+  renumeran**: las pruebas los citan.
+- Cada afirmación técnica dice de dónde sale (archivo o sección) cuando no es
+  obvio.
+
+### Estilo
+
+- En español, en tono formal e impersonal, con frases cortas.
+- Los nombres de clases, endpoints, archivos y comandos van en `código`, tal
+  como están en el repositorio.
+- Diagramas en Mermaid (bloques ```` ```mermaid ````), para que se versionen y
+  se exporten.
+- Acá sí se nombra a la universidad y que es un proyecto académico (la regla de
+  no mencionarla es solo para la interfaz de la aplicación).
+
+### Seguridad
+
+- **Ningún secreto ni dato personal:** ni el contenido del `.env`,
+  contraseñas, claves, tokens, correos o teléfonos reales. Los ejemplos usan
+  datos inventados y evidentes (`cliente@ejemplo.com`).
+- **No se copian manuales de proveedores** (ni el de pago): se describe la
+  interfaz propia (`IPago`) y se dice que el proveedor real va detrás de ella.
+- El nombre del proveedor de pago puede aparecer en la documentación, nunca
+  como si fuera parte de la API de la tienda.
+
+### Comandos de opencode (`.opencode/commands/`)
+
+- `/acta N`: escribe `docs/proyecto/sprints/sprint-N.md` con los issues y PR
+  del sprint y lo que cuente el usuario.
+- `/requisitos`: pasa los RF de `docs/historias/` a `docs/proyecto/requisitos.md`.
+
+Los dos necesitan `gh` con la sesión iniciada (`gh auth login`). Con `gh` solo
+se **lee** (`issue list`, `issue view`, `pr list`, `pr view`): no se crean,
+editan, cierran ni mergean issues o PR.
+
+### Cómo entra
+
+- Rama `docs/…` desde `main` actualizado (`docs/sprint-1`, `docs/requisitos`…).
+- Commits y PR **solo cuando el usuario lo pide**. El PR sigue
+  `.github/pull_request_template.md`: «Trabajo de documentación, sin issue» (o
+  `Closes #N` si hay un issue de documentación) y, en «Qué cambia», los
+  archivos y de qué fuentes salieron.
+- Con el CI en verde, el PR se puede mergear: `docs/proyecto/` no necesita la
+  aprobación del dueño del código.
+
+### El Word final
+
+Al final se exporta `docs/proyecto/` al Word con el formato de la universidad
+(pandoc con la plantilla de la universidad como `--reference-doc`, o un
+generador). **El Markdown es la fuente:** las correcciones se hacen en el
+Markdown, no en el Word.
