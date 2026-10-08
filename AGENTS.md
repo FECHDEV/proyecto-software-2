@@ -59,7 +59,15 @@ Para quien documenta el proyecto (con opencode u otro agente).
   muestre. Si falta un dato, se pregunta.
 - **Cómo entra:** por PR, desde una rama `docs/…`.
 - **Lo que no se toca:** `backend/`, `frontend/`, `CLAUDE.md`, `AGENTS.md`,
-  `docs/historias/`, `docs/planes/` y `docs/decisiones.md`. Un cambio al código
-  va por PR revisado por el dueño del código (`.github/CODEOWNERS`).
+  `docs/historias/`, `docs/planes/`, `docs/decisiones.md`, `docs/flujo-sdd.md`,
+  `.claude/` ni `.opencode/`. Un PR que los toque necesita la aprobación del
+  dueño del código (`.github/CODEOWNERS`).
+- **Comandos de opencode** (en `.opencode/commands/`):
+  - `/acta N`: escribe `docs/proyecto/sprints/sprint-N.md` (planning, review
+    y retro) con los issues y PR del sprint y lo que cuente el usuario.
+  - `/requisitos`: pasa los RF de `docs/historias/` a
+    `docs/proyecto/requisitos.md`, con su identificador «HU-XX RF-N».
+
+  Los dos necesitan `gh` con la sesión iniciada (`gh auth login`).
 - **El Word:** al final se exporta `docs/proyecto/` con el formato de la
   universidad (pandoc o un generador); el Markdown es la fuente.

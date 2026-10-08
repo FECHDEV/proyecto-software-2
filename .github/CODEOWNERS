@@ -6,3 +6,14 @@
 /backend/   @FECHDEV
 /frontend/  @FECHDEV
 /.github/   @FECHDEV
+
+# Las reglas y las specs también: un agente de documentación no las cambia sin
+# que lo apruebe quien programa.
+/CLAUDE.md               @FECHDEV
+/AGENTS.md               @FECHDEV
+/.claude/                @FECHDEV
+/.opencode/              @FECHDEV
+/docs/historias/         @FECHDEV
+/docs/planes/            @FECHDEV
+/docs/decisiones.md      @FECHDEV
+/docs/flujo-sdd.md       @FECHDEV
