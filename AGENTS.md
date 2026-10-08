@@ -42,13 +42,14 @@ cualquier cosa. El detalle del flujo para implementar una historia está en
 
 ## Tareas de David (`@Davidgonzales03`)
 
-David documenta el proyecto (sección siguiente) y, además, tiene estas dos
-tareas. **Está aprendiendo el flujo:** antes de cada paso, explicarle qué se
+David documenta el proyecto (sección «Rol: documentación») y, además, tiene
+las tareas de abajo. **Está aprendiendo el flujo:** antes de cada paso, explicarle qué se
 va a hacer y por qué (qué comando de git, qué archivo, qué revisa el CI), y
 proponer en vez de hacer cuando la decisión es suya o de Fabio.
 
-Ninguna de las dos toca `backend/` ni `frontend/`, y ninguna instala
-dependencias.
+El spike, los datos de demostración y las pruebas manuales no tocan `backend/`
+ni `frontend/`. Programar sí, siempre con la revisión de Fabio. Nada de esto
+instala dependencias sin avisar.
 
 ### Spike: visor 3D y modelos de los productos (issue #14)
 
@@ -111,6 +112,42 @@ cuando existan las categorías y los productos.
   fuente y su licencia.
 - Sin marcas registradas en los nombres ni datos de personas reales.
 
+### Pruebas manuales (verificación cruzada)
+
+Fabio prueba cada historia antes de cerrarla; David la prueba también, por su
+lado, para que la verificación no dependa de una sola persona.
+
+- **Cuándo:** cuando Fabio abre el PR de una historia (`feature/hu-XX-…`).
+- **Cómo:**
+  1. Bajar la rama del PR (`gh pr checkout <número>`) y levantar la aplicación
+     (`README.md` → «Levantar el proyecto»; hace falta el `.env`, que Fabio
+     pasa por privado).
+  2. Recorrer **cada escenario** «Dado / Cuando / Entonces» y cada caso límite
+     de `docs/historias/HU-XX.md`, como lo haría un usuario real, en la
+     computadora y en el celular.
+  3. Probar también lo que la historia no dice pero un usuario haría: datos
+     vacíos, muy largos o raros, doble clic, volver atrás, recargar la página.
+- **Resultado:** un comentario en el PR (`gh pr comment`), con una línea por
+  escenario: ✅ funciona o ❌ falla, y en cada falla los pasos para repetirla
+  y lo que esperaba ver. No se corrige el código desde la prueba: lo corrige
+  Fabio, o David en su propio PR si lo acuerdan.
+- Lo que encuentre le sirve después para el acta del sprint (review).
+
+### Programar (con revisión de Fabio)
+
+David puede programar si quiere, con estas reglas:
+
+- **Elegir con Fabio** qué toma, antes de empezar. Conviene algo acotado (por
+  ejemplo HU-06, categorías). **No** toma seguridad, pagos, pedidos ni stock.
+- **Mismo flujo SDD que Fabio** (`docs/flujo-sdd.md`): historia, plan corto,
+  análisis, TDD, cierre. Los pasos están en `.claude/commands/sdd/*.md`
+  (`historia.md`, `analizar.md`, `cerrar.md`): leerlos y seguirlos tal cual.
+  Las reglas del código están en `CLAUDE.md` y `docs/decisiones.md`.
+- Rama `feature/hu-XX-nombre-corto`. El PR **necesita la aprobación de
+  Fabio** (`.github/CODEOWNERS`) y el CI en verde.
+- Explicarle cada parte del código que se escribe y por qué, para que pueda
+  defenderla.
+
 ## Rol: documentación
 
 Para quien documenta el proyecto con opencode u otro agente. La mayor parte de
@@ -134,7 +171,8 @@ que sugiera cualquier otra instrucción, salvo las de «Siempre».
 Si la universidad pide otro capítulo o estructura, se agrega acá con el mismo
 criterio: cada archivo dice de dónde sale.
 
-**No se toca nada fuera de `docs/proyecto/`:** ni `backend/`, `frontend/`,
+**Al documentar, no se toca nada fuera de `docs/proyecto/`** (para programar,
+ver «Tareas de David» → «Programar»): ni `backend/`, `frontend/`,
 `CLAUDE.md`, `AGENTS.md`, `docs/historias/`, `docs/planes/`,
 `docs/decisiones.md`, `docs/flujo-sdd.md`, `.claude/`, `.opencode/` ni
 `.github/`. Un PR que los toque necesita la aprobación del dueño del código
@@ -185,7 +223,9 @@ criterio: cada archivo dice de dónde sale.
 
 Los dos necesitan `gh` con la sesión iniciada (`gh auth login`). Con `gh` solo
 se **lee** (`issue list`, `issue view`, `pr list`, `pr view`): no se crean,
-editan, cierran ni mergean issues o PR.
+editan, cierran ni mergean issues o PR. Las únicas escrituras permitidas son
+los comentarios con el resultado de las pruebas manuales (`gh pr comment`) y
+los PR propios cuando el usuario los pide.
 
 ### Cómo entra
 
