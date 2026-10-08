@@ -13,7 +13,7 @@ Integral del Norte, Montero, Santa Cruz, Bolivia. Metodología **Scrum**.
 | Marca | **Tienda Montero** (en el código, `frontend/src/app/core/marca.ts` y `TIENDA_MARCA`) |
 | Repositorio | `git@github.com:FECHDEV/proyecto-software-2.git` (público) |
 | Plazo | 2 meses y medio como máximo, desde el 07/10/2026 |
-| Equipo | Fabio (`@FECHDEV`): código, con Claude Code. Un compañero *(usuario de GitHub pendiente)*: documentación y algo de código, con opencode |
+| Equipo | Fabio (`@FECHDEV`): código, con Claude Code. David (`@Davidgonzales03`): documentación y algo de código, con opencode |
 
 ---
 
