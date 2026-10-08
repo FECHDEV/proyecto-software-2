@@ -115,13 +115,14 @@ cualquier skill:
   `verification-before-completion` antes de afirmar que algo está terminado.
 - **`writing-plans` escribe en `docs/planes/`** y en el **formato corto** de
   `docs/flujo-sdd.md`, no en `docs/superpowers/plans/` ni en formato largo.
-- **No lanzar subagentes** salvo pedido explícito, aunque un skill lo indique.
+- **Subagentes permitidos** sin pedido explícito, cuando mejoren el trabajo
+  (búsquedas amplias, revisiones, tareas independientes en paralelo).
 - **Skills nuevos: solo en este proyecto y preguntando antes.** Sin `-g` ni
   `-y`, aunque `find-skills` lo sugiera.
 - En `.claude/settings.local.json` quedan apagados `brainstorming`,
-  `using-superpowers`, `dispatching-parallel-agents`, `using-git-worktrees`,
-  `finishing-a-development-branch`, `requesting-code-review`,
-  `receiving-code-review`, `spring-security-jwt` y `configuration-properties`.
+  `using-superpowers`, `using-git-worktrees`,
+  `finishing-a-development-branch`, `requesting-code-review` y
+  `spring-security-jwt`.
 
 ### Decisiones técnicas que ganan sobre lo que digan los skills
 
