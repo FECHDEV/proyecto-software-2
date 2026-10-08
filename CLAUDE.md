@@ -54,6 +54,9 @@ de asumir.
 
 ### Tienda
 - **Tienda propia, no marketplace:** un solo vendedor, un solo inventario.
+- **Rubro: ferretería** (herramientas, hogar y jardín). Un producto puede tener
+  un **modelo 3D opcional**, hecho fuera de la aplicación y cargado cuando
+  exista; sin modelo, se ve solo con sus fotos.
 
 ### Pago
 - Detrás de `IPago`, con un **simulador local** por defecto. El proveedor real

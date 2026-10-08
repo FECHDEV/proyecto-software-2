@@ -40,6 +40,77 @@ cualquier cosa. El detalle del flujo para implementar una historia está en
 - Frontend: `cd frontend && npx ng test --watch=false && npx ng build` (Vitest).
 - Todo junto: `docker compose up -d --build`.
 
+## Tareas de David (`@Davidgonzales03`)
+
+David documenta el proyecto (sección siguiente) y, además, tiene estas dos
+tareas. **Está aprendiendo el flujo:** antes de cada paso, explicarle qué se
+va a hacer y por qué (qué comando de git, qué archivo, qué revisa el CI), y
+proponer en vez de hacer cuando la decisión es suya o de Fabio.
+
+Ninguna de las dos toca `backend/` ni `frontend/`, y ninguna instala
+dependencias.
+
+### Spike: visor 3D y modelos de los productos (issue #14)
+
+Investigación corta, sin código de producción, para decidir cómo se hacen
+HU-15 (subir el modelo 3D) y HU-16 (verlo en 3D y en realidad aumentada).
+
+- **Rama:** `docs/spike-visor-3d`. **Entrega:**
+  `docs/proyecto/investigacion/visor-3d.md`, por PR con `Closes #14`.
+- **Preguntas que tiene que responder el informe:**
+  1. Visor: `<model-viewer>` contra Three.js. Qué hace cada uno (girar,
+     acercar, alejar, mover), cómo se integra con Angular 22 y cuánto pesa.
+  2. Realidad aumentada: en qué celulares funciona (Android e iOS), qué
+     necesita y qué ve quien no la tiene.
+  3. Formato y tamaño: `.glb` u otro, y el tamaño máximo razonable por
+     archivo.
+  4. Cómo conseguir los modelos: la fuente principal es Poly Haven (CC0);
+     comparar sus resoluciones de textura (1k, 2k) en peso y calidad. Como
+     complemento, probar una app de escaneo con el celular (Polycam, KIRI
+     Engine u otra) con un producto real y anotar tiempo, calidad, tamaño y
+     si es gratis.
+  5. Rendimiento en un celular de gama baja.
+  6. **Recomendación** y riesgos.
+- **Prototipo:** lo arma Fabio con Claude Code y lo publica como una página
+  privada (el enlace está en el issue #14; ya tiene seis herramientas de Poly Haven y
+  permite cargar un `.glb` propio). David **no programa el visor**: lo
+  prueba en celulares reales (el suyo, el de Fabio y uno de gama baja), carga
+  ahí los modelos que consiga y anota qué funciona y qué no. El código de
+  producción del visor va en HU-16, en `frontend/`, y lo hace Fabio.
+- **Los modelos `.glb` no van al repositorio** (pesan y tienen licencias): se
+  guardan en una carpeta compartida con Fabio y se listan en el informe
+  (producto, archivo, tamaño, cómo se hizo, licencia).
+- La decisión final la pasa Fabio a `docs/decisiones.md`; el informe la
+  propone.
+
+### Datos de demostración (issue #25)
+
+El catálogo con el que se muestra la tienda en las reviews y en la defensa.
+Primero se arma el contenido; el código que lo carga va después de HU-07,
+cuando existan las categorías y los productos.
+
+- **Rama:** `docs/datos-demo`. **Entrega:** `docs/proyecto/demo/catalogo.csv`
+  y `docs/proyecto/demo/README.md`, por PR con `Refs #25` (no `Closes`: el
+  issue se cierra cuando también esté el código que carga el catálogo).
+- **Rubro: ferretería** (herramientas, hogar y jardín), porque es lo que
+  tiene modelos 3D gratuitos: [Poly Haven](https://polyhaven.com/models) tiene
+  unos 70 modelos de herramientas con licencia CC0 (martillos, llaves,
+  taladros, destornilladores, alicates, escaleras, regaderas…). Los productos
+  con modelo 3D salen de ahí; el resto puede ir solo con fotos.
+- `catalogo.csv`, una fila por producto, con estas columnas:
+  `categoria,nombre,descripcion,precio_bs,stock_inicial,imagenes,modelo_3d`.
+  `imagenes` lleva los nombres de archivo separados por `|`; `modelo_3d`, el
+  nombre del `.glb` o vacío.
+- Entre 15 y 25 productos, en 4 a 6 categorías, con precios creíbles en
+  bolivianos y descripciones cortas y propias (no copiadas de otra tienda).
+  Algunos productos (los del spike) llevan modelo 3D.
+- **Imágenes:** fotos propias o con licencia libre (Unsplash, Pexels),
+  en JPG, PNG o WebP de **2 MB como máximo** (es lo que acepta el backend,
+  `docs/decisiones.md` → «Imágenes subidas»). Se guardan en la carpeta
+  compartida, no en el repositorio; el `README.md` lista cada archivo con su
+  fuente y su licencia.
+- Sin marcas registradas en los nombres ni datos de personas reales.
+
 ## Rol: documentación
 
 Para quien documenta el proyecto con opencode u otro agente. La mayor parte de
