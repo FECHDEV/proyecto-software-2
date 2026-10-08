@@ -17,7 +17,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Paleta y modos](#paleta-y-modos) · [Tipografía](#tipografía) · [Reglas que valen para toda la interfaz](#reglas-que-valen-para-toda-la-interfaz) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
-- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo)
+- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d)
 
 ---
 
@@ -400,3 +400,22 @@ a la plantilla antes de la skill `nuevo-proyecto`.
 
 **Motivo:** el diseño depende de la marca, y las pantallas que más lo muestran
 (catálogo, producto, carrito) todavía no existen.
+
+### Rubro: ferretería, con vista 3D
+
+*08/10/2026.* Tienda Montero es una ferretería: herramientas, hogar y jardín.
+Los productos pueden tener, además de sus fotos, un **modelo 3D** que el
+cliente gira, acerca, aleja y mueve (HU-15 y HU-16).
+
+- El modelo 3D es **opcional** y se hace **fuera de la aplicación** (se
+  descarga, se escanea o se modela aparte). Un producto se crea sin modelo y
+  el modelo se carga después, cuando exista; sin modelo, el producto se ve
+  solo con sus fotos.
+- Los modelos de demostración salen de [Poly Haven](https://polyhaven.com/models),
+  con licencia CC0.
+
+**Motivo:** el rubro se eligió por los modelos 3D gratuitos que existen. Poly
+Haven tiene unos 70 modelos de herramientas con licencia CC0 y calidad
+realista, y el prototipo del spike (#14) los mostró con `<model-viewer>` sin
+problemas.
+
