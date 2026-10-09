@@ -197,6 +197,15 @@ archivo versionado, como haría un `data.sql`.
   desde todas las IPs). Los correos inexistentes también cuentan. Los
   contadores viven en memoria: se pierden al reiniciar y suponen una sola
   instancia del backend.
+- *09/10/2026 (HU-02).* **Con la sesión iniciada, «Iniciar sesión» lleva al
+  inicio,** como «Crear cuenta» (HU-01).
+- *09/10/2026 (HU-02).* **Cuando la sesión se cierra sola** (vence el token o
+  el servidor responde 401 en una ruta protegida), se va a «Iniciar sesión»
+  con el aviso «Tu sesión se cerró. Inicia sesión de nuevo.» y, al volver a
+  entrar, a la pantalla donde estaba. «Cerrar sesión» a pedido no muestra
+  aviso. **Motivo:** sin el aviso, la persona no entiende por qué la sacaron.
+- *09/10/2026 (HU-02).* El campo de la contraseña del inicio de sesión tiene
+  un botón para mostrarla u ocultarla; empieza oculta.
 
 ### Recuperación de contraseña
 
