@@ -9,6 +9,22 @@ $margen-lateral: clamp(var(--app-espacio-4), 5vw, var(--app-espacio-12));
 	min-height: 100%;
 }
 
+// Cuánto del fondo deja ver el borde de abajo del encabezado: 1 es sólido. Se
+// registra para que el navegador pueda animarlo
+@property --cabecera-solidez {
+	syntax: '<number>';
+	inherits: false;
+	initial-value: 1;
+}
+
+// Al bajar, el encabezado pasa de sólido a translúcido en degradé (sólido arriba,
+// más transparente hacia el borde de abajo) en los primeros 80 px
+@keyframes cabecera-al-desplazar {
+	to {
+		--cabecera-solidez: 0.3;
+	}
+}
+
 // La raya amarilla de abajo es la firma de la marca. Queda fija arriba al
 // desplazarse, para tener siempre a mano el menú y la sesión
 header {
@@ -16,7 +32,23 @@ header {
 	top: 0;
 	z-index: 5;
 	border-bottom: 3px solid var(--app-ambar);
-	background: var(--app-fondo);
+	background: linear-gradient(
+		to top,
+		color-mix(in srgb, var(--app-fondo) calc(var(--cabecera-solidez) * 100%), transparent),
+		var(--app-fondo)
+	);
+	// Lo que pasa por detrás se desenfoca, para que el menú se siga leyendo
+	backdrop-filter: blur(10px);
+}
+
+// La transición la marca el propio desplazamiento, sin JavaScript. Donde no hay
+// soporte, el encabezado queda sólido
+@supports (animation-timeline: scroll()) {
+	header {
+		animation: cabecera-al-desplazar linear both;
+		animation-timeline: scroll(root);
+		animation-range: 0 80px;
+	}
 }
 
 .barra,
