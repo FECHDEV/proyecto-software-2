@@ -287,16 +287,24 @@ navegador (`localStorage`, clave `app.tema`). El claro redefine los tokens en
 `:root[data-tema='claro']`; un script mínimo en `index.html` lo aplica antes de
 que arranque Angular, para que la página no aparezca oscura un instante.
 
-La paleta viene de la plantilla (fondo azul nocturno y ámbar para la acción
-principal) y se redefine en el sprint 1 con la marca. **Se puede cambiar,** con una
+*09/10/2026 (chore #8).* La paleta es la del prototipo del visor 3D:
+**grafito con amarillo de señalización**, el de las herramientas y los avisos
+de obra, que va con el rubro (ferretería). El amarillo tiene dos tokens: el de
+relleno (`--app-ambar`: botones, logotipo, la raya del encabezado), con texto
+oscuro encima en los dos modos, y el de texto (`--app-acento-texto`: enlaces,
+foco, la pestaña actual), que en el modo claro es un ocre oscuro porque el
+amarillo no llega a 4.5:1 sobre el fondo claro. **Se puede cambiar,** con una
 condición: los contrastes se miden contra el fondo con la fórmula de luminancia
 de WCAG, uno por uno, antes de fijar un color (4.5:1 en texto, 3:1 en bordes
 de control), en los dos modos.
 
 ### Tipografía
 
-Sora para los títulos (600/700) e Inter para el texto y los datos (400/500),
-de Google Fonts y con su pila de reserva. Escala de 12, 14, 16 (base), 18, 20,
+*09/10/2026 (chore #8).* **Barlow Condensed** para los títulos (600/700),
+como la rotulación de una ferretería; **Barlow** para el texto (400/500/600) y
+**JetBrains Mono** para las etiquetas de los campos, los precios y los datos
+(400/500). De Google Fonts y con su pila de reserva. Las etiquetas van en
+mayúsculas y espaciadas, como un rótulo. Escala de 12, 14, 16 (base), 18, 20,
 22, 28 y 34 px; interlineado 1.5 en el texto y 1.1 en los títulos. Sobre fondo
 oscuro el texto fino se deshace, así que el cuerpo no baja de 400.
 
@@ -323,8 +331,8 @@ oscuro el texto fino se deshace, así que el cuerpo no baja de 400.
   `aria-hidden="true"`. El tamaño y el color salen de tokens.
 - **Sin librerías de componentes ni de estilos** (Angular Material, PrimeNG,
   Tailwind, Bootstrap): Lucide es la única excepción, y solo para iconos.
-- **Espaciado** en múltiplos de 4 px; radio de 10 px en tarjetas y 8 px en
-  campos y botones; ancho máximo del contenido de 1120 px.
+- **Espaciado** en múltiplos de 4 px; radio de 8 px en tarjetas y 6 px en
+  campos y botones (más recto, como el prototipo); ancho máximo del contenido de 1120 px.
 - **Lo angosto va centrado,** con el mixin `pagina-angosta` de
   `frontend/src/styles/_pagina.scss`, sin `max-width` suelto.
 - **Estilos solo por tokens,** y componentes estilados con `:host`.

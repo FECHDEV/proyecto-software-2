@@ -9,8 +9,14 @@ $margen-lateral: clamp(var(--app-espacio-4), 5vw, var(--app-espacio-12));
 	min-height: 100%;
 }
 
+// La raya amarilla de abajo es la firma de la marca. Queda fija arriba al
+// desplazarse, para tener siempre a mano el menú y la sesión
 header {
-	border-bottom: 1px solid var(--app-borde);
+	position: sticky;
+	top: 0;
+	z-index: 5;
+	border-bottom: 3px solid var(--app-ambar);
+	background: var(--app-fondo);
 }
 
 .barra,
@@ -52,11 +58,13 @@ main {
 	text-decoration: none;
 	font-family: var(--app-familia-titulos);
 	font-weight: 700;
-	font-size: 18px;
+	font-size: 22px;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
 }
 
 .marca:hover .nombre {
-	color: var(--app-ambar);
+	color: var(--app-acento-texto);
 }
 
 .logotipo {
@@ -71,15 +79,11 @@ main {
 	font-size: 17px;
 }
 
+// Los iconos son de Lucide; acá solo el tamaño, que sale del token
 .icono {
 	flex: none;
-	width: 18px;
-	height: 18px;
-	fill: none;
-	stroke: currentColor;
-	stroke-width: 2;
-	stroke-linecap: round;
-	stroke-linejoin: round;
+	width: var(--app-icono);
+	height: var(--app-icono);
 }
 
 nav ul {
@@ -116,7 +120,7 @@ nav a:hover,
 
 nav a.actual,
 .perfil.actual {
-	border-bottom-color: var(--app-ambar);
+	border-bottom-color: var(--app-acento-texto);
 	color: var(--app-texto);
 }
 
@@ -205,7 +209,7 @@ nav a.actual,
 }
 
 .entrar:hover {
-	color: var(--app-ambar);
+	color: var(--app-acento-texto);
 }
 
 .crear-cuenta {
