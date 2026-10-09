@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 
 import java.sql.SQLException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -26,12 +27,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import bo.edu.uagrm.tienda.config.JwtProperties;
+import bo.edu.uagrm.tienda.config.TokenJwt;
 import bo.edu.uagrm.tienda.dto.DatosPersonalesRequest;
 import bo.edu.uagrm.tienda.dto.RegistroClienteRequest;
 import bo.edu.uagrm.tienda.entity.EstadoCuenta;
 import bo.edu.uagrm.tienda.entity.Rol;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.exception.CuentaExistenteException;
+import bo.edu.uagrm.tienda.exception.RegistrosExcedidosException;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,28 +43,42 @@ class UsuarioServiceTest {
 
 	private static final Clock RELOJ = Clock.fixed(Instant.parse("2026-09-12T15:00:00Z"), ZoneId.of("America/La_Paz"));
 
+	private static final String IP = "10.0.0.1";
+
 	@Mock
 	private UsuarioRepository usuarioRepository;
 
 	private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+	private final TokenJwt tokenJwt = new TokenJwt(
+			new JwtProperties("Y2xhdmUtZGUtcHJ1ZWJhcy1wYXJhLXRva2Vucy1qd3QtZXZlbnRvcw==", Duration.ofHours(8)), RELOJ);
+	private final LimiteRegistros limiteRegistros = new LimiteRegistros(RELOJ);
 
 	private UsuarioService usuarioService;
 
 	@BeforeEach
 	void crearServicio() {
-		usuarioService = new UsuarioService(usuarioRepository, passwordEncoder, RELOJ);
+		usuarioService = new UsuarioService(usuarioRepository, passwordEncoder, RELOJ, tokenJwt, limiteRegistros);
+	}
+
+	private void guardarConId() {
+		given(usuarioRepository.saveAndFlush(any(Usuario.class))).willAnswer(invocacion -> {
+			Usuario usuario = invocacion.getArgument(0);
+			ReflectionTestUtils.setField(usuario, "idUsuario", 7L);
+			return usuario;
+		});
 	}
 
 	private static RegistroClienteRequest solicitud(String correo, String telefono) {
 		return new RegistroClienteRequest("Ana", "Rojas", correo, "secreta12", telefono);
 	}
 
+	// HU-01 RF-1, RF-7, RF-11
 	@Test
 	void registraClienteActivoConCorreoNormalizadoYContrasenaHasheada() {
 		given(usuarioRepository.existsByCorreo("ana@mail.com")).willReturn(false);
-		given(usuarioRepository.saveAndFlush(any(Usuario.class))).willAnswer(invocacion -> invocacion.getArgument(0));
+		guardarConId();
 
-		Usuario registrado = usuarioService.registrarCliente(solicitud("Ana@Mail.COM", "70000000"));
+		Usuario registrado = usuarioService.registrarCliente(solicitud("Ana@Mail.COM", "70000000"), IP).usuario();
 
 		ArgumentCaptor<Usuario> guardado = ArgumentCaptor.forClass(Usuario.class);
 		then(usuarioRepository).should().saveAndFlush(guardado.capture());
@@ -77,25 +95,28 @@ class UsuarioServiceTest {
 		assertThat(passwordEncoder.matches("secreta12", usuario.getContrasena())).isTrue();
 	}
 
+	// HU-01 RF-10
 	@Test
 	void telefonoEnBlancoSeGuardaComoNulo() {
 		given(usuarioRepository.existsByCorreo("ana@mail.com")).willReturn(false);
-		given(usuarioRepository.saveAndFlush(any(Usuario.class))).willAnswer(invocacion -> invocacion.getArgument(0));
+		guardarConId();
 
-		Usuario usuario = usuarioService.registrarCliente(solicitud("ana@mail.com", "  "));
+		Usuario usuario = usuarioService.registrarCliente(solicitud("ana@mail.com", "  "), IP).usuario();
 
 		assertThat(usuario.getTelefono()).isNull();
 	}
 
+	// HU-01 RF-7, RF-8
 	@Test
 	void rechazaCorreoYaRegistradoAunqueCambienLasMayusculas() {
 		given(usuarioRepository.existsByCorreo("ana@mail.com")).willReturn(true);
 
-		assertThatThrownBy(() -> usuarioService.registrarCliente(solicitud("ANA@mail.com", null)))
+		assertThatThrownBy(() -> usuarioService.registrarCliente(solicitud("ANA@mail.com", null), IP))
 				.isInstanceOf(CuentaExistenteException.class);
 		then(usuarioRepository).should(never()).saveAndFlush(any(Usuario.class));
 	}
 
+	// HU-01 RF-8
 	@Test
 	void registroSimultaneoConElMismoCorreoTerminaComoCuentaExistente() {
 		given(usuarioRepository.existsByCorreo("ana@mail.com")).willReturn(false);
@@ -103,7 +124,7 @@ class UsuarioServiceTest {
 				new ConstraintViolationException("duplicado", new SQLException("Duplicate entry", "23000", 1062),
 						ConstraintViolationException.ConstraintKind.UNIQUE, "uk_usuario_correo")));
 
-		assertThatThrownBy(() -> usuarioService.registrarCliente(solicitud("ana@mail.com", null)))
+		assertThatThrownBy(() -> usuarioService.registrarCliente(solicitud("ana@mail.com", null), IP))
 				.isInstanceOf(CuentaExistenteException.class);
 	}
 
@@ -114,8 +135,49 @@ class UsuarioServiceTest {
 		given(usuarioRepository.existsByCorreo("ana@mail.com")).willReturn(false);
 		given(usuarioRepository.saveAndFlush(any(Usuario.class))).willThrow(datoDemasiadoLargo);
 
-		assertThatThrownBy(() -> usuarioService.registrarCliente(solicitud("ana@mail.com", null)))
+		assertThatThrownBy(() -> usuarioService.registrarCliente(solicitud("ana@mail.com", null), IP))
 				.isSameAs(datoDemasiadoLargo);
+	}
+
+	// HU-01 RF-2
+	@Test
+	void registroDevuelveUnTokenDeLaCuentaCreada() {
+		given(usuarioRepository.existsByCorreo("ana@mail.com")).willReturn(false);
+		guardarConId();
+
+		SesionIniciada sesion = usuarioService.registrarCliente(solicitud("ana@mail.com", null), IP);
+
+		assertThat(tokenJwt.leer(sesion.token().token()))
+				.hasValueSatisfying(leido -> assertThat(leido.idUsuario()).isEqualTo(7L));
+		assertThat(tokenJwt.correspondeA(tokenJwt.leer(sesion.token().token()).orElseThrow(), sesion.usuario()))
+				.isTrue();
+	}
+
+	// HU-01 RF-13
+	@Test
+	void limiteExcedidoNoCreaLaCuenta() {
+		for (int i = 0; i < 5; i++) {
+			limiteRegistros.registrarIntento(IP);
+		}
+
+		assertThatThrownBy(() -> usuarioService.registrarCliente(solicitud("ana@mail.com", null), IP))
+				.isInstanceOf(RegistrosExcedidosException.class);
+		then(usuarioRepository).should(never()).saveAndFlush(any(Usuario.class));
+	}
+
+	// HU-01 RF-13: solo cuentan los registros exitosos
+	@Test
+	void correoDuplicadoNoCuentaParaElLimite() {
+		given(usuarioRepository.existsByCorreo("ana@mail.com")).willReturn(true);
+		for (int i = 0; i < 4; i++) {
+			limiteRegistros.registrarIntento(IP);
+		}
+		assertThatThrownBy(() -> usuarioService.registrarCliente(solicitud("ana@mail.com", null), IP))
+				.isInstanceOf(CuentaExistenteException.class);
+
+		given(usuarioRepository.existsByCorreo("beto@mail.com")).willReturn(false);
+		guardarConId();
+		assertThat(usuarioService.registrarCliente(solicitud("beto@mail.com", null), IP).usuario()).isNotNull();
 	}
 
 	private static Usuario ana() {

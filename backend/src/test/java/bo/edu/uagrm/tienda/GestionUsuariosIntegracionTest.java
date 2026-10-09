@@ -1,5 +1,6 @@
 package bo.edu.uagrm.tienda;
 
+import static bo.edu.uagrm.tienda.IpsDePrueba.ipNueva;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
@@ -71,7 +72,7 @@ class GestionUsuariosIntegracionTest {
 		// La H2 es compartida y otro contexto pudo recrearla sin el administrador inicial; repetir el arranque es
 		// idempotente
 		administradorInicial.run(new DefaultApplicationArguments());
-		assertThat(mvc.post().uri("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
+		assertThat(mvc.post().uri("/api/auth/registro").with(ipNueva()).contentType(MediaType.APPLICATION_JSON)
 				.content(REGISTRO_DE_ANA).exchange()).hasStatus(HttpStatus.CREATED);
 		idAdmin = usuarioRepository.findByCorreo(ADMIN).orElseThrow().getIdUsuario();
 		idAna = usuarioRepository.findByCorreo("ana@mail.com").orElseThrow().getIdUsuario();

@@ -45,12 +45,14 @@ class RegistroClienteRequestTest {
 		return "ana@" + "a".repeat(60) + "." + "b".repeat(longitud - 69) + ".com";
 	}
 
+	// HU-01 RF-1
 	@Test
 	void solicitudCompletaEsValida() {
 		var solicitud = new RegistroClienteRequest("Ana", "Rojas", "ana@mail.com", "secreta12", "70000000");
 		assertThat(camposInvalidos(solicitud)).isEmpty();
 	}
 
+	// HU-01 RF-3, RF-9
 	@Test
 	void faltanTodosLosObligatoriosYSeIndicanTodos() {
 		var solicitud = new RegistroClienteRequest(null, null, null, null, null);
@@ -58,18 +60,21 @@ class RegistroClienteRequestTest {
 				.containsExactlyInAnyOrder("nombre", "apellido", "correo", "contrasena");
 	}
 
+	// HU-01 RF-3
 	@Test
 	void camposConSoloEspaciosSonIncompletos() {
 		var solicitud = new RegistroClienteRequest("   ", "   ", "   ", "secreta12", null);
 		assertThat(camposInvalidos(solicitud)).containsExactlyInAnyOrder("nombre", "apellido", "correo");
 	}
 
+	// HU-01 RF-5
 	@Test
 	void correoSinFormatoEsInvalido() {
 		var solicitud = new RegistroClienteRequest("Ana", "Rojas", "ana-sin-arroba", "secreta12", null);
 		assertThat(camposInvalidos(solicitud)).containsExactly("correo");
 	}
 
+	// HU-01 RF-7
 	@Test
 	void correoSeNormalizaAntesDeValidar() {
 		var solicitud = new RegistroClienteRequest("Ana", "Rojas", "  Ana@Mail.com ", "secreta12", null);
@@ -77,6 +82,7 @@ class RegistroClienteRequestTest {
 		assertThat(camposInvalidos(solicitud)).isEmpty();
 	}
 
+	// HU-01 RF-4, RF-7
 	@Test
 	void limiteDelCorreoSeAplicaAlValorNormalizado() {
 		// "İ" (U+0130) ocupa 2 caracteres en minúsculas: 100 caracteres de entrada quedan en 140
@@ -85,18 +91,21 @@ class RegistroClienteRequestTest {
 		assertThat(camposInvalidos(solicitud)).containsExactly("correo");
 	}
 
+	// HU-01 RF-6
 	@Test
 	void contrasenaDe7CaracteresEsInvalidaYDe8Valida() {
 		assertThat(camposInvalidos(conContrasena("1234567"))).containsExactly("contrasena");
 		assertThat(camposInvalidos(conContrasena("12345678"))).isEmpty();
 	}
 
+	// HU-01 RF-6
 	@Test
 	void contrasenaDe72BytesEsValidaYDe73Invalida() {
 		assertThat(camposInvalidos(conContrasena("a".repeat(72)))).isEmpty();
 		assertThat(camposInvalidos(conContrasena("a".repeat(73)))).containsExactly("contrasena");
 	}
 
+	// HU-01 RF-6
 	@Test
 	void caracteresMultibyteCuentanPorBytesParaElMaximo() {
 		// "ñ" ocupa 2 bytes en UTF-8: 36 = 72 bytes, 37 = 74 bytes
@@ -104,6 +113,7 @@ class RegistroClienteRequestTest {
 		assertThat(camposInvalidos(conContrasena("ñ".repeat(37)))).containsExactly("contrasena");
 	}
 
+	// HU-01 RF-4
 	@Test
 	void longitudesMaximasDeLaTablaUsuario() {
 		var enElLimite = new RegistroClienteRequest("a".repeat(80), "a".repeat(80), correoDeLongitud(120),
@@ -115,6 +125,7 @@ class RegistroClienteRequestTest {
 		assertThat(camposInvalidos(excedida)).containsExactlyInAnyOrder("nombre", "apellido", "correo", "telefono");
 	}
 
+	// HU-01 RF-10
 	@Test
 	void telefonoEsOpcional() {
 		var solicitud = new RegistroClienteRequest("Ana", "Rojas", "ana@mail.com", "secreta12", null);

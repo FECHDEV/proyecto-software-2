@@ -13,7 +13,6 @@ import bo.edu.uagrm.tienda.dto.MensajeResponse;
 import bo.edu.uagrm.tienda.dto.RegistroClienteRequest;
 import bo.edu.uagrm.tienda.dto.RestablecimientoContrasenaRequest;
 import bo.edu.uagrm.tienda.dto.SolicitudRecuperacionRequest;
-import bo.edu.uagrm.tienda.dto.UsuarioResponse;
 import bo.edu.uagrm.tienda.service.AutenticacionService;
 import bo.edu.uagrm.tienda.service.RecuperacionContrasenaService;
 import bo.edu.uagrm.tienda.service.UsuarioService;
@@ -35,10 +34,13 @@ public class AuthController {
 	private final AutenticacionService autenticacionService;
 	private final RecuperacionContrasenaService recuperacionContrasenaService;
 
+	// Responde con la sesión iniciada, como el inicio de sesión. La IP alimenta el límite de registros, con la misma
+	// salvedad del proxy inverso
 	@PostMapping("/registro")
-	public ResponseEntity<UsuarioResponse> registrar(@Valid @RequestBody RegistroClienteRequest solicitud) {
+	public ResponseEntity<InicioSesionResponse> registrar(@Valid @RequestBody RegistroClienteRequest solicitud,
+			HttpServletRequest peticion) {
 		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(UsuarioResponse.from(usuarioService.registrarCliente(solicitud)));
+				.body(InicioSesionResponse.from(usuarioService.registrarCliente(solicitud, peticion.getRemoteAddr())));
 	}
 
 	// La IP alimenta el límite de intentos fallidos. Detrás de un proxy inverso, la IP real requiere configurar el

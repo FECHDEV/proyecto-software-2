@@ -1,7 +1,7 @@
 import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, inject, signal } from '@angular/core';
 import { email, form, FormField, required, schema, submit } from '@angular/forms/signals';
-import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AutenticacionService } from '../../core/api/autenticacion.service';
 import { mensajeDeError, primerMensaje } from '../../core/api/mensajes-error';
@@ -13,7 +13,6 @@ import { destinoInterno, parametrosDelDestino } from '../../shared/navegacion/de
 // Lo que se viene a contar desde otra pantalla. Un solo parámetro con valores
 // conocidos, en vez de una bandera por caso.
 const AVISOS: Record<string, string> = {
-	'cuenta-creada': 'Tu cuenta quedó creada. Inicia sesión para entrar.',
 	'contrasena-actualizada': 'Tu contraseña quedó actualizada. Inicia sesión con la nueva.',
 };
 
@@ -51,21 +50,20 @@ export class InicioSesionPage {
 
 	private readonly parametros = this.ruta.snapshot.queryParamMap;
 	private readonly credenciales = signal<Credenciales>({
-		correo: correoDeAlta(this.parametros),
+		correo: '',
 		contrasena: '',
 	});
 
-	// Se llega acá desde el registro o desde el restablecimiento
+	// Se llega acá desde el restablecimiento de la contraseña
 	protected readonly aviso = signal(avisoDe(this.parametros.get('aviso')));
 
 	// Quien no tiene cuenta la crea y vuelve igual a donde iba
 	protected readonly paraElRegistro = parametrosDelDestino(this.parametros.get('destino'));
 
 	constructor() {
-		// Los parámetros ya se leyeron. Se sacan de la dirección para que el correo
-		// no quede en el historial y el aviso no reaparezca al recargar; el destino
-		// que dejó el guard sí se conserva.
-		if (this.parametros.has('aviso') || this.parametros.has('correo')) {
+		// El parámetro ya se leyó. Se saca de la dirección para que el aviso no
+		// reaparezca al recargar; el destino que dejó el guard sí se conserva.
+		if (this.parametros.has('aviso')) {
 			const destino = this.parametros.get('destino');
 			this.ubicacion.replaceState(
 				'/inicio-sesion',
@@ -128,11 +126,4 @@ export class InicioSesionPage {
 // que `?aviso=constructor` no termine pintando una función.
 function avisoDe(clave: string | null): string {
 	return clave !== null && Object.hasOwn(AVISOS, clave) ? AVISOS[clave] : '';
-}
-
-// El correo llega por la URL, así que se usa solo si parece un correo y entra
-// en el largo que admite la cuenta; si no, el campo arranca vacío.
-function correoDeAlta(parametros: ParamMap): string {
-	const correo = parametros.get('correo') ?? '';
-	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo) && correo.length <= 120 ? correo : '';
 }
