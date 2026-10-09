@@ -43,6 +43,13 @@ describe('rutas', () => {
     return TestBed.inject(Router).url;
   }
 
+  // Las pantallas que importan @lucide/angular tardan en compilarse la primera vez dentro de
+  // Vitest (el paquete trae todos los iconos; en el build solo quedan los usados). Se cargan
+  // antes, para que ese costo no cuente en el tiempo de cada prueba
+  beforeAll(async () => {
+    await import('./features/inicio-sesion/inicio-sesion.page');
+  }, 60_000);
+
   afterEach(() => localStorage.clear());
 
   // La gestión de usuarios es del administrador: los demás vuelven al inicio (usabilidad; el
@@ -51,6 +58,21 @@ describe('rutas', () => {
     expect(await navegarComo('ADMINISTRADOR', '/usuarios')).toBe('/usuarios');
     expect(await navegarComo('CLIENTE', '/usuarios')).toBe('/');
     expect(await navegarComo('EMPLEADO', '/usuarios')).toBe('/');
+  });
+
+  // HU-02 RF-12: con la sesión iniciada no tiene sentido volver a entrar
+  it('con sesión, iniciar sesión lleva al inicio', async () => {
+    expect(await navegarComo('CLIENTE', '/inicio-sesion')).toBe('/');
+  });
+
+  // HU-01 RF-14
+  it('con sesión, crear cuenta lleva al inicio', async () => {
+    expect(await navegarComo('CLIENTE', '/registro')).toBe('/');
+  });
+
+  // HU-02 RF-12
+  it('sin sesión, iniciar sesión se muestra', async () => {
+    expect(await navegarComo(null, '/inicio-sesion')).toBe('/inicio-sesion');
   });
 
   it('sin sesión la gestión de usuarios lleva a iniciar sesión', async () => {

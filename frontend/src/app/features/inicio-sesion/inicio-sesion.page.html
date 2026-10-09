@@ -30,14 +30,29 @@
 
     <div class="campo">
       <label for="contrasena">Contraseña</label>
-      <input
-        id="contrasena"
-        type="password"
-        autocomplete="current-password"
-        [formField]="formulario.contrasena"
-        [attr.aria-invalid]="formulario.contrasena().touched() && formulario.contrasena().invalid()"
-        [attr.aria-describedby]="formulario.contrasena().touched() && formulario.contrasena().invalid() ? 'error-contrasena' : null"
-      />
+      <div class="con-boton">
+        <input
+          id="contrasena"
+          [type]="contrasenaVisible() ? 'text' : 'password'"
+          autocomplete="current-password"
+          spellcheck="false"
+          [formField]="formulario.contrasena"
+          [attr.aria-invalid]="formulario.contrasena().touched() && formulario.contrasena().invalid()"
+          [attr.aria-describedby]="formulario.contrasena().touched() && formulario.contrasena().invalid() ? 'error-contrasena' : null"
+        />
+        <button
+          type="button"
+          class="ver-contrasena"
+          [attr.aria-label]="contrasenaVisible() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          (click)="contrasenaVisible.set(!contrasenaVisible())"
+        >
+          @if (contrasenaVisible()) {
+            <svg lucideEyeOff class="icono" aria-hidden="true"></svg>
+          } @else {
+            <svg lucideEye class="icono" aria-hidden="true"></svg>
+          }
+        </button>
+      </div>
       @if (formulario.contrasena().touched() && formulario.contrasena().invalid()) {
         <p class="error" id="error-contrasena">
           {{ primerMensaje(formulario.contrasena().errors()) }}

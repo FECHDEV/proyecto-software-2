@@ -38,6 +38,7 @@ describe('AutenticacionService', () => {
 
   afterEach(() => http.verify());
 
+  // HU-02 RF-1
   it('envía el correo y la contraseña, y devuelve la sesión', async () => {
     const promesa = servicio.iniciarSesion('ana@mail.com', 'secreta12');
 
@@ -49,7 +50,7 @@ describe('AutenticacionService', () => {
     await expect(promesa).resolves.toEqual(RESPUESTA);
   });
 
-  // RF-3: la cuenta se busca con el correo en minúsculas y sin espacios
+  // HU-02 RF-2: la cuenta se busca con el correo en minúsculas y sin espacios
   it('normaliza el correo antes de enviarlo', async () => {
     const promesa = servicio.iniciarSesion('  Ana@Mail.COM  ', 'secreta12');
 
@@ -60,6 +61,7 @@ describe('AutenticacionService', () => {
     await promesa;
   });
 
+  // HU-02 RF-2
   it('no toca la contraseña, que sí distingue mayúsculas', async () => {
     const promesa = servicio.iniciarSesion('ana@mail.com', '  Secreta12  ');
 
@@ -70,7 +72,7 @@ describe('AutenticacionService', () => {
     await promesa;
   });
 
-  // RF-11: el backend responde 401 con un ProblemDetail y su código de negocio
+  // HU-02 RF-3: el backend responde 401 con un ProblemDetail y su código de negocio
   it('rechaza con el error de la API cuando las credenciales no sirven', async () => {
     const promesa = servicio.iniciarSesion('ana@mail.com', 'incorrecta');
 
@@ -93,6 +95,7 @@ describe('AutenticacionService', () => {
 
   // Regresión: con el contrato viejo ({codigo, mensaje}) todos los errores del
   // backend caían en SIN_CONEXION y el mensaje real nunca se mostraba
+  // HU-02 RF-5
   it('un 429 del límite de intentos conserva su código', async () => {
     const promesa = servicio.iniciarSesion('ana@mail.com', 'incorrecta');
 
@@ -224,7 +227,7 @@ describe('AutenticacionService · registro', () => {
     await promesa;
   });
 
-  // RF-9: el backend indica todos los campos a corregir, en un arreglo
+  // HU-01 RF-9: el backend indica todos los campos a corregir, en un arreglo
   it('conserva la lista de campos a corregir de un 400', async () => {
     const promesa = servicio.registrarCliente({ ...DATOS, correo: 'ana-sin-arroba' });
 
@@ -252,7 +255,7 @@ describe('AutenticacionService · registro', () => {
     } as ErrorApi);
   });
 
-  // RF-15 (FA-02): el correo ya pertenece a una cuenta
+  // HU-01 RF-8: el correo ya pertenece a una cuenta
   it('rechaza con CUENTA_EXISTENTE cuando el correo ya está registrado', async () => {
     const promesa = servicio.registrarCliente(DATOS);
 

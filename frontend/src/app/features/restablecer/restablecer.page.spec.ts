@@ -1,5 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, NavigationExtras, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { vi } from 'vitest';
+
+import { SesionService } from '../../core/sesion/sesion.service';
 
 import { AutenticacionService } from '../../core/api/autenticacion.service';
 import { ErrorApi } from '../../core/modelos/error-api';
@@ -82,6 +85,18 @@ describe('RestablecerPage', () => {
   });
 
   // RF-10: token vigente y contraseña nueva
+  // HU-02 RF-12: con una sesión abierta en este navegador, «Iniciar sesión»
+  // llevaría al inicio y el aviso se perdería; el token ya no vale igual
+  it('al restablecer cierra la sesión abierta en este navegador', async () => {
+    const sesion = TestBed.inject(SesionService);
+    const cerrar = vi.spyOn(sesion, 'cerrar');
+    escribir('nueva-secreta');
+
+    await enviar();
+
+    expect(cerrar).toHaveBeenCalled();
+  });
+
   it('restablece con el token del enlace y lleva a iniciar sesión', async () => {
     escribir('nueva-clave-1');
 

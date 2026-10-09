@@ -233,6 +233,7 @@ class AuthControllerTest {
 				new TokenEmitido("token.de.prueba", Instant.parse("2026-09-14T23:00:00Z")));
 	}
 
+	// HU-02 RF-1
 	@Test
 	void inicioDeSesionValidoSinSesionDevuelveTokenYDatosSinContrasena() throws Exception {
 		given(autenticacionService.iniciarSesion(any(InicioSesionRequest.class), anyString())).willReturn(sesionDeAna());
@@ -249,6 +250,7 @@ class AuthControllerTest {
 		assertThat(resultado.getResponse().getContentAsString()).doesNotContain("$2a$10$hash");
 	}
 
+	// HU-02 RF-2
 	@Test
 	void correoLlegaNormalizadoAlServicioDeAutenticacion() {
 		given(autenticacionService.iniciarSesion(any(InicioSesionRequest.class), anyString())).willReturn(sesionDeAna());
@@ -275,6 +277,7 @@ class AuthControllerTest {
 		then(autenticacionService).should().iniciarSesion(any(InicioSesionRequest.class), eq("10.0.0.9"));
 	}
 
+	// HU-02 RF-5
 	@Test
 	void intentosExcedidosDevuelven429() {
 		given(autenticacionService.iniciarSesion(any(InicioSesionRequest.class), anyString()))

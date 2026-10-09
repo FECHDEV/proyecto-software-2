@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { afterEach, vi } from 'vitest';
 
 import { Sesion } from '../modelos/sesion';
@@ -32,6 +33,9 @@ describe('SesionService', () => {
     localStorage.clear();
     TestBed.resetTestingModule();
   });
+
+  // Si una prueba con temporizadores falsos falla, las siguientes siguen con los reales
+  afterEach(() => vi.useRealTimers());
 
   it('arranca sin sesión', () => {
     const servicio = TestBed.inject(SesionService);
@@ -69,6 +73,7 @@ describe('SesionService', () => {
     expect(localStorage.getItem(CLAVE_SESION)).toContain('ana@mail.com');
   });
 
+  // HU-02 RF-11
   it('cerrar limpia la sesión y el almacenamiento', () => {
     const servicio = TestBed.inject(SesionService);
     servicio.iniciar(vigente());
@@ -81,15 +86,47 @@ describe('SesionService', () => {
   });
 
   // Una pestaña abierta no puede seguir diciendo que hay sesión tras el vencimiento
-  it('cierra la sesión sola cuando el token vence', () => {
+  // HU-02 RF-10: la sesión que se cierra sola avisa y recuerda dónde estaba
+  it('al vencer el token lleva a iniciar sesión con el aviso y el destino', () => {
     vi.useFakeTimers();
+    const router = TestBed.inject(Router);
+    vi.spyOn(router, 'url', 'get').mockReturnValue('/mis-datos');
+    const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     const servicio = TestBed.inject(SesionService);
     servicio.iniciar(sesion(new Date(Date.now() + 60_000).toISOString()));
 
     vi.advanceTimersByTime(60_001);
 
     expect(servicio.autenticado()).toBe(false);
+    expect(localStorage.getItem(CLAVE_SESION)).toBeNull();
+    expect(navegar).toHaveBeenCalledWith(['/inicio-sesion'], {
+      queryParams: { aviso: 'sesion-cerrada', destino: '/mis-datos' },
+    });
     vi.useRealTimers();
+  });
+
+  // HU-02 RF-10: estando ya en iniciar sesión, no hay destino que recordar
+  it('vencer estando en iniciar sesión no guarda destino', () => {
+    const router = TestBed.inject(Router);
+    vi.spyOn(router, 'url', 'get').mockReturnValue('/inicio-sesion');
+    const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const servicio = TestBed.inject(SesionService);
+    servicio.iniciar(vigente());
+
+    servicio.vencer();
+
+    expect(navegar).toHaveBeenCalledWith(['/inicio-sesion'], { queryParams: { aviso: 'sesion-cerrada' } });
+  });
+
+  // HU-02 RF-10: dos 401 seguidos no navegan dos veces ni pierden el destino
+  it('vencer sin sesión no hace nada', () => {
+    const router = TestBed.inject(Router);
+    const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const servicio = TestBed.inject(SesionService);
+
+    servicio.vencer();
+
+    expect(navegar).not.toHaveBeenCalled();
   });
 
   it('antes del vencimiento la sesión sigue abierta', () => {

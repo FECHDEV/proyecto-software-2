@@ -93,6 +93,7 @@ class AutenticacionServiceTest {
 		}
 	}
 
+	// HU-02 RF-1
 	@Test
 	void credencialesCorrectasDeUnaCuentaActivaEntreganUnTokenDelUsuario() {
 		Usuario ana = cliente(7, HASH_SECRETA12);
@@ -106,6 +107,7 @@ class AutenticacionServiceTest {
 				.hasValueSatisfying(leido -> assertThat(leido.idUsuario()).isEqualTo(7L));
 	}
 
+	// HU-02 RF-1
 	@Test
 	void administradorIniciaSesionIgualQueUnCliente() {
 		Usuario admin = Usuario.crearAdministrador("Administrador", "Inicial", "admin@tienda.com", HASH_SECRETA12,
@@ -116,6 +118,7 @@ class AutenticacionServiceTest {
 		assertThat(iniciarSesion("admin@tienda.com", "secreta12").usuario().getRol()).isEqualTo(Rol.ADMINISTRADOR);
 	}
 
+	// HU-02 RF-3
 	@Test
 	void contrasenaIncorrectaSeInformaComoCredencialesIncorrectas() {
 		given(usuarioRepository.findByCorreo("ana@mail.com")).willReturn(Optional.of(cliente(7, HASH_SECRETA12)));
@@ -125,6 +128,7 @@ class AutenticacionServiceTest {
 				.hasMessage("Correo o contraseña incorrectos.");
 	}
 
+	// HU-02 RF-3
 	@Test
 	void correoInexistenteSeInformaIgualYTambienComparaUnaContrasena() {
 		given(usuarioRepository.findByCorreo("nadie@mail.com")).willReturn(Optional.empty());
@@ -135,6 +139,7 @@ class AutenticacionServiceTest {
 		then(passwordEncoder).should().matches(eq("secreta12"), startsWith("$2"));
 	}
 
+	// HU-02 RF-7
 	@Test
 	void contrasenaDeMasDe72BytesNoEntraAunqueBcryptLaTruncaria() {
 		String hash72 = new BCryptPasswordEncoder().encode("a".repeat(72));
@@ -147,6 +152,7 @@ class AutenticacionServiceTest {
 				.isInstanceOf(CredencialesIncorrectasException.class);
 	}
 
+	// HU-02 RF-4
 	@Test
 	void cuentaDesactivadaConContrasenaCorrectaSeInformaComoDesactivada() {
 		given(usuarioRepository.findByCorreo("ana@mail.com"))
@@ -156,6 +162,7 @@ class AutenticacionServiceTest {
 				.isInstanceOf(CuentaDesactivadaException.class);
 	}
 
+	// HU-02 RF-4
 	@Test
 	void cuentaDesactivadaConContrasenaIncorrectaSeInformaComoCredencialesIncorrectas() {
 		given(usuarioRepository.findByCorreo("ana@mail.com"))
@@ -165,6 +172,7 @@ class AutenticacionServiceTest {
 				.isInstanceOf(CredencialesIncorrectasException.class);
 	}
 
+	// HU-02 RF-5
 	@Test
 	void cincoIntentosFallidosBloqueanAunqueElSextoTengaLaContrasenaCorrecta() {
 		given(usuarioRepository.findByCorreo("ana@mail.com")).willReturn(Optional.of(cliente(7, HASH_SECRETA12)));
@@ -174,6 +182,7 @@ class AutenticacionServiceTest {
 				.isInstanceOf(IntentosExcedidosException.class);
 	}
 
+	// HU-02 RF-5
 	@Test
 	void correoInexistenteTambienSumaIntentos() {
 		given(usuarioRepository.findByCorreo("nadie@mail.com")).willReturn(Optional.empty());
@@ -183,6 +192,7 @@ class AutenticacionServiceTest {
 				.isInstanceOf(IntentosExcedidosException.class);
 	}
 
+	// HU-02 RF-6
 	@Test
 	void inicioDeSesionExitosoReiniciaElConteo() {
 		given(usuarioRepository.findByCorreo("ana@mail.com")).willReturn(Optional.of(cliente(7, HASH_SECRETA12)));
@@ -193,6 +203,7 @@ class AutenticacionServiceTest {
 		assertThat(iniciarSesion("ana@mail.com", "secreta12").usuario().getIdUsuario()).isEqualTo(7L);
 	}
 
+	// HU-02 RF-4, RF-5
 	@Test
 	void cuentaDesactivadaConContrasenaCorrectaNoSumaIntentos() {
 		given(usuarioRepository.findByCorreo("ana@mail.com"))
@@ -204,6 +215,7 @@ class AutenticacionServiceTest {
 		}
 	}
 
+	// HU-02 RF-5
 	@Test
 	void peticionesSimultaneasNoComparanMasDeCincoContrasenas() throws Exception {
 		int hilos = 10;
@@ -254,6 +266,7 @@ class AutenticacionServiceTest {
 		assertThat(comparaciones.get()).isEqualTo(5);
 	}
 
+	// HU-02 RF-9
 	@Test
 	void usuarioActivoDevuelveSoloCuentasActivasExistentes() {
 		given(usuarioRepository.findById(7L)).willReturn(Optional.of(cliente(7, HASH_SECRETA12)));

@@ -74,6 +74,7 @@ class InicioSesionIntegracionTest {
 		return mvc.get().uri("/api/no-existe").header(HttpHeaders.AUTHORIZATION, "Bearer " + token).exchange();
 	}
 
+	// HU-02 RF-1, RF-9
 	@Test
 	void clienteRegistradoIniciaSesionYUsaElTokenEnLasPeticionesSiguientes() throws Exception {
 		MvcTestResult sesion = iniciarSesion(" Ana@Mail.COM ", "secreta12");
@@ -84,6 +85,7 @@ class InicioSesionIntegracionTest {
 		assertThat(pedirRutaProtegida(token(sesion))).hasStatus(HttpStatus.NOT_FOUND);
 	}
 
+	// HU-02 RF-3
 	@Test
 	void contrasenaIncorrectaDevuelveCredencialesIncorrectas() {
 		MvcTestResult resultado = iniciarSesion("ana@mail.com", "Secreta12");
@@ -92,6 +94,7 @@ class InicioSesionIntegracionTest {
 		assertThat(resultado).bodyJson().extractingPath("$.codigo").isEqualTo("CREDENCIALES_INCORRECTAS");
 	}
 
+	// HU-02 RF-1
 	@Test
 	void administradorInicialIniciaSesionConLasVariablesDelPerfil() {
 		// UsuarioRepositoryTest comparte la H2 en memoria y recrea el esquema al arrancar su contexto, lo que
@@ -105,6 +108,7 @@ class InicioSesionIntegracionTest {
 		assertThat(resultado).bodyJson().extractingPath("$.usuario.nombre").isEqualTo("Administrador");
 	}
 
+	// HU-02 RF-4, RF-9
 	@Test
 	void cuentaDesactivadaNoIniciaSesionYSuTokenAnteriorDejaDeValer() throws Exception {
 		String tokenAnterior = token(iniciarSesion("ana@mail.com", "secreta12"));
@@ -118,6 +122,7 @@ class InicioSesionIntegracionTest {
 		assertThat(pedirRutaProtegida(tokenAnterior)).hasStatus(HttpStatus.UNAUTHORIZED);
 	}
 
+	// HU-02 RF-9
 	@Test
 	void cambioDeContrasenaInvalidaElTokenAnterior() throws Exception {
 		String tokenAnterior = token(iniciarSesion("ana@mail.com", "secreta12"));
@@ -130,6 +135,7 @@ class InicioSesionIntegracionTest {
 				.hasStatus(HttpStatus.NOT_FOUND);
 	}
 
+	// HU-02 RF-5
 	@Test
 	void cincoIntentosFallidosBloqueanElCorreoSoloDesdeEsaIp() {
 		// Correo propio de este test: los contadores del límite viven en el contexto compartido
@@ -151,6 +157,7 @@ class InicioSesionIntegracionTest {
 		assertThat(desdeOtraIp).hasStatus(HttpStatus.UNAUTHORIZED);
 	}
 
+	// HU-02 RF-9
 	@Test
 	void tokenInvalidoEnElHeaderNoImpideIniciarSesion() {
 		MvcTestResult resultado = mvc.post().uri("/api/auth/inicio-sesion").contentType(MediaType.APPLICATION_JSON)

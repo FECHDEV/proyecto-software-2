@@ -1,7 +1,7 @@
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { NavigationExtras, Router } from '@angular/router';
 
 import { Sesion } from '../modelos/sesion';
 import { SesionService } from '../sesion/sesion.service';
@@ -29,7 +29,7 @@ describe('erroresInterceptor', () => {
   let http: HttpClient;
   let servidor: HttpTestingController;
   let sesion: SesionService;
-  let navegaciones: string[];
+  let navegaciones: Array<{ ruta: string; extras?: NavigationExtras }>;
 
   beforeEach(() => {
     localStorage.clear();
@@ -42,8 +42,9 @@ describe('erroresInterceptor', () => {
         {
           provide: Router,
           useValue: {
-            navigate: (ruta: unknown[]) => {
-              navegaciones.push(String(ruta[0]));
+            url: '/mis-datos',
+            navigate: (ruta: unknown[], extras?: NavigationExtras) => {
+              navegaciones.push({ ruta: String(ruta[0]), extras });
               return Promise.resolve(true);
             },
           },
@@ -57,8 +58,8 @@ describe('erroresInterceptor', () => {
 
   afterEach(() => servidor.verify());
 
-  // RF-8, RF-9 y RF-21: el token dejó de valer, aunque no haya vencido
-  it('ante un 401 cierra la sesión y lleva a iniciar sesión', async () => {
+  // HU-02 RF-9, RF-10: el token dejó de valer, aunque no haya vencido
+  it('ante un 401 cierra la sesión y lleva a iniciar sesión con el aviso y el destino', async () => {
     sesion.iniciar(sesionVigente());
     const respuesta = new Promise((_, rechazar) => {
       http.get('/api/cuenta/datos-personales').subscribe({ error: rechazar });
@@ -77,10 +78,26 @@ describe('erroresInterceptor', () => {
 
     await expect(respuesta).rejects.toBeDefined();
     expect(sesion.autenticado()).toBe(false);
-    expect(navegaciones).toEqual(['/inicio-sesion']);
+    expect(navegaciones).toEqual([
+      { ruta: '/inicio-sesion', extras: { queryParams: { aviso: 'sesion-cerrada', destino: '/mis-datos' } } },
+    ]);
   });
 
-  // RF-10: la sesión sigue siendo válida, solo que ese rol no puede entrar
+  // HU-02 RF-10: un error del servidor no es una sesión cerrada
+  it('ante un 500 no cierra la sesión', async () => {
+    sesion.iniciar(sesionVigente());
+    const respuesta = new Promise((_, rechazar) => {
+      http.get('/api/cuenta/datos-personales').subscribe({ error: rechazar });
+    });
+
+    servidor.expectOne('/api/cuenta/datos-personales').flush(null, { status: 500, statusText: 'Server Error' });
+
+    await expect(respuesta).rejects.toBeDefined();
+    expect(sesion.autenticado()).toBe(true);
+    expect(navegaciones).toEqual([]);
+  });
+
+  // HU-02 RF-10: la sesión sigue siendo válida, solo que ese rol no puede entrar
   it('ante un 403 no cierra la sesión', async () => {
     sesion.iniciar(sesionVigente());
     const respuesta = new Promise((_, rechazar) => {
@@ -103,7 +120,8 @@ describe('erroresInterceptor', () => {
     expect(navegaciones).toEqual([]);
   });
 
-  // Un 401 al iniciar sesión son credenciales incorrectas, no una sesión caída
+  // HU-02 RF-10: un 401 al iniciar sesión son credenciales incorrectas, no una
+  // sesión caída
   it('ante un 401 al iniciar sesión no navega', async () => {
     const respuesta = new Promise((_, rechazar) => {
       http.post('/api/auth/inicio-sesion', {}).subscribe({ error: rechazar });

@@ -1,7 +1,9 @@
 import { computed, DestroyRef, inject, Injectable, NgZone, signal } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { Sesion } from '../modelos/sesion';
 import { Rol, Usuario } from '../modelos/usuario';
+import { parametrosDelDestino } from '../../shared/navegacion/destino-interno';
 import { borrarSesion, guardarSesion, leerSesion } from './almacen-token';
 
 // Estado de la sesión para toda la aplicación. Quien autoriza de verdad es el
@@ -12,6 +14,7 @@ export class SesionService {
 	private readonly sesion = signal<Sesion | null>(leerSesion());
 	private temporizador: ReturnType<typeof setTimeout> | null = null;
 	private readonly zona = inject(NgZone);
+	private readonly router = inject(Router);
 
 	readonly usuario = computed<Usuario | null>(() => this.sesion()?.usuario ?? null);
 	readonly rol = computed<Rol | null>(() => this.sesion()?.usuario.rol ?? null);
@@ -33,6 +36,21 @@ export class SesionService {
 		this.cancelarCierre();
 		borrarSesion();
 		this.sesion.set(null);
+	}
+
+	// La sesión se cerró sola (venció el token o el servidor lo rechazó): se
+	// avisa en «Iniciar sesión» y, al volver a entrar, se vuelve a donde estaba
+	// (HU-02 RF-10). «Cerrar sesión» a pedido usa cerrar(), sin aviso.
+	// Si ya no hay sesión no hace nada: varias peticiones que vuelven con 401 a la vez
+	// no deben navegar dos veces ni perder el destino.
+	vencer(): void {
+		if (!this.autenticado()) {
+			return;
+		}
+		this.cerrar();
+		const actual = this.router.url;
+		const destino = parametrosDelDestino(actual.startsWith('/inicio-sesion') ? null : actual);
+		void this.router.navigate(['/inicio-sesion'], { queryParams: { aviso: 'sesion-cerrada', ...destino } });
 	}
 
 	// los datos de la cuenta cambiaron pero el token sigue valiendo. Se
@@ -64,7 +82,7 @@ export class SesionService {
 		// aplicación como "ocupada" y las pruebas nunca se estabilizarían
 		const restante = new Date(sesion.expiracion).getTime() - Date.now();
 		this.temporizador = this.zona.runOutsideAngular(() =>
-			setTimeout(() => this.zona.run(() => this.cerrar()), Math.max(restante, 0)),
+			setTimeout(() => this.zona.run(() => this.vencer()), Math.max(restante, 0)),
 		);
 	}
 
