@@ -9,6 +9,10 @@ dialog {
 	color: var(--app-texto);
 }
 
+dialog[open] {
+	animation: app-aparecer var(--app-duracion-media) var(--app-curva-salida);
+}
+
 // Los navegadores anteriores a 2024 no heredan las variables en ::backdrop:
 // ahí queda el velo del modo oscuro, que también sirve sobre el claro
 dialog::backdrop {
@@ -17,7 +21,7 @@ dialog::backdrop {
 
 h2 {
 	margin: 0 0 var(--app-espacio-3);
-	font-size: 18px;
+	font-size: 22px;
 	text-wrap: balance;
 }
 

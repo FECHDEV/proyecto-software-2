@@ -8,28 +8,34 @@
 
 :root {
 	// Color
-	--app-fondo: #0b1020;
-	--app-superficie: #151b2e;
-	--app-superficie-alta: #1c2440;
-	--app-texto: #f4f6ff;
-	--app-texto-suave: #a7b0cc;
-	--app-ambar: #f5b301;
-	--app-ambar-fuerte: #d99a00;
-	--app-borde: #2b3350;
-	--app-borde-control: #6b7799;
-	--app-exito: #4ade80;
-	--app-aviso: #fbbf24;
-	--app-error: #fca5a5;
-	--app-neutro: #94a3b8;
+	// Grafito con amarillo de señalización, el de las herramientas y los avisos
+	// de obra (decisiones.md → Paleta y modos)
+	--app-fondo: #16181b;
+	--app-superficie: #1f2226;
+	--app-superficie-alta: #272a2f;
+	--app-texto: #ecebe6;
+	--app-texto-suave: #a2a7ae;
+	// El amarillo de relleno (botones, logotipo, raya del encabezado)
+	--app-ambar: #f2b81c;
+	--app-ambar-fuerte: #d9a516;
+	// El amarillo como texto, enlace o contorno de foco: en el modo claro es otro,
+	// porque el de relleno no llega a 4.5:1 sobre el fondo claro
+	--app-acento-texto: #f2b81c;
+	--app-borde: #33373d;
+	--app-borde-control: #6c727a;
+	--app-exito: #6cc391;
+	--app-aviso: #f0a24a;
+	--app-error: #f2998f;
+	--app-neutro: #a2a7ae;
 	// El texto sobre un fondo ámbar (botones principales, logotipo)
-	--app-sobre-ambar: #0b1020;
+	--app-sobre-ambar: #16181b;
 	// Lo que oscurece la página detrás de un diálogo
-	--app-velo: rgb(11 16 32 / 0.75);
+	--app-velo: rgb(22 24 27 / 0.75);
 
 	// Fondos tenues de las etiquetas de estado
-	--app-exito-fondo: #0e2418;
-	--app-aviso-fondo: #2a2008;
-	--app-error-fondo: #2a1620;
+	--app-exito-fondo: #18291f;
+	--app-aviso-fondo: #2e2414;
+	--app-error-fondo: #2e1c1b;
 
 	// El código QR: oscuro sobre claro, como piden los lectores, sea cual sea el
 	// tema de la interfaz
@@ -46,41 +52,58 @@
 	--app-espacio-12: 48px;
 
 	// Forma
-	--app-radio: 10px;
-	--app-radio-control: 8px;
+	--app-radio: 8px;
+	--app-radio-control: 6px;
 	--app-ancho-maximo: 1120px;
 	--app-ancho-formulario: 420px;
 
 	// Tipografía
-	--app-familia-titulos: Sora, system-ui, -apple-system, sans-serif;
-	--app-familia-texto: Inter, system-ui, -apple-system, sans-serif;
+	// Condensada para los títulos, como la rotulación de una ferretería; Barlow
+	// para el texto y una monoespaciada para etiquetas, precios y datos
+	--app-familia-titulos: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+	--app-familia-texto: Barlow, 'Segoe UI', system-ui, -apple-system, sans-serif;
+	--app-familia-datos: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
-	// Movimiento
-	--app-transicion: 180ms ease;
+	// Movimiento: de 150 a 400 ms, solo transform y opacity (decisiones.md →
+	// Reglas que valen para toda la interfaz). Todo se apaga con
+	// prefers-reduced-motion (styles.scss)
+	--app-duracion-rapida: 150ms;
+	--app-duracion-media: 250ms;
+	--app-duracion-lenta: 400ms;
+	// Sale rápido y frena al llegar: para lo que entra y para responder a una acción
+	--app-curva-salida: cubic-bezier(0.2, 0, 0, 1);
+	// Arranca lento y se va rápido: para lo que sale
+	--app-curva-entrada: cubic-bezier(0.4, 0, 1, 1);
+	// Respuesta a hover y foco: color, fondo y borde
+	--app-transicion: var(--app-duracion-rapida) var(--app-curva-salida);
+
+	// Iconos (Lucide)
+	--app-icono: 18px;
 }
 
-// Modo claro: solo cambian los colores. El ámbar se oscurece porque el del modo
-// oscuro no llega a 4.5:1 sobre blanco, y entonces el texto sobre él va blanco
+// Modo claro: solo cambian los colores. El amarillo sigue de relleno con texto
+// oscuro encima; como texto o enlace va uno oscuro (--app-acento-texto)
 :root[data-tema='claro'] {
 	color-scheme: light;
 
-	--app-fondo: #f6f7fb;
+	--app-fondo: #f3f2ee;
 	--app-superficie: #ffffff;
-	--app-superficie-alta: #eef1f8;
-	--app-texto: #141a2e;
-	--app-texto-suave: #4a5370;
-	--app-ambar: #a84b06;
-	--app-ambar-fuerte: #92400e;
-	--app-borde: #dde2ee;
-	--app-borde-control: #7a849e;
-	--app-exito: #166534;
-	--app-aviso: #854d0e;
-	--app-error: #b91c1c;
-	--app-neutro: #5b6577;
-	--app-sobre-ambar: #ffffff;
-	--app-velo: rgb(20 26 46 / 0.45);
+	--app-superficie-alta: #ebe9e3;
+	--app-texto: #1d1f22;
+	--app-texto-suave: #5d636b;
+	--app-ambar: #e0a100;
+	--app-ambar-fuerte: #c99000;
+	--app-acento-texto: #8a5a00;
+	--app-borde: #d9d7cf;
+	--app-borde-control: #7d8086;
+	--app-exito: #1f6b3f;
+	--app-aviso: #8a4b00;
+	--app-error: #b3261e;
+	--app-neutro: #5d636b;
+	--app-sobre-ambar: #1d1f22;
+	--app-velo: rgb(29 31 34 / 0.45);
 
-	--app-exito-fondo: #dcfce7;
-	--app-aviso-fondo: #fef3c7;
-	--app-error-fondo: #fee2e2;
+	--app-exito-fondo: #e3f1e8;
+	--app-aviso-fondo: #f8ecd9;
+	--app-error-fondo: #f9e3e1;
 }

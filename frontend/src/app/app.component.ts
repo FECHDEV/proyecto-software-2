@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { LucideHouse, LucideMoon, LucideSun, LucideUser } from '@lucide/angular';
 
 import { MARCA } from './core/marca';
 import { nombreCompleto, Rol } from './core/modelos/usuario';
@@ -14,7 +15,7 @@ const MODULOS: readonly { ruta: string; nombre: string; roles: readonly Rol[] }[
 
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, LucideHouse, LucideMoon, LucideSun, LucideUser],
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.component.scss',

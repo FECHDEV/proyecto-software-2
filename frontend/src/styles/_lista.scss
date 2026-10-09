@@ -7,7 +7,7 @@
 // bien separadas (decisiones.md → Dirección visual). Todo sale de _tokens.scss.
 
 h1 {
-	font-size: 26px;
+	font-size: 34px;
 	font-weight: 700;
 }
 
@@ -19,8 +19,12 @@ h1 {
 }
 
 label {
-	font-size: 13px;
-	font-weight: 600;
+	font-family: var(--app-familia-datos);
+	font-size: 12px;
+	font-weight: 500;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--app-texto-suave);
 }
 
 input,
@@ -51,8 +55,11 @@ table {
 thead th {
 	background: var(--app-superficie);
 	color: var(--app-texto-suave);
-	font-size: 13px;
-	font-weight: 600;
+	font-family: var(--app-familia-datos);
+	font-size: 12px;
+	font-weight: 500;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
 	text-align: left;
 }
 

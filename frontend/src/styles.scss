@@ -1,6 +1,7 @@
 @use './styles/tokens';
 
-// Sora para títulos e Inter para el texto (decisiones.md → Sistema de diseño).
+// Barlow Condensed para títulos, Barlow para el texto y JetBrains Mono para
+// etiquetas y datos (decisiones.md → Sistema de diseño).
 // Se cargan desde index.html; cada familia lleva su reserva del sistema en
 // _tokens.scss por si la fuente no carga.
 
@@ -15,6 +16,9 @@ html {
 	// autocompletado y las barras de desplazamiento también se pintan oscuros.
 	// El modo claro lo cambia a light (styles/_tokens.scss)
 	color-scheme: dark;
+	// El encabezado queda fijo arriba: lo que recibe el foco o se busca con un
+	// ancla no queda tapado por él
+	scroll-padding-top: 80px;
 }
 
 html,
@@ -37,7 +41,8 @@ h2,
 h3,
 h4 {
 	font-family: var(--app-familia-titulos);
-	line-height: 1.15;
+	letter-spacing: 0.01em;
+	line-height: 1.1;
 	text-wrap: balance;
 	margin: 0;
 }
@@ -48,7 +53,7 @@ strong {
 }
 
 a {
-	color: var(--app-ambar);
+	color: var(--app-acento-texto);
 }
 
 button,
@@ -60,7 +65,7 @@ a {
 }
 
 :focus-visible {
-	outline: 2px solid var(--app-ambar);
+	outline: 3px solid var(--app-acento-texto);
 	outline-offset: 2px;
 }
 
@@ -81,6 +86,21 @@ a {
 
 .salto-al-contenido:focus-visible {
 	transform: none;
+}
+
+// Entrada: sube 8 px mientras aparece. La usan la pantalla que llega por el
+// router, los avisos y los diálogos
+@keyframes app-aparecer {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+}
+
+// Cada pantalla es el hermano del router-outlet dentro de <main>
+main > :not(router-outlet) {
+	display: block;
+	animation: app-aparecer var(--app-duracion-lenta) var(--app-curva-salida);
 }
 
 @media (prefers-reduced-motion: reduce) {
