@@ -84,7 +84,6 @@ describe('RestablecerPage', () => {
     expect(fijo.nativeElement.querySelector('#contrasena').type).toBe('password');
   });
 
-  // RF-10: token vigente y contraseña nueva
   // HU-02 RF-12: con una sesión abierta en este navegador, «Iniciar sesión»
   // llevaría al inicio y el aviso se perdería; el token ya no vale igual
   it('al restablecer cierra la sesión abierta en este navegador', async () => {
@@ -97,6 +96,7 @@ describe('RestablecerPage', () => {
     expect(cerrar).toHaveBeenCalled();
   });
 
+  // HU-03 RF-8: token vigente y contraseña nueva
   it('restablece con el token del enlace y lleva a iniciar sesión', async () => {
     escribir('nueva-clave-1');
 
@@ -111,12 +111,13 @@ describe('RestablecerPage', () => {
   });
 
   // El token nunca se muestra: es tan sensible como una contraseña
+  // HU-03 RF-12
   it('no escribe el token en la pantalla', () => {
     expect(texto()).not.toContain('token-del-enlace');
     expect(fijo.nativeElement.innerHTML).not.toContain('token-del-enlace');
   });
 
-  // RF-11: la contraseña nueva tiene las mismas reglas que la del registro
+  // HU-03 RF-10: la contraseña nueva tiene las mismas reglas que la del registro
   it('sin contraseña no llama a la API', async () => {
     await enviar();
 
@@ -124,6 +125,7 @@ describe('RestablecerPage', () => {
     expect(texto()).toContain('Elige una contraseña');
   });
 
+  // HU-03 RF-10
   it('frena una contraseña de 7 caracteres', async () => {
     escribir('siete12');
 
@@ -133,6 +135,7 @@ describe('RestablecerPage', () => {
     expect(texto()).toContain('8 caracteres');
   });
 
+  // HU-03 RF-10
   it('frena una contraseña de más de 72 bytes', async () => {
     escribir('a'.repeat(73));
 
@@ -142,7 +145,7 @@ describe('RestablecerPage', () => {
     expect(texto()).toContain('demasiado larga');
   });
 
-  // FA-02: token inexistente, vencido o ya usado
+  // HU-03 RF-9: token inexistente, vencido o ya usado
   it('avisa que el enlace ya no sirve y ofrece pedir otro', async () => {
     autenticacion.respuesta = rechaza('TOKEN_RECUPERACION_INVALIDO', 400);
     escribir('nueva-clave-1');
@@ -155,6 +158,7 @@ describe('RestablecerPage', () => {
     expect(enlaceA('/recuperacion')).not.toBeNull();
   });
 
+  // HU-03 RF-10
   it('reparte los errores del backend bajo el campo', async () => {
     autenticacion.respuesta = rechaza('DATOS_INVALIDOS', 400, [
       { campo: 'contrasena', mensaje: 'debe tener al menos 8 caracteres' },
@@ -203,6 +207,7 @@ describe('RestablecerPage', () => {
       await preparar();
     });
 
+    // HU-03 RF-9
     it('no muestra el formulario y explica qué hacer', () => {
       expect(fijo.nativeElement.querySelector('form')).toBeNull();
       expect(texto()).toContain('Este enlace ya no sirve. Pide uno nuevo.');
@@ -217,6 +222,7 @@ describe('RestablecerPage', () => {
   });
 
   // Un enlace cortado que solo trae espacios es un enlace sin token
+  // HU-03 RF-9
   it('un token de solo espacios se trata como enlace sin token', async () => {
     token = '  ';
     await preparar();

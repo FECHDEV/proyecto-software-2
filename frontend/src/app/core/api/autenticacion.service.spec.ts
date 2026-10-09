@@ -298,7 +298,7 @@ describe('AutenticacionService, recuperacion de contrasena', () => {
 
   afterEach(() => http.verify());
 
-  // RF-2: la cuenta se busca con el correo normalizado
+  // HU-03 RF-4: la cuenta se busca con el correo normalizado
   it('solicita la recuperacion con el correo en minusculas y sin espacios', async () => {
     const promesa = servicio.solicitarRecuperacion('  Ana@Mail.COM  ');
 
@@ -313,7 +313,7 @@ describe('AutenticacionService, recuperacion de contrasena', () => {
     await expect(promesa).resolves.toBeUndefined();
   });
 
-  // RF-8: cuarta solicitud seguida
+  // HU-03 RF-7: cuarta solicitud seguida
   it('rechaza con SOLICITUDES_EXCEDIDAS cuando se pidio demasiadas veces', async () => {
     const promesa = servicio.solicitarRecuperacion('ana@mail.com');
 
@@ -331,7 +331,7 @@ describe('AutenticacionService, recuperacion de contrasena', () => {
     await expect(promesa).rejects.toMatchObject({ codigo: 'SOLICITUDES_EXCEDIDAS' });
   });
 
-  // RF-10: token vigente y contrasena nueva
+  // HU-03 RF-8: token vigente y contrasena nueva
   it('restablece la contrasena con el token tal como vino', async () => {
     const promesa = servicio.restablecerContrasena('  token-con-espacios  ', 'nueva-clave-1');
 
@@ -346,7 +346,7 @@ describe('AutenticacionService, recuperacion de contrasena', () => {
     await expect(promesa).resolves.toBeUndefined();
   });
 
-  // RF-12 (FA-02): token inexistente, vencido o ya usado, todos iguales
+  // HU-03 RF-9: token inexistente, vencido o ya usado, todos iguales
   it('rechaza con TOKEN_RECUPERACION_INVALIDO', async () => {
     const promesa = servicio.restablecerContrasena('token-usado', 'nueva-clave-1');
 
@@ -364,7 +364,7 @@ describe('AutenticacionService, recuperacion de contrasena', () => {
     await expect(promesa).rejects.toMatchObject({ codigo: 'TOKEN_RECUPERACION_INVALIDO' });
   });
 
-  // RF-11: la contrasena nueva se valida como la del registro
+  // HU-03 RF-10: la contrasena nueva se valida como la del registro
   it('conserva los campos a corregir de un 400', async () => {
     const promesa = servicio.restablecerContrasena('token-vigente', 'corta');
 

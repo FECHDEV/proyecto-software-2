@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -36,7 +37,10 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import com.jayway.jsonpath.JsonPath;
 
 import bo.edu.uagrm.tienda.dto.SolicitudRecuperacionRequest;
+import bo.edu.uagrm.tienda.entity.EstadoCuenta;
+import bo.edu.uagrm.tienda.entity.Rol;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
+import bo.edu.uagrm.tienda.service.GestionUsuariosService;
 import bo.edu.uagrm.tienda.service.NotificadorCorreo;
 import bo.edu.uagrm.tienda.service.RecuperacionContrasenaService;
 import bo.edu.uagrm.tienda.service.TokenRecuperacion;
@@ -61,6 +65,9 @@ class RecuperacionContrasenaIntegracionTest {
 
 	@Autowired
 	private RecuperacionContrasenaService recuperacionContrasenaService;
+
+	@Autowired
+	private GestionUsuariosService gestionUsuarios;
 
 	// Deja pasar la llamada al simulador y permite leer el token, que la base no guarda
 	@MockitoSpyBean
@@ -113,6 +120,7 @@ class RecuperacionContrasenaIntegracionTest {
 		return mvc.get().uri("/api/no-existe").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenDeSesion).exchange();
 	}
 
+	// HU-03 RF-1, RF-8, RF-9
 	@Test
 	void flujoCompletoCambiaLaContrasenaYElTokenNoSePuedeReutilizar() {
 		assertThat(solicitar(" Ana@Mail.COM ", "10.1.0.1")).hasStatus(HttpStatus.ACCEPTED);
@@ -127,6 +135,7 @@ class RecuperacionContrasenaIntegracionTest {
 		assertThat(reutilizado).bodyJson().extractingPath("$.codigo").isEqualTo("TOKEN_RECUPERACION_INVALIDO");
 	}
 
+	// HU-03 RF-2, RF-3
 	@Test
 	void correoNoRegistradoRecibeLaMismaRespuestaSinQueSeEnvieCorreo() throws Exception {
 		MvcTestResult inexistente = solicitar("nadie@mail.com", "10.1.0.2");
@@ -139,6 +148,7 @@ class RecuperacionContrasenaIntegracionTest {
 		then(notificadorCorreo).should(never()).enviarRecuperacion(eq("nadie@mail.com"), anyString(), anyString());
 	}
 
+	// HU-03 RF-5
 	@Test
 	void laBaseGuardaElHashDelTokenYEseValorNoSirveComoToken() {
 		solicitar("ana@mail.com", "10.1.0.3");
@@ -150,6 +160,7 @@ class RecuperacionContrasenaIntegracionTest {
 		assertThat(restablecer(guardado, "nueva-clave-1")).hasStatus(HttpStatus.BAD_REQUEST);
 	}
 
+	// HU-03 RF-6
 	@Test
 	void segundaSolicitudInvalidaElTokenDeLaPrimera() {
 		solicitar("ana@mail.com", "10.1.0.4");
@@ -162,6 +173,7 @@ class RecuperacionContrasenaIntegracionTest {
 		assertThat(restablecer(segundo, "nueva-clave-1")).hasStatus(HttpStatus.OK);
 	}
 
+	// HU-03 RF-9
 	@Test
 	void tokenVencidoNoCambiaLaContrasena() {
 		solicitar("ana@mail.com", "10.1.0.5");
@@ -186,6 +198,7 @@ class RecuperacionContrasenaIntegracionTest {
 		assertThat(solicitar(correo, "10.1.0.60")).hasStatus(HttpStatus.ACCEPTED);
 	}
 
+	// HU-03 RF-11
 	@Test
 	void restablecerLaContrasenaInvalidaLosTokensDeSesionAnteriores() throws Exception {
 		String tokenDeSesion = JsonPath.read(
@@ -198,20 +211,26 @@ class RecuperacionContrasenaIntegracionTest {
 		assertThat(pedirRutaProtegida(tokenDeSesion)).hasStatus(HttpStatus.UNAUTHORIZED);
 	}
 
+	// HU-03 RF-2, RF-3, RF-9: tampoco vuelve a servir si después se reactiva la cuenta
 	@Test
-	void cuentaDesactivadaRecuperaLaContrasenaSinReactivarse() {
-		// Se desactiva directo en la base, sin pasar por la gestión de usuarios, que se prueba aparte
-		jdbc.update("UPDATE usuario SET estado = 'DESACTIVADA' WHERE correo = ?", "ana@mail.com");
+	void cuentaDesactivadaNoRecibeEnlaceYSuEnlaceAnteriorNoSirveNiAlReactivarla() {
 		assertThat(solicitar("ana@mail.com", "10.1.0.8")).hasStatus(HttpStatus.ACCEPTED);
+		String anterior = ultimoTokenEnviadoA("ana@mail.com");
+		Long idAdmin = usuarioRepository.findAll().stream().filter(cuenta -> cuenta.getRol() == Rol.ADMINISTRADOR)
+				.findFirst().orElseThrow().getIdUsuario();
+		Long idAna = usuarioRepository.findByCorreo("ana@mail.com").orElseThrow().getIdUsuario();
 
-		assertThat(restablecer(ultimoTokenEnviadoA("ana@mail.com"), "nueva-clave-1")).hasStatus(HttpStatus.OK);
+		gestionUsuarios.cambiarEstado(idAdmin, idAna, EstadoCuenta.DESACTIVADA);
+		assertThat(solicitar("ana@mail.com", "10.1.0.8")).hasStatus(HttpStatus.ACCEPTED);
+		then(notificadorCorreo).should(times(1)).enviarRecuperacion(eq("ana@mail.com"), anyString(), anyString());
 
-		// 403 y no 401: la contraseña nueva es la correcta, pero la cuenta sigue desactivada
-		MvcTestResult sesion = iniciarSesion("ana@mail.com", "nueva-clave-1");
-		assertThat(sesion).hasStatus(HttpStatus.FORBIDDEN);
-		assertThat(sesion).bodyJson().extractingPath("$.codigo").isEqualTo("CUENTA_DESACTIVADA");
+		gestionUsuarios.cambiarEstado(idAdmin, idAna, EstadoCuenta.ACTIVA);
+		MvcTestResult restablecimiento = restablecer(anterior, "nueva-clave-1");
+		assertThat(restablecimiento).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(restablecimiento).bodyJson().extractingPath("$.codigo").isEqualTo("TOKEN_RECUPERACION_INVALIDO");
 	}
 
+	// HU-03 RF-8
 	@Test
 	void elTokenDeUnaCuentaSoloCambiaLaContrasenaDeEsaCuenta() {
 		registrar("beto@mail.com");
@@ -232,6 +251,7 @@ class RecuperacionContrasenaIntegracionTest {
 				.content("{\"correo\":\"ana@mail.com\",\"contrasena\":\"%s\"}".formatted(contrasena)).exchange();
 	}
 
+	// HU-03 RF-11
 	@Test
 	void despuesDeRestablecerSePuedeIniciarSesionAunqueElCorreoEstuvieraBloqueado() {
 		// IP propia: los intentos fallidos de ana en otros tests de esta clase se cuentan desde 127.0.0.1
@@ -247,6 +267,7 @@ class RecuperacionContrasenaIntegracionTest {
 		assertThat(iniciarSesionDesde(ip, "nueva-clave-1")).hasStatus(HttpStatus.OK);
 	}
 
+	// HU-03 RF-6
 	@Test
 	void dosSolicitudesSimultaneasDejanUnSoloTokenVigente() throws Exception {
 		// El envío tarda: sin bloqueo, la segunda solicitud no ve el token que la primera todavía no confirmó

@@ -33,8 +33,10 @@ public class RecuperacionContrasenaService {
 	public void solicitar(SolicitudRecuperacionRequest solicitud, String ip) {
 		String correo = Usuario.normalizarCorreo(solicitud.correo());
 		limiteSolicitudes.registrarIntento(correo, ip);
-		// Con la cuenta bloqueada, una solicitud simultánea espera y ve el token de esta: solo queda uno vigente
-		usuarioRepository.findConBloqueoByCorreo(correo).ifPresent(this::iniciarRecuperacion);
+		// Con la cuenta bloqueada, una solicitud simultánea espera y ve el token de esta: solo queda uno vigente.
+		// A una cuenta desactivada no se le envía nada: cambiar la contraseña no le serviría para entrar (HU-03 RF-3)
+		usuarioRepository.findConBloqueoByCorreo(correo).filter(Usuario::estaActiva)
+				.ifPresent(this::iniciarRecuperacion);
 	}
 
 	@Transactional
