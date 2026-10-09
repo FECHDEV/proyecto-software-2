@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import bo.edu.uagrm.tienda.config.TokenJwt;
 import bo.edu.uagrm.tienda.dto.DatosPersonalesRequest;
 import bo.edu.uagrm.tienda.dto.RegistroClienteRequest;
 import bo.edu.uagrm.tienda.entity.Usuario;
@@ -22,9 +23,24 @@ public class UsuarioService {
 	private final UsuarioRepository usuarioRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final Clock clock;
+	private final TokenJwt tokenJwt;
+	private final LimiteRegistros limiteRegistros;
 
+	// El registro cuenta para el límite antes de crear la cuenta (una ráfaga no pasa del máximo) y se anula si no se
+	// completa: solo cuentan los registros exitosos (decisiones.md → Registro)
 	@Transactional
-	public Usuario registrarCliente(RegistroClienteRequest solicitud) {
+	public SesionIniciada registrarCliente(RegistroClienteRequest solicitud, String ip) {
+		limiteRegistros.registrarIntento(ip);
+		try {
+			Usuario usuario = crearCliente(solicitud);
+			return new SesionIniciada(usuario, tokenJwt.emitir(usuario));
+		} catch (RuntimeException e) {
+			limiteRegistros.anularIntento(ip);
+			throw e;
+		}
+	}
+
+	private Usuario crearCliente(RegistroClienteRequest solicitud) {
 		String correo = Usuario.normalizarCorreo(solicitud.correo());
 		if (usuarioRepository.existsByCorreo(correo)) {
 			throw new CuentaExistenteException();

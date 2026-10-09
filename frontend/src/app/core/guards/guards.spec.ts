@@ -12,6 +12,7 @@ import { Rol } from '../modelos/usuario';
 import { SesionService } from '../sesion/sesion.service';
 import { rolGuard } from './rol.guard';
 import { sesionGuard } from './sesion.guard';
+import { visitanteGuard } from './visitante.guard';
 
 function sesionCon(rol: Rol): Sesion {
   return {
@@ -97,6 +98,21 @@ describe('guards de ruta', () => {
       const resultado = correr(rolGuard as never, { rol: 'ADMINISTRADOR' }, '/usuarios');
 
       expect(router.serializeUrl(resultado as UrlTree)).toContain('/inicio-sesion');
+    });
+  });
+
+  // HU-01 RF-14: «Crear cuenta» es para quien todavía no tiene sesión
+  describe('visitanteGuard', () => {
+    it('deja pasar sin sesión', () => {
+      expect(correr(visitanteGuard as never)).toBe(true);
+    });
+
+    it('con sesión lleva al inicio', () => {
+      sesion.iniciar(sesionCon('CLIENTE'));
+
+      const resultado = correr(visitanteGuard as never) as UrlTree;
+
+      expect(router.serializeUrl(resultado)).toBe('/');
     });
   });
 });

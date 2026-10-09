@@ -1,5 +1,6 @@
 package bo.edu.uagrm.tienda;
 
+import static bo.edu.uagrm.tienda.IpsDePrueba.ipNueva;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.AfterEach;
@@ -51,7 +52,7 @@ class InicioSesionIntegracionTest {
 
 	@BeforeEach
 	void registrarAna() {
-		assertThat(mvc.post().uri("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
+		assertThat(mvc.post().uri("/api/auth/registro").with(ipNueva()).contentType(MediaType.APPLICATION_JSON)
 				.content(REGISTRO_DE_ANA).exchange()).hasStatus(HttpStatus.CREATED);
 	}
 
