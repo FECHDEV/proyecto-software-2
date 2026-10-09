@@ -26,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import bo.edu.uagrm.tienda.entity.EstadoCuenta;
+import bo.edu.uagrm.tienda.entity.RecuperacionContrasena;
 import bo.edu.uagrm.tienda.entity.Rol;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.exception.CuentaPropiaNoDesactivableException;
@@ -33,6 +34,7 @@ import bo.edu.uagrm.tienda.exception.RolDeCuentaDesactivadaException;
 import bo.edu.uagrm.tienda.exception.RolPropioNoModificableException;
 import bo.edu.uagrm.tienda.exception.UltimoAdministradorActivoException;
 import bo.edu.uagrm.tienda.exception.UsuarioNoEncontradoException;
+import bo.edu.uagrm.tienda.repository.RecuperacionContrasenaRepository;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,11 +46,14 @@ class GestionUsuariosServiceTest {
 	@Mock
 	private UsuarioRepository usuarioRepository;
 
+	@Mock
+	private RecuperacionContrasenaRepository recuperacionRepository;
+
 	private GestionUsuariosService servicio;
 
 	@BeforeEach
 	void crearServicio() {
-		servicio = new GestionUsuariosService(usuarioRepository);
+		servicio = new GestionUsuariosService(usuarioRepository, recuperacionRepository);
 	}
 
 	private static Usuario conId(Usuario usuario, long id) {
@@ -256,6 +261,30 @@ class GestionUsuariosServiceTest {
 
 		assertThat(servicio.cambiarEstado(ID_ADMIN, ID_ANA, EstadoCuenta.ACTIVA).getEstado())
 				.isEqualTo(EstadoCuenta.ACTIVA);
+	}
+
+	// HU-03 RF-9: el enlace pedido antes de desactivar deja de servir, también si después se reactiva la cuenta
+	@Test
+	void desactivarAnulaLosEnlacesDeRecuperacionPendientes() {
+		Usuario ana = ana();
+		administradoresActivos(administrador(ID_ADMIN));
+		cuenta(ana);
+		RecuperacionContrasena pendiente = RecuperacionContrasena.crear(ana, "a".repeat(64), REGISTRO);
+		given(recuperacionRepository.findByUsuarioAndUsadoFalse(ana)).willReturn(List.of(pendiente));
+
+		servicio.cambiarEstado(ID_ADMIN, ID_ANA, EstadoCuenta.DESACTIVADA);
+
+		assertThat(pendiente.isUsado()).isTrue();
+	}
+
+	@Test
+	void reactivarNoTocaLosEnlacesDeRecuperacion() {
+		Usuario ana = ana();
+		cuenta(ana);
+
+		servicio.cambiarEstado(ID_ADMIN, ID_ANA, EstadoCuenta.ACTIVA);
+
+		then(recuperacionRepository).shouldHaveNoInteractions();
 	}
 
 	@Test

@@ -42,6 +42,7 @@ class NotificadorCorreoSmtpTest {
 		given(mailSender.createMimeMessage()).willAnswer(invocacion -> new MimeMessage((Session) null));
 	}
 
+	// HU-03 RF-13
 	@Test
 	void laRecuperacionVaAlUsuarioDesdeElRemitenteDelSitio() throws Exception {
 		notificador.enviarRecuperacion("ana@mail.com", "Ana", "token-de-prueba");
@@ -53,6 +54,7 @@ class NotificadorCorreoSmtpTest {
 		assertThat(mensaje.getSubject()).isEqualTo("Recupera tu contraseña de Tienda");
 	}
 
+	// HU-03 RF-1, RF-13
 	@Test
 	void laRecuperacionLlevaElEnlaceConElTokenEnTextoYEnHtml() throws Exception {
 		notificador.enviarRecuperacion("ana@mail.com", "Ana", "token-de-prueba");
@@ -64,6 +66,7 @@ class NotificadorCorreoSmtpTest {
 						.contains("1 hora"));
 	}
 
+	// HU-03 RF-13
 	@Test
 	void elCorreoVaFirmadoConLaMarcaDelSitio() throws Exception {
 		notificador.enviarRecuperacion("ana@mail.com", "Ana", "token-de-prueba");
@@ -71,6 +74,7 @@ class NotificadorCorreoSmtpTest {
 		assertThat(partes(enviado())).allSatisfy(parte -> assertThat(parte).contains("Tienda"));
 	}
 
+	// HU-03 RF-13
 	@Test
 	void elNombreDelUsuarioSeEscapaEnElHtml() throws Exception {
 		notificador.enviarRecuperacion("ana@mail.com", "<script>alert(1)</script>", "token-de-prueba");
@@ -79,6 +83,16 @@ class NotificadorCorreoSmtpTest {
 		assertThat(html).doesNotContain("<script>").contains("&lt;script&gt;");
 	}
 
+	// HU-03 RF-13: los colores de la marca (decisiones.md → Paleta y modos); los de la plantilla vieja no quedan
+	@Test
+	void elHtmlUsaLosColoresDeLaMarca() throws Exception {
+		notificador.enviarRecuperacion("ana@mail.com", "Ana", "token-de-prueba");
+
+		String html = partes(enviado()).get(1);
+		assertThat(html).contains("#16181b", "#f2b81c").doesNotContain("#0b1020", "#f5b301", "#f4f6ff");
+	}
+
+	// HU-03 RF-2
 	@Test
 	void unFalloDelEnvioSeRegistraSinPropagarseNiMostrarElToken(CapturedOutput salida) {
 		willThrow(new MailSendException("servidor caído")).given(mailSender).send(any(MimeMessage.class));

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import bo.edu.uagrm.tienda.entity.EstadoCuenta;
+import bo.edu.uagrm.tienda.entity.RecuperacionContrasena;
 import bo.edu.uagrm.tienda.entity.Rol;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.exception.CuentaPropiaNoDesactivableException;
@@ -16,6 +17,7 @@ import bo.edu.uagrm.tienda.exception.RolDeCuentaDesactivadaException;
 import bo.edu.uagrm.tienda.exception.RolPropioNoModificableException;
 import bo.edu.uagrm.tienda.exception.UltimoAdministradorActivoException;
 import bo.edu.uagrm.tienda.exception.UsuarioNoEncontradoException;
+import bo.edu.uagrm.tienda.repository.RecuperacionContrasenaRepository;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +31,7 @@ public class GestionUsuariosService {
 	private static final Sort ORDEN = Sort.by(Sort.Direction.DESC, "fechaRegistro", "idUsuario");
 
 	private final UsuarioRepository usuarioRepository;
+	private final RecuperacionContrasenaRepository recuperacionRepository;
 
 	@Transactional(readOnly = true)
 	public Page<Usuario> listar(Rol rol, EstadoCuenta estado, String texto, int pagina, int tamano) {
@@ -73,6 +76,8 @@ public class GestionUsuariosService {
 			throw new UltimoAdministradorActivoException();
 		}
 		usuario.desactivar();
+		// Un enlace de recuperación pendiente no puede revivir si después se reactiva la cuenta (HU-03 RF-9)
+		recuperacionRepository.findByUsuarioAndUsadoFalse(usuario).forEach(RecuperacionContrasena::marcarUsada);
 		return usuario;
 	}
 

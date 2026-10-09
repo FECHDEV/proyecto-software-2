@@ -100,6 +100,7 @@ class RecuperacionContrasenaServiceTest {
 		return recuperacion;
 	}
 
+	// HU-03 RF-1, RF-5
 	@Test
 	void correoRegistradoGuardaElHashDelTokenConVigenciaDeUnaHoraYLeEnviaElToken() {
 		Usuario ana = ana();
@@ -116,6 +117,7 @@ class RecuperacionContrasenaServiceTest {
 		assertThat(guardada.isUsado()).isFalse();
 	}
 
+	// HU-03 RF-2, RF-3
 	@Test
 	void correoNoRegistradoTerminaIgualSinGuardarNiEnviarNada() {
 		assertThatCode(() -> solicitar("nadie@mail.com")).doesNotThrowAnyException();
@@ -124,6 +126,7 @@ class RecuperacionContrasenaServiceTest {
 		then(notificadorCorreo).shouldHaveNoInteractions();
 	}
 
+	// HU-03 RF-6
 	@Test
 	void nuevaSolicitudInvalidaLasRecuperacionesPendientesAnteriores() {
 		Usuario ana = ana();
@@ -137,17 +140,19 @@ class RecuperacionContrasenaServiceTest {
 		assertThat(recuperacionGuardada().isUsado()).isFalse();
 	}
 
+	// HU-03 RF-2, RF-3: a la cuenta desactivada no le sirve el enlace; la solicitud termina igual
 	@Test
-	void cuentaDesactivadaTambienRecibeElTokenYSigueDesactivada() {
+	void cuentaDesactivadaNoRecibeCorreoNiToken() {
 		Usuario ana = desactivada(ana());
 		given(usuarioRepository.findConBloqueoByCorreo("ana@mail.com")).willReturn(Optional.of(ana));
 
-		solicitar("ana@mail.com");
+		assertThatCode(() -> solicitar("ana@mail.com")).doesNotThrowAnyException();
 
-		assertThat(tokenEnviadoAAna()).isNotBlank();
-		assertThat(ana.getEstado()).isEqualTo(EstadoCuenta.DESACTIVADA);
+		then(recuperacionRepository).shouldHaveNoInteractions();
+		then(notificadorCorreo).shouldHaveNoInteractions();
 	}
 
+	// HU-03 RF-7
 	@Test
 	void cuartaSolicitudDelMismoCorreoDesdeLaMismaIpSeRechazaAunqueElCorreoNoExista() {
 		for (int i = 0; i < 3; i++) {
@@ -158,6 +163,7 @@ class RecuperacionContrasenaServiceTest {
 		then(usuarioRepository).should(times(3)).findConBloqueoByCorreo("nadie@mail.com");
 	}
 
+	// HU-03 RF-8
 	@Test
 	void tokenVigenteCambiaLaContrasenaEInvalidaLasRecuperacionesPendientesDeLaCuenta() {
 		Usuario ana = ana();
@@ -173,6 +179,7 @@ class RecuperacionContrasenaServiceTest {
 		assertThat(otra.isUsado()).isTrue();
 	}
 
+	// HU-03 RF-9
 	@Test
 	void tokenVencidoNoCambiaLaContrasena() {
 		Usuario ana = ana();
@@ -185,6 +192,7 @@ class RecuperacionContrasenaServiceTest {
 		assertThat(ana.getContrasena()).isEqualTo(HASH_ANTERIOR);
 	}
 
+	// HU-03 RF-9
 	@Test
 	void tokenYaUsadoNoCambiaLaContrasena() {
 		Usuario ana = ana();
@@ -196,24 +204,14 @@ class RecuperacionContrasenaServiceTest {
 		assertThat(ana.getContrasena()).isEqualTo(HASH_ANTERIOR);
 	}
 
+	// HU-03 RF-9
 	@Test
 	void tokenDesconocidoSeRechazaConElMismoError() {
 		assertThatThrownBy(() -> restablecer(TokenRecuperacion.generar(), "nueva-clave-1"))
 				.isInstanceOf(TokenRecuperacionInvalidoException.class);
 	}
 
-	@Test
-	void restablecerEnUnaCuentaDesactivadaNoLaReactiva() {
-		Usuario ana = desactivada(ana());
-		String token = TokenRecuperacion.generar();
-		registrada(ana, token, AHORA.minusMinutes(5));
-
-		restablecer(token, "nueva-clave-1");
-
-		assertThat(passwordEncoder.matches("nueva-clave-1", ana.getContrasena())).isTrue();
-		assertThat(ana.getEstado()).isEqualTo(EstadoCuenta.DESACTIVADA);
-	}
-
+	// HU-03 RF-11
 	@Test
 	void restablecerLaContrasenaQuitaElBloqueoDeInicioDeSesionDeLaCuenta() {
 		for (int i = 0; i < 5; i++) {

@@ -28,6 +28,7 @@ class LimiteSolicitudesRecuperacionTest {
 		}
 	}
 
+	// HU-03 RF-7
 	@Test
 	void tresSolicitudesSePermiten() {
 		solicitar(2);
@@ -35,6 +36,7 @@ class LimiteSolicitudesRecuperacionTest {
 		assertThatCode(() -> limite.registrarIntento(CORREO, IP)).doesNotThrowAnyException();
 	}
 
+	// HU-03 RF-7
 	@Test
 	void cuartaSolicitudSeRechazaDuranteQuinceMinutos() {
 		solicitar(3);
@@ -50,6 +52,7 @@ class LimiteSolicitudesRecuperacionTest {
 		assertThatCode(() -> limite.registrarIntento(CORREO, IP)).doesNotThrowAnyException();
 	}
 
+	// HU-03 RF-7
 	@Test
 	void otroCorreoUOtraIpNoQuedanBloqueados() {
 		solicitar(3);
@@ -58,6 +61,7 @@ class LimiteSolicitudesRecuperacionTest {
 		assertThatCode(() -> limite.registrarIntento("beto@mail.com", IP)).doesNotThrowAnyException();
 	}
 
+	// HU-03 RF-7
 	@Test
 	void solicitudesFueraDeLaVentanaDeQuinceMinutosNoSeAcumulan() {
 		solicitar(2);

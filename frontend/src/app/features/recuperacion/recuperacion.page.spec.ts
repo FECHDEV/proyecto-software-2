@@ -67,7 +67,7 @@ describe('RecuperacionPage', () => {
     expect(campo('correo').type).toBe('email');
   });
 
-  // RF-1: se pide sin sesión iniciada
+  // HU-03 RF-1, RF-2: se pide sin sesión iniciada
   it('pide la recuperación y confirma sin decir si la cuenta existe', async () => {
     escribir('correo', 'ana@mail.com');
 
@@ -80,7 +80,7 @@ describe('RecuperacionPage', () => {
     expect(fijo.nativeElement.querySelector('.aviso.exito').getAttribute('tabindex')).toBe('-1');
   });
 
-  // RF-3: un correo sin cuenta recibe exactamente la misma respuesta
+  // HU-03 RF-2: un correo sin cuenta recibe exactamente la misma respuesta
   it('un correo sin cuenta ve la misma confirmación, palabra por palabra', async () => {
     escribir('correo', 'nadie@mail.com');
 
@@ -107,7 +107,7 @@ describe('RecuperacionPage', () => {
     expect(texto()).toContain('formato de correo');
   });
 
-  // RF-8: el límite de solicitudes
+  // HU-03 RF-7: el límite de solicitudes
   it('muestra el aviso del límite y deja el formulario para reintentar', async () => {
     autenticacion.respuesta = rechaza('SOLICITUDES_EXCEDIDAS', 429);
     escribir('correo', 'ana@mail.com');

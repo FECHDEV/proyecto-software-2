@@ -49,8 +49,8 @@ public class NotificadorCorreoSmtp implements NotificadorCorreo {
 				<p>Hola, %s:</p>
 				<p>Recibimos una solicitud para recuperar la contraseña de tu cuenta de %s.</p>
 				%s
-				<p>O copia este enlace en tu navegador:<br><a href="%s" style="color:#0b1020;word-break:break-all">%s</a></p>
-				<p style="color:#5b6480">El enlace vence en 1 hora y sirve una sola vez. Si no pediste recuperar tu \
+				<p>O copia este enlace en tu navegador:<br><a href="%s" style="color:#8a5a00;word-break:break-all">%s</a></p>
+				<p style="color:#5d636b">El enlace vence en 1 hora y sirve una sola vez. Si no pediste recuperar tu \
 				contraseña, ignora este correo: tu contraseña sigue siendo la misma.</p>
 				""".formatted(htmlEscape(nombre), htmlEscape(marca), boton("Elegir una contraseña nueva", enlace),
 				enlace, enlace);
@@ -76,9 +76,9 @@ public class NotificadorCorreoSmtp implements NotificadorCorreo {
 	private String plantilla(String cuerpo) {
 		return """
 				<!DOCTYPE html>
-				<html lang="es"><body style="margin:0;padding:24px;background:#f4f6ff;font-family:Arial,sans-serif;color:#151b2e">
-				<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden">
-				<div style="background:#0b1020;padding:20px 24px;color:#f5b301;font-size:22px;font-weight:bold">%s</div>
+				<html lang="es"><body style="margin:0;padding:24px;background:#f3f2ee;font-family:Arial,sans-serif;color:#1d1f22">
+				<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden">
+				<div style="background:#16181b;border-bottom:3px solid #f2b81c;padding:20px 24px;color:#f2b81c;font-size:22px;font-weight:bold;letter-spacing:0.02em;text-transform:uppercase">%s</div>
 				<div style="padding:24px;font-size:15px;line-height:1.5">%s</div>
 				</div>
 				</body></html>
@@ -87,8 +87,8 @@ public class NotificadorCorreoSmtp implements NotificadorCorreo {
 
 	private static String boton(String texto, String enlace) {
 		return """
-				<p><a href="%s" style="display:inline-block;padding:12px 20px;background:#f5b301;color:#0b1020;\
-				text-decoration:none;border-radius:8px;font-weight:bold">%s</a></p>
+				<p><a href="%s" style="display:inline-block;padding:12px 20px;background:#f2b81c;color:#16181b;\
+				text-decoration:none;border-radius:6px;font-weight:bold">%s</a></p>
 				""".formatted(enlace, texto);
 	}
 }

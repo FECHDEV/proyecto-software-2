@@ -218,6 +218,15 @@ archivo versionado, como haría un `data.sql`.
 - **Límite de solicitudes:** 3 para el mismo correo desde la misma IP en 15
   minutos (429 `SOLICITUDES_EXCEDIDAS`): cada solicitud aceptada dispara un
   correo real.
+- *09/10/2026 (HU-03).* **A una cuenta desactivada no se le envía el
+  enlace,** y un enlace pedido antes de desactivarla deja de servir (responde
+  como un token inválido). La solicitud responde igual que siempre. **Motivo:**
+  con la cuenta desactivada, cambiar la contraseña no le sirve para entrar.
+- *09/10/2026 (HU-03).* Después de restablecer se va a «Iniciar sesión» con el
+  aviso, sin entrar directo: el enlace del correo no alcanza por sí solo para
+  abrir una sesión.
+- *09/10/2026 (HU-03).* El correo usa los colores de la marca (grafito y
+  amarillo de señalización, «Paleta y modos»).
 
 ### Datos personales
 
