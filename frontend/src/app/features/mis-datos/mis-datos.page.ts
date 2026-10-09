@@ -1,12 +1,4 @@
-import {
-	ChangeDetectionStrategy,
-	Component,
-	computed,
-	ElementRef,
-	inject,
-	linkedSignal,
-	signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, linkedSignal, signal, viewChildren } from '@angular/core';
 import {
 	form,
 	FormField,
@@ -25,6 +17,7 @@ import { comoError, ErrorApi } from '../../core/modelos/error-api';
 import { EstadoCuenta, NOMBRES_DE_ESTADO, NOMBRES_DE_ROL, Rol, Usuario } from '../../core/modelos/usuario';
 import { ConCambiosSinGuardar } from '../../core/guards/cambios-sin-guardar.guard';
 import { SesionService } from '../../core/sesion/sesion.service';
+import { VerContrasena } from '../../shared/formularios/ver-contrasena';
 import { iguales } from '../../shared/formularios/iguales';
 import {
 	enfocarCampo,
@@ -79,7 +72,7 @@ const esquemaDeContrasena = schema<CambioDeContrasena>((ruta) => {
 // del token, así que acá no hay ningún id.
 @Component({
 	selector: 'app-mis-datos',
-	imports: [FormField],
+	imports: [FormField, VerContrasena],
 	templateUrl: './mis-datos.page.html',
 	styleUrl: './mis-datos.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -122,6 +115,7 @@ export class MisDatosPage implements ConCambiosSinGuardar {
 	private readonly contrasenas = signal<CambioDeContrasena>({ ...SIN_CONTRASENAS });
 	protected readonly formularioDeContrasena = form(this.contrasenas, esquemaDeContrasena);
 	protected readonly cambiandoContrasena = signal(false);
+	private readonly botonesVerContrasena = viewChildren(VerContrasena);
 	private readonly errorDeContrasena = signal<ErrorApi | null>(null);
 	private readonly contrasenasEnviadas = signal<CambioDeContrasena | null>(null);
 	private readonly contrasenaCambiada = signal(false);
@@ -232,6 +226,8 @@ export class MisDatosPage implements ConCambiosSinGuardar {
 					// siguiente petición (RF-13): la sesión sigue con el nuevo
 					this.sesion.iniciar(await this.cuenta.cambiarContrasena(enviadas));
 					this.formularioDeContrasena().reset({ ...SIN_CONTRASENAS });
+					// La próxima contraseña que se escriba no queda a la vista (HU-04 RF-12)
+					this.botonesVerContrasena().forEach((boton) => boton.ocultar());
 					this.contrasenaCambiada.set(true);
 				} catch (error: unknown) {
 					const problema = comoError(error);

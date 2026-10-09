@@ -442,6 +442,16 @@ describe('RegistroPage', () => {
     expect(enlace.getAttribute('href')).toBe('/inicio-sesion');
   });
 
+  // HU-04 RF-12
+  it('la contraseña tiene el botón para verla', () => {
+    const boton: HTMLButtonElement = fijo.nativeElement.querySelector('button.ver-contrasena');
+
+    boton.click();
+    fijo.detectChanges();
+
+    expect(campo('contrasena').type).toBe('text');
+  });
+
   it('no menciona la universidad', () => {
     expect(texto().toLowerCase()).not.toContain('universidad');
   });

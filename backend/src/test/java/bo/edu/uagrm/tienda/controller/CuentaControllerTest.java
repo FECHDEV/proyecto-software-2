@@ -85,6 +85,7 @@ class CuentaControllerTest {
 				.content("{\"contrasenaActual\":\"otra-clave\",\"contrasenaNueva\":\"nueva-clave-1\"}").exchange();
 	}
 
+	// HU-04 RF-11
 	@Test
 	void sinSesionNoSePuedeConsultarActualizarNiCambiarLaContrasena() {
 		assertThat(mvc.get().uri(DATOS).exchange()).hasStatus(HttpStatus.UNAUTHORIZED);
@@ -99,6 +100,7 @@ class CuentaControllerTest {
 		then(autenticacionService).shouldHaveNoInteractions();
 	}
 
+	// HU-04 RF-1
 	@Test
 	void consultaDevuelveLosDatosDeLaCuentaDeLaSesionSinContrasena() throws Exception {
 		given(usuarioService.datosPersonales(7L)).willReturn(ana);
@@ -113,6 +115,7 @@ class CuentaControllerTest {
 		assertThat(resultado.getResponse().getContentAsString()).doesNotContain("$2a$10$hash");
 	}
 
+	// HU-04 RF-2, RF-4
 	@Test
 	void actualizacionValidaUsaLaCuentaDeLaSesionYSoloNombreApellidoYTelefono() {
 		given(usuarioService.actualizarDatos(eq(7L), any(DatosPersonalesRequest.class))).willReturn(ana);
@@ -145,6 +148,7 @@ class CuentaControllerTest {
 		then(usuarioService).shouldHaveNoInteractions();
 	}
 
+	// HU-04 RF-5
 	@Test
 	void cambioDeContrasenaValidoDevuelveElTokenNuevo() {
 		given(autenticacionService.cambiarContrasena(eq(7L), any(CambioContrasenaRequest.class), anyString()))

@@ -237,6 +237,12 @@ archivo versionado, como haría un `data.sql`.
   el límite de intentos del inicio de sesión. La respuesta trae un token nuevo:
   la huella `hc` invalida todos los anteriores, así las demás sesiones abiertas
   se cierran.
+- *09/10/2026 (HU-04).* **El botón para mostrar u ocultar la contraseña va en
+  todos los campos de contraseña** («Iniciar sesión», «Crear cuenta», «Elegir
+  contraseña nueva» y «Mis datos»), como una pieza de `shared/`.
+- *09/10/2026 (HU-04).* **El usuario no da de baja su propia cuenta:** la
+  desactiva un Administrador. Borrar una cuenta con pedidos rompería el
+  historial y los reportes.
 
 ### Gestión de usuarios
 
@@ -363,6 +369,11 @@ oscuro el texto fino se deshace, así que el cuerpo no baja de 400.
   Tailwind, Bootstrap): Lucide es la única excepción, y solo para iconos.
 - **Espaciado** en múltiplos de 4 px; radio de 8 px en tarjetas y 6 px en
   campos y botones (más recto, como el prototipo); ancho máximo del contenido de 1120 px.
+- *09/10/2026.* **El encabezado queda fijo arriba y, al bajar, se vuelve
+  translúcido en degradé** (sólido arriba, más transparente hacia la raya
+  amarilla) con desenfoque de lo que pasa por detrás. Lo marca el propio
+  desplazamiento con CSS (`animation-timeline: scroll()`), sin JavaScript;
+  donde no hay soporte queda sólido.
 - **Lo angosto va centrado,** con el mixin `pagina-angosta` de
   `frontend/src/styles/_pagina.scss`, sin `max-width` suelto.
 - **Estilos solo por tokens,** y componentes estilados con `:host`.

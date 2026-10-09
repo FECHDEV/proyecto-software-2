@@ -19,7 +19,7 @@ export class CuentaService {
 		return httpResource<Usuario>(() => '/api/cuenta/datos-personales');
 	}
 
-	// Limpio como en el registro; el teléfono vacío viaja como null (RF-8)
+	// Limpio como en el registro; el teléfono vacío viaja como null (HU-04 RF-3)
 	async actualizarDatos(datos: DatosPersonales): Promise<Usuario> {
 		const telefono = datos.telefono.trim();
 		try {

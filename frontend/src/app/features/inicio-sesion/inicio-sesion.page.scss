@@ -3,38 +3,3 @@
 :host {
 	display: block;
 }
-
-// El botón de ver la contraseña va dentro del campo, a la derecha
-.con-boton {
-	position: relative;
-}
-
-.con-boton input {
-	padding-right: calc(44px + var(--app-espacio-1));
-}
-
-.ver-contrasena {
-	position: absolute;
-	top: 0;
-	right: 0;
-	display: grid;
-	place-items: center;
-	width: 44px;
-	height: 44px;
-	padding: 0;
-	border: none;
-	border-radius: var(--app-radio-control);
-	background: transparent;
-	color: var(--app-texto-suave);
-	cursor: pointer;
-	transition: color var(--app-transicion);
-}
-
-.ver-contrasena:hover {
-	color: var(--app-texto);
-}
-
-.icono {
-	width: var(--app-icono);
-	height: var(--app-icono);
-}

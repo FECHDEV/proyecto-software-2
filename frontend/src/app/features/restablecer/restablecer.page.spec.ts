@@ -110,6 +110,16 @@ describe('RestablecerPage', () => {
     ]);
   });
 
+  // HU-04 RF-12
+  it('la contraseña nueva tiene el botón para verla', () => {
+    const boton: HTMLButtonElement = fijo.nativeElement.querySelector('button.ver-contrasena');
+
+    boton.click();
+    fijo.detectChanges();
+
+    expect((fijo.nativeElement.querySelector('#contrasena') as HTMLInputElement).type).toBe('text');
+  });
+
   // El token nunca se muestra: es tan sensible como una contraseña
   // HU-03 RF-12
   it('no escribe el token en la pantalla', () => {

@@ -101,14 +101,18 @@
       <div class="campo">
         @let errorActual = mensajeDeContrasena(formularioDeContrasena.contrasenaActual(), 'contrasenaActual');
         <label for="contrasenaActual">Contraseña actual</label>
-        <input
-          id="contrasenaActual"
-          type="password"
-          autocomplete="current-password"
-          [formField]="formularioDeContrasena.contrasenaActual"
-          [attr.aria-invalid]="errorActual ? 'true' : null"
-          [attr.aria-describedby]="errorActual ? 'error-contrasenaActual' : null"
-        />
+        <div class="con-boton">
+          <input
+            #claveActual
+            id="contrasenaActual"
+            type="password"
+            autocomplete="current-password"
+            [formField]="formularioDeContrasena.contrasenaActual"
+            [attr.aria-invalid]="errorActual ? 'true' : null"
+            [attr.aria-describedby]="errorActual ? 'error-contrasenaActual' : null"
+          />
+          <button appVerContrasena [campo]="claveActual"></button>
+        </div>
         @if (errorActual) {
           <p class="error" id="error-contrasenaActual">{{ errorActual }}</p>
         }
@@ -117,16 +121,20 @@
       <div class="campo">
         @let errorNueva = mensajeDeContrasena(formularioDeContrasena.contrasenaNueva(), 'contrasenaNueva');
         <label for="contrasenaNueva">Contraseña nueva</label>
-        <input
-          id="contrasenaNueva"
-          type="password"
-          autocomplete="new-password"
-          [formField]="formularioDeContrasena.contrasenaNueva"
-          [attr.aria-invalid]="errorNueva ? 'true' : null"
-          [attr.aria-describedby]="
-            errorNueva ? 'error-contrasenaNueva' : ayudaContrasenaNueva() ? 'ayuda-contrasenaNueva' : null
-          "
-        />
+        <div class="con-boton">
+          <input
+            #claveNueva
+            id="contrasenaNueva"
+            type="password"
+            autocomplete="new-password"
+            [formField]="formularioDeContrasena.contrasenaNueva"
+            [attr.aria-invalid]="errorNueva ? 'true' : null"
+            [attr.aria-describedby]="
+              errorNueva ? 'error-contrasenaNueva' : ayudaContrasenaNueva() ? 'ayuda-contrasenaNueva' : null
+            "
+          />
+          <button appVerContrasena [campo]="claveNueva"></button>
+        </div>
         @if (errorNueva) {
           <p class="error" id="error-contrasenaNueva">{{ errorNueva }}</p>
         } @else if (ayudaContrasenaNueva()) {

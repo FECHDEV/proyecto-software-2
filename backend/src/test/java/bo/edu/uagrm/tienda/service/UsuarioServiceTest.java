@@ -187,6 +187,7 @@ class UsuarioServiceTest {
 		return ana;
 	}
 
+	// HU-04 RF-1
 	@Test
 	void datosPersonalesDevuelveLaCuentaDeLaSesion() {
 		Usuario ana = ana();
@@ -195,6 +196,7 @@ class UsuarioServiceTest {
 		assertThat(usuarioService.datosPersonales(7L)).isSameAs(ana);
 	}
 
+	// HU-04 RF-2, RF-4
 	@Test
 	void actualizarDatosCambiaSoloNombreApellidoYTelefono() {
 		Usuario ana = ana();
@@ -213,6 +215,7 @@ class UsuarioServiceTest {
 		assertThat(ana.getEstado()).isEqualTo(EstadoCuenta.ACTIVA);
 	}
 
+	// HU-04 RF-3
 	@Test
 	void telefonoEnBlancoAlActualizarDejaLaCuentaSinTelefono() {
 		given(usuarioRepository.findById(7L)).willReturn(Optional.of(ana()));
@@ -221,6 +224,7 @@ class UsuarioServiceTest {
 				.isNull();
 	}
 
+	// HU-04 RF-2
 	@Test
 	void actualizarConLosMismosDatosNoAlteraLaCuenta() {
 		Usuario ana = ana();
