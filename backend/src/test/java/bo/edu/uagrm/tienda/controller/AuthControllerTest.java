@@ -37,6 +37,7 @@ import bo.edu.uagrm.tienda.exception.CredencialesIncorrectasException;
 import bo.edu.uagrm.tienda.exception.CuentaDesactivadaException;
 import bo.edu.uagrm.tienda.exception.CuentaExistenteException;
 import bo.edu.uagrm.tienda.exception.IntentosExcedidosException;
+import bo.edu.uagrm.tienda.exception.RegistrosExcedidosException;
 import bo.edu.uagrm.tienda.exception.SolicitudesExcedidasException;
 import bo.edu.uagrm.tienda.exception.TokenRecuperacionInvalidoException;
 import bo.edu.uagrm.tienda.service.AutenticacionService;
@@ -90,22 +91,54 @@ class AuthControllerTest {
 		return Usuario.registrarCliente("Ana", "Rojas", "ana@mail.com", "$2a$10$hash", null, LocalDateTime.of(2026, 9, 12, 11, 0));
 	}
 
+	// HU-01 RF-2, RF-11
 	@Test
-	void registroValidoSinSesionDevuelve201SinContrasena() {
-		given(usuarioService.registrarCliente(any(RegistroClienteRequest.class))).willReturn(clienteRegistrado());
+	void registroDevuelveTokenYDatosSinContrasena() throws Exception {
+		given(usuarioService.registrarCliente(any(RegistroClienteRequest.class), anyString())).willReturn(sesionDeAna());
 
 		MvcTestResult resultado = registrar(datosValidos());
 
 		assertThat(resultado).hasStatus(HttpStatus.CREATED);
-		assertThat(resultado).bodyJson().extractingPath("$.correo").isEqualTo("ana@mail.com");
-		assertThat(resultado).bodyJson().extractingPath("$.rol").isEqualTo("CLIENTE");
-		assertThat(resultado).bodyJson().extractingPath("$.estado").isEqualTo("ACTIVA");
-		assertThat(resultado).bodyJson().doesNotHavePath("$.contrasena");
+		assertThat(resultado).bodyJson().extractingPath("$.token").isEqualTo("token.de.prueba");
+		assertThat(resultado).bodyJson().extractingPath("$.tipo").isEqualTo("Bearer");
+		assertThat(resultado).bodyJson().extractingPath("$.usuario.correo").isEqualTo("ana@mail.com");
+		assertThat(resultado).bodyJson().extractingPath("$.usuario.rol").isEqualTo("CLIENTE");
+		assertThat(resultado).bodyJson().extractingPath("$.usuario.estado").isEqualTo("ACTIVA");
+		assertThat(resultado).bodyJson().doesNotHavePath("$.usuario.contrasena");
+		assertThat(resultado.getResponse().getContentAsString()).doesNotContain("$2a$10$hash");
 	}
 
+	// HU-01 RF-13
+	@Test
+	void direccionIpDelClienteLlegaAlRegistro() {
+		given(usuarioService.registrarCliente(any(RegistroClienteRequest.class), anyString())).willReturn(sesionDeAna());
+
+		assertThat(mvc.post().uri(URL).contentType(MediaType.APPLICATION_JSON)
+				.with(peticion -> {
+					peticion.setRemoteAddr("10.0.0.9");
+					return peticion;
+				})
+				.content(json(datosValidos())).exchange()).hasStatus(HttpStatus.CREATED);
+
+		then(usuarioService).should().registrarCliente(any(RegistroClienteRequest.class), eq("10.0.0.9"));
+	}
+
+	// HU-01 RF-13
+	@Test
+	void registrosExcedidosDevuelven429() {
+		given(usuarioService.registrarCliente(any(RegistroClienteRequest.class), anyString()))
+				.willThrow(new RegistrosExcedidosException());
+
+		MvcTestResult resultado = registrar(datosValidos());
+
+		assertThat(resultado).hasStatus(HttpStatus.TOO_MANY_REQUESTS);
+		assertThat(resultado).bodyJson().extractingPath("$.codigo").isEqualTo("REGISTROS_EXCEDIDOS");
+	}
+
+	// HU-01 RF-12
 	@Test
 	void rolYEstadoEnviadosEnLaSolicitudSeIgnoran() {
-		given(usuarioService.registrarCliente(any(RegistroClienteRequest.class))).willReturn(clienteRegistrado());
+		given(usuarioService.registrarCliente(any(RegistroClienteRequest.class), anyString())).willReturn(sesionDeAna());
 		Map<String, String> datos = datosValidos();
 		datos.put("rol", "ADMINISTRADOR");
 		datos.put("estado", "DESACTIVADA");
@@ -113,19 +146,21 @@ class AuthControllerTest {
 		assertThat(registrar(datos)).hasStatus(HttpStatus.CREATED);
 	}
 
+	// HU-01 RF-7
 	@Test
 	void correoLlegaNormalizadoAlServicio() {
-		given(usuarioService.registrarCliente(any(RegistroClienteRequest.class))).willReturn(clienteRegistrado());
+		given(usuarioService.registrarCliente(any(RegistroClienteRequest.class), anyString())).willReturn(sesionDeAna());
 		Map<String, String> datos = datosValidos();
 		datos.put("correo", "  Ana@Mail.com ");
 
 		assertThat(registrar(datos)).hasStatus(HttpStatus.CREATED);
 
 		ArgumentCaptor<RegistroClienteRequest> solicitud = ArgumentCaptor.forClass(RegistroClienteRequest.class);
-		then(usuarioService).should().registrarCliente(solicitud.capture());
+		then(usuarioService).should().registrarCliente(solicitud.capture(), anyString());
 		assertThat(solicitud.getValue().correo()).isEqualTo("ana@mail.com");
 	}
 
+	// HU-01 RF-3, RF-5, RF-6, RF-9
 	@Test
 	void datosInvalidosDevuelven400ConTodosLosCamposSinLlamarAlServicio() {
 		Map<String, String> datos = datosValidos();
@@ -152,6 +187,7 @@ class AuthControllerTest {
 		then(usuarioService).shouldHaveNoInteractions();
 	}
 
+	// HU-01: cuerpo que no es JSON (caso límite)
 	@Test
 	void jsonMalFormadoDevuelveDatosInvalidos() {
 		MvcTestResult resultado = mvc.post().uri(URL).contentType(MediaType.APPLICATION_JSON)
@@ -163,9 +199,10 @@ class AuthControllerTest {
 		then(usuarioService).shouldHaveNoInteractions();
 	}
 
+	// HU-01 RF-8
 	@Test
 	void cuentaExistenteDevuelve409() {
-		given(usuarioService.registrarCliente(any(RegistroClienteRequest.class)))
+		given(usuarioService.registrarCliente(any(RegistroClienteRequest.class), anyString()))
 				.willThrow(new CuentaExistenteException());
 
 		MvcTestResult resultado = registrar(datosValidos());

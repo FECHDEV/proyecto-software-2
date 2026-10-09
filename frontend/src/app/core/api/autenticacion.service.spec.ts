@@ -133,6 +133,14 @@ const CLIENTE_REGISTRADO: Usuario = {
   fechaRegistro: '2026-09-17T10:00:00',
 };
 
+// HU-01 RF-2: el registro responde con la sesión, igual que el inicio de sesión
+const SESION_REGISTRADA: Sesion = {
+  token: 'token.de.ana',
+  tipo: 'Bearer',
+  expiracion: '2026-09-17T18:00:00Z',
+  usuario: CLIENTE_REGISTRADO,
+};
+
 const DATOS: DatosDeRegistro = {
   nombre: 'Ana',
   apellido: 'Rojas',
@@ -155,8 +163,8 @@ describe('AutenticacionService · registro', () => {
 
   afterEach(() => http.verify());
 
-  // RF-1: datos completos y válidos crean la cuenta
-  it('envía los datos del registro y devuelve el usuario creado', async () => {
+  // HU-01 RF-1, RF-2
+  it('envía los datos del registro y devuelve la sesión', async () => {
     const promesa = servicio.registrarCliente({ ...DATOS, telefono: '70011122' });
 
     const peticion = http.expectOne('/api/auth/registro');
@@ -168,12 +176,12 @@ describe('AutenticacionService · registro', () => {
       contrasena: 'secreta12',
       telefono: '70011122',
     });
-    peticion.flush(CLIENTE_REGISTRADO, { status: 201, statusText: 'Created' });
+    peticion.flush(SESION_REGISTRADA, { status: 201, statusText: 'Created' });
 
-    await expect(promesa).resolves.toEqual(CLIENTE_REGISTRADO);
+    await expect(promesa).resolves.toEqual(SESION_REGISTRADA);
   });
 
-  // RF-5: el correo se guarda en minúsculas y sin espacios alrededor
+  // HU-01 RF-7: el correo se guarda en minúsculas y sin espacios alrededor
   it('normaliza el correo y recorta los espacios de los demás datos', async () => {
     const promesa = servicio.registrarCliente({
       ...DATOS,
@@ -190,18 +198,18 @@ describe('AutenticacionService · registro', () => {
       correo: 'ana@mail.com',
       telefono: '70011122',
     });
-    peticion.flush(CLIENTE_REGISTRADO, { status: 201, statusText: 'Created' });
+    peticion.flush(SESION_REGISTRADA, { status: 201, statusText: 'Created' });
 
     await promesa;
   });
 
-  // RF-8: la cuenta se registra sin teléfono
+  // HU-01 RF-10: la cuenta se registra sin teléfono
   it('envía el teléfono como null cuando queda vacío', async () => {
     const promesa = servicio.registrarCliente({ ...DATOS, telefono: '   ' });
 
     const peticion = http.expectOne('/api/auth/registro');
     expect(peticion.request.body.telefono).toBeNull();
-    peticion.flush(CLIENTE_REGISTRADO, { status: 201, statusText: 'Created' });
+    peticion.flush(SESION_REGISTRADA, { status: 201, statusText: 'Created' });
 
     await promesa;
   });
@@ -211,7 +219,7 @@ describe('AutenticacionService · registro', () => {
 
     const peticion = http.expectOne('/api/auth/registro');
     expect(peticion.request.body.contrasena).toBe('  Secreta12  ');
-    peticion.flush(CLIENTE_REGISTRADO, { status: 201, statusText: 'Created' });
+    peticion.flush(SESION_REGISTRADA, { status: 201, statusText: 'Created' });
 
     await promesa;
   });

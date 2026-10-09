@@ -1,10 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, NavigationExtras, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 
 import { AutenticacionService } from '../../core/api/autenticacion.service';
 import { ErrorApi } from '../../core/modelos/error-api';
 import { DatosDeRegistro } from '../../core/modelos/registro';
+import { Sesion } from '../../core/modelos/sesion';
 import { Usuario } from '../../core/modelos/usuario';
+import { SesionService } from '../../core/sesion/sesion.service';
 import { RegistroPage } from './registro.page';
 
 const CLIENTE: Usuario = {
@@ -18,30 +20,42 @@ const CLIENTE: Usuario = {
   fechaRegistro: '2026-09-17T10:00:00',
 };
 
+const SESION: Sesion = { token: 'token.de.ana', tipo: 'Bearer', expiracion: '2026-10-09T23:00:00Z', usuario: CLIENTE };
+
 class AutenticacionFalsa {
-  respuesta: Promise<Usuario> = Promise.resolve(CLIENTE);
+  respuesta: Promise<Sesion> = Promise.resolve(SESION);
   llamadas: DatosDeRegistro[] = [];
 
-  registrarCliente(datos: DatosDeRegistro): Promise<Usuario> {
+  registrarCliente(datos: DatosDeRegistro): Promise<Sesion> {
     this.llamadas.push(datos);
     return this.respuesta;
   }
 }
 
+class SesionFalsa {
+  iniciadas: Sesion[] = [];
+
+  iniciar(sesion: Sesion): void {
+    this.iniciadas.push(sesion);
+  }
+}
+
 // Cuerpo como el que arma ManejadorErrores (ProblemDetail + código propio)
-function rechaza(error: ErrorApi): Promise<Usuario> {
+function rechaza(error: ErrorApi): Promise<Sesion> {
   return Promise.reject(error);
 }
 
 describe('RegistroPage', () => {
   let fijo: ComponentFixture<RegistroPage>;
   let autenticacion: AutenticacionFalsa;
-  let navegaciones: Array<{ ruta: unknown[]; extras?: NavigationExtras }>;
+  let sesion: SesionFalsa;
+  let navegaciones: string[];
 
   // El destino llega del inicio de sesión: a dónde iba la persona antes de crear la cuenta
   async function preparar(destino: string | null = null) {
     TestBed.resetTestingModule();
     autenticacion = new AutenticacionFalsa();
+    sesion = new SesionFalsa();
     navegaciones = [];
 
     await TestBed.configureTestingModule({
@@ -49,6 +63,7 @@ describe('RegistroPage', () => {
       providers: [
         provideRouter([]),
         { provide: AutenticacionService, useValue: autenticacion },
+        { provide: SesionService, useValue: sesion },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { queryParamMap: convertToParamMap(destino === null ? {} : { destino }) } },
@@ -57,8 +72,8 @@ describe('RegistroPage', () => {
     }).compileComponents();
 
     const router = TestBed.inject(Router);
-    router.navigate = (ruta: unknown[], extras?: NavigationExtras) => {
-      navegaciones.push({ ruta, extras });
+    router.navigateByUrl = (url) => {
+      navegaciones.push(String(url));
       return Promise.resolve(true);
     };
 
@@ -116,21 +131,23 @@ describe('RegistroPage', () => {
     return enlace?.getAttribute('href') ?? null;
   }
 
-  // quien iba a comprar crea la cuenta y, al entrar, vuelve al tipo elegido
-  it('con destino, al crear la cuenta lo pasa a iniciar sesión', async () => {
+  // HU-01 RF-2: quien iba a comprar crea la cuenta y vuelve a donde estaba
+  it('con destino, al crear la cuenta vuelve a ese destino', async () => {
     await preparar('/catalogo/5/entradas/1');
     completar();
 
     await enviar();
 
-    expect(navegaciones).toEqual([
-      {
-        ruta: ['/inicio-sesion'],
-        extras: {
-          queryParams: { aviso: 'cuenta-creada', correo: 'ana@mail.com', destino: '/catalogo/5/entradas/1' },
-        },
-      },
-    ]);
+    expect(navegaciones).toEqual(['/catalogo/5/entradas/1']);
+  });
+
+  // HU-01 RF-2
+  it('sin destino, al crear la cuenta va al inicio', async () => {
+    completar();
+
+    await enviar();
+
+    expect(navegaciones).toEqual(['/']);
   });
 
   it('con destino, el enlace a iniciar sesión también lo lleva', async () => {
@@ -139,13 +156,14 @@ describe('RegistroPage', () => {
     expect(iniciaSesion()).toBe('/inicio-sesion?destino=%2Fcatalogo%2F5%2Fentradas%2F1');
   });
 
-  it('un destino externo no viaja', async () => {
+  // HU-01 RF-2
+  it('un destino externo no se sigue: va al inicio', async () => {
     await preparar('//sitio-ajeno.example/phishing');
     completar();
 
     await enviar();
 
-    expect(navegaciones[0].extras).toEqual({ queryParams: { aviso: 'cuenta-creada', correo: 'ana@mail.com' } });
+    expect(navegaciones).toEqual(['/']);
     expect(iniciaSesion()).toBe('/inicio-sesion');
   });
 
@@ -166,8 +184,8 @@ describe('RegistroPage', () => {
     expect(campo('contrasena').type).toBe('password');
   });
 
-  // RF-1: datos completos y válidos crean la cuenta
-  it('con los datos completos registra y lleva a iniciar sesión con el correo', async () => {
+  // HU-01 RF-1, RF-2
+  it('con los datos completos crea la cuenta y deja la sesión iniciada', async () => {
     completar({ telefono: '70011122' });
 
     await enviar();
@@ -181,15 +199,11 @@ describe('RegistroPage', () => {
         telefono: '70011122',
       },
     ]);
-    expect(navegaciones).toEqual([
-      {
-        ruta: ['/inicio-sesion'],
-        extras: { queryParams: { aviso: 'cuenta-creada', correo: 'ana@mail.com' } },
-      },
-    ]);
+    expect(sesion.iniciadas).toEqual([SESION]);
+    expect(navegaciones).toEqual(['/']);
   });
 
-  // RF-8: la cuenta se puede registrar sin teléfono
+  // HU-01 RF-10: la cuenta se puede registrar sin teléfono
   it('registra sin teléfono', async () => {
     completar();
 
@@ -199,7 +213,7 @@ describe('RegistroPage', () => {
     expect(navegaciones.length).toBe(1);
   });
 
-  // RF-10: nombre, apellido, correo y contraseña son obligatorios
+  // HU-01 RF-3: nombre, apellido, correo y contraseña son obligatorios
   it('con todo vacío no llama a la API y marca los cuatro campos obligatorios', async () => {
     await enviar();
 
@@ -211,7 +225,7 @@ describe('RegistroPage', () => {
     expect(navegaciones).toEqual([]);
   });
 
-  // RF-11
+  // HU-01 RF-5
   it('avisa cuando el correo no tiene formato de correo', async () => {
     completar({ correo: 'ana-sin-arroba' });
 
@@ -232,7 +246,7 @@ describe('RegistroPage', () => {
     expect(texto()).not.toContain('Al menos 8 caracteres');
   });
 
-  // RF-12: mínimo de 8 caracteres
+  // HU-01 RF-6: mínimo de 8 caracteres
   it('frena una contraseña de 7 caracteres sin llamar a la API', async () => {
     completar({ contrasena: 'siete12' });
 
@@ -242,7 +256,7 @@ describe('RegistroPage', () => {
     expect(texto()).toContain('8 caracteres');
   });
 
-  // RF-12: máximo de 72 bytes, que es lo que admite BCrypt
+  // HU-01 RF-6: máximo de 72 bytes, que es lo que admite BCrypt
   it('frena una contraseña de más de 72 bytes', async () => {
     completar({ contrasena: 'a'.repeat(73) });
 
@@ -252,6 +266,7 @@ describe('RegistroPage', () => {
     expect(texto()).toContain('demasiado larga');
   });
 
+  // HU-01 RF-6
   it('acepta una contraseña de exactamente 72 bytes', async () => {
     completar({ contrasena: 'a'.repeat(72) });
 
@@ -263,7 +278,7 @@ describe('RegistroPage', () => {
     expect(autenticacion.llamadas.length).toBe(1);
   });
 
-  // RF-14: longitudes de la tabla usuario
+  // HU-01 RF-4: longitudes de la tabla usuario
   it('frena un nombre de más de 80 caracteres', async () => {
     completar({ nombre: 'a'.repeat(81) });
 
@@ -273,7 +288,7 @@ describe('RegistroPage', () => {
     expect(texto()).toContain('80 caracteres');
   });
 
-  // RF-9: el backend indica todos los campos a corregir, y cada mensaje se
+  // HU-01 RF-9: el backend indica todos los campos a corregir, y cada mensaje se
   // muestra debajo del campo que le toca
   it('reparte los errores del backend campo por campo', async () => {
     autenticacion.respuesta = rechaza({
@@ -314,7 +329,7 @@ describe('RegistroPage', () => {
     expect(texto()).not.toContain('Revisa los datos marcados');
   });
 
-  // FA-02: el aviso vale para el correo que se envió, no para el que se está
+  // HU-01 RF-8: el aviso vale para el correo que se envió, no para el que se está
   // escribiendo ahora
   it('el aviso de cuenta existente desaparece al cambiar el correo', async () => {
     autenticacion.respuesta = rechaza({ status: 409, detail: 'x', codigo: 'CUENTA_EXISTENTE' });
@@ -328,7 +343,7 @@ describe('RegistroPage', () => {
     expect(texto()).not.toContain('Ya existe una cuenta con ese correo.');
   });
 
-  // Campos con solo espacios son dato incompleto, igual que vacíos
+  // HU-01 RF-3: campos con solo espacios son dato incompleto, igual que vacíos
   it('un nombre de solo espacios no llega a la API', async () => {
     completar({ nombre: '   ' });
 
@@ -342,7 +357,7 @@ describe('RegistroPage', () => {
   // chocar contra un 409
   it('si falla la navegación no dice que falló el registro', async () => {
     const router = TestBed.inject(Router);
-    router.navigate = () => Promise.reject(new Error('navegación interrumpida'));
+    router.navigateByUrl = () => Promise.reject(new Error('navegación interrumpida'));
     // El fallo llega un tick después de que submit() resuelve
     completar();
 
@@ -357,7 +372,7 @@ describe('RegistroPage', () => {
     expect(fijo.nativeElement.querySelector('button[type="submit"]').disabled).toBe(false);
   });
 
-  // RF-15 (FA-02): el correo ya pertenece a una cuenta
+  // HU-01 RF-8: el correo ya pertenece a una cuenta
   it('avisa que ya existe una cuenta con ese correo', async () => {
     autenticacion.respuesta = rechaza({
       status: 409,
@@ -370,7 +385,32 @@ describe('RegistroPage', () => {
 
     expect(texto()).toContain('Ya existe una cuenta con ese correo.');
     expect(texto()).not.toContain('detalle técnico');
+    expect(sesion.iniciadas).toEqual([]);
     expect(navegaciones).toEqual([]);
+  });
+
+  // HU-01 RF-8: el correo es el único dato a cambiar
+  it('con cuenta existente el foco va al correo', async () => {
+    autenticacion.respuesta = rechaza({ status: 409, detail: 'x', codigo: 'CUENTA_EXISTENTE' });
+    completar();
+
+    await enviar();
+
+    expect(document.activeElement).toBe(campo('correo'));
+  });
+
+  // HU-01 RF-8: un doble clic no manda dos registros
+  it('deshabilita el botón mientras se envía', async () => {
+    let responder: (sesion: Sesion) => void = () => undefined;
+    autenticacion.respuesta = new Promise((resolver) => (responder = resolver));
+    completar();
+
+    fijo.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+    fijo.detectChanges();
+
+    expect(fijo.nativeElement.querySelector('button[type="submit"]').disabled).toBe(true);
+    responder(SESION);
+    await fijo.whenStable();
   });
 
   it('avisa cuando no se pudo contactar al servidor', async () => {

@@ -29,6 +29,11 @@ describe('mensajeDeError', () => {
     expect(mensajeDeError(error('INTENTOS_EXCEDIDOS'))).toContain('15 minutos');
   });
 
+  // HU-01 RF-13
+  it('traduce REGISTROS_EXCEDIDOS', () => {
+    expect(mensajeDeError(error('REGISTROS_EXCEDIDOS'))).toContain('una hora');
+  });
+
   it('traduce el conflicto por operación simultánea', () => {
     expect(mensajeDeError(error('OPERACION_SIMULTANEA'))).toContain('Vuelve a intentar');
   });

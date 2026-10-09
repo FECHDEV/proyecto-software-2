@@ -5,7 +5,6 @@ import { firstValueFrom } from 'rxjs';
 import { ErrorApi, esErrorApi } from '../modelos/error-api';
 import { DatosDeRegistro } from '../modelos/registro';
 import { Sesion } from '../modelos/sesion';
-import { Usuario } from '../modelos/usuario';
 
 // Llamadas a /api/auth. El proxy de desarrollo las reenvía al backend, así que
 // nunca se escribe una dirección absoluta.
@@ -31,11 +30,12 @@ export class AutenticacionService {
 	// El backend vuelve a validar y a normalizar todo esto: acá se manda limpio
 	// para que un espacio de más no termine guardado en la cuenta.
 	// El teléfono es opcional y, si queda vacío, viaja como null.
-	async registrarCliente(datos: DatosDeRegistro): Promise<Usuario> {
+	// Responde con la sesión de la cuenta nueva, como el inicio de sesión.
+	async registrarCliente(datos: DatosDeRegistro): Promise<Sesion> {
 		const telefono = datos.telefono.trim();
 		try {
 			return await firstValueFrom(
-				this.http.post<Usuario>('/api/auth/registro', {
+				this.http.post<Sesion>('/api/auth/registro', {
 					nombre: datos.nombre.trim(),
 					apellido: datos.apellido.trim(),
 					correo: datos.correo.trim().toLowerCase(),

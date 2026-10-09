@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { cambiosSinGuardarGuard } from './core/guards/cambios-sin-guardar.guard';
 import { rolGuard } from './core/guards/rol.guard';
 import { sesionGuard } from './core/guards/sesion.guard';
+import { visitanteGuard } from './core/guards/visitante.guard';
 import { MARCA } from './core/marca';
 
 // Cada pantalla se carga cuando hace falta, para que el paquete inicial no
@@ -17,6 +18,7 @@ export const routes: Routes = [
   {
     path: 'registro',
     title: `Crear cuenta · ${MARCA.nombre}`,
+    canActivate: [visitanteGuard],
     loadComponent: () => import('./features/registro/registro.page').then((m) => m.RegistroPage),
   },
   {

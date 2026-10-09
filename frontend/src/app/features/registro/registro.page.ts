@@ -21,7 +21,8 @@ import {
 	primerCampoConError,
 	primerCampoRechazado,
 } from '../../shared/formularios/primer-campo-con-error';
-import { parametrosDelDestino } from '../../shared/navegacion/destino-interno';
+import { SesionService } from '../../core/sesion/sesion.service';
+import { destinoInterno, parametrosDelDestino } from '../../shared/navegacion/destino-interno';
 import { sinEspaciosSolos } from '../../shared/formularios/reglas-de-campo';
 import { bytesUtf8 } from '../../shared/validacion/reglas';
 
@@ -81,13 +82,13 @@ const esquema = schema<DatosDeRegistro>((ruta) => {
 })
 export class RegistroPage {
 	private readonly autenticacion = inject(AutenticacionService);
+	private readonly sesion = inject(SesionService);
 	private readonly router = inject(Router);
 	private readonly elemento = inject(ElementRef<HTMLElement>);
 
 	// A dónde iba la persona antes de crear la cuenta: vuelve ahí al entrar
-	protected readonly paraIniciarSesion = parametrosDelDestino(
-		inject(ActivatedRoute).snapshot.queryParamMap.get('destino'),
-	);
+	private readonly destinoPedido = inject(ActivatedRoute).snapshot.queryParamMap.get('destino');
+	protected readonly paraIniciarSesion = parametrosDelDestino(this.destinoPedido);
 
 	private readonly datos = signal<DatosDeRegistro>({ ...SIN_DATOS });
 
@@ -124,21 +125,17 @@ export class RegistroPage {
 			action: async (formulario) => {
 				const datos = formulario().value();
 				try {
-					await this.autenticacion.registrarCliente(datos);
+					// HU-01 RF-2: la cuenta nueva queda con la sesión iniciada
+					this.sesion.iniciar(await this.autenticacion.registrarCliente(datos));
 				} catch (error: unknown) {
 					this.mostrarError(datos, comoError(error));
 					return undefined;
 				}
 				// Fuera del try: la cuenta ya está creada, y un problema al navegar
-				// no puede contarse como un registro fallido
+				// no puede contarse como un registro fallido. Por URL y no por
+				// segmentos: el destino puede traer sus propios parámetros.
 				try {
-					await this.router.navigate(['/inicio-sesion'], {
-						queryParams: {
-							aviso: 'cuenta-creada',
-							correo: datos.correo.trim().toLowerCase(),
-							...this.paraIniciarSesion,
-						},
-					});
+					await this.router.navigateByUrl(destinoInterno(this.destinoPedido) ?? '/');
 				} catch {
 					// Navegar puede fallar por fuera de este caso de uso. La cuenta ya
 					// está creada, así que solo hay que no dejar la pantalla trabada.

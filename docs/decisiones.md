@@ -169,6 +169,18 @@ archivo versionado, como haría un `data.sql`.
 - El correo se guarda en minúsculas y sin espacios alrededor, y los duplicados
   se buscan igual: `Juan@mail.com` y `juan@mail.com` son la misma cuenta. El
   inicio de sesión lo normaliza del mismo modo.
+- *08/10/2026 (HU-01).* **Al crear la cuenta, la sesión queda iniciada:** el
+  registro responde con un token como el inicio de sesión, y la persona vuelve
+  a la pantalla de la que venía. **Motivo:** volver a escribir la contraseña
+  recién elegida era fricción antes de comprar.
+- *08/10/2026 (HU-01).* **Límite de registros:** 5 cuentas creadas desde la
+  misma IP en 1 hora bloquean el registro desde esa IP durante 1 hora contada
+  desde la quinta (429), como el bloqueo del inicio de sesión. Solo cuentan los registros exitosos; los contadores viven en
+  memoria, como los del inicio de sesión. **Motivo:** el registro es público
+  y sin límite permite crear cuentas falsas en masa.
+- *08/10/2026 (HU-01).* El teléfono es opcional y de texto libre; el contacto
+  para la entrega se pide al confirmar el pedido (HU-12). Con la sesión
+  iniciada, «Crear cuenta» lleva al inicio.
 
 ### Inicio de sesión
 

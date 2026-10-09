@@ -270,17 +270,10 @@ describe('InicioSesionPage', () => {
     expect(texto().toLowerCase()).not.toContain('universidad');
   });
 
-  // se llega acá desde el registro, con la cuenta recién creada
-  describe('vuelta desde el registro', () => {
-    it('confirma que la cuenta quedó creada y precarga el correo', async () => {
-      parametros = { aviso: 'cuenta-creada', correo: 'ana@mail.com' };
-      await preparar();
-
-      expect(texto()).toContain('Tu cuenta quedó creada');
-      expect(campo('correo').value).toBe('ana@mail.com');
-    });
-
-    it('avisa también cuando se viene de restablecer la contraseña', async () => {
+  // se llega acá desde el restablecimiento de la contraseña (el registro ya
+  // entra directo: HU-01 RF-2)
+  describe('avisos al llegar', () => {
+    it('avisa cuando se viene de restablecer la contraseña', async () => {
       parametros = { aviso: 'contrasena-actualizada' };
       await preparar();
 
@@ -304,45 +297,37 @@ describe('InicioSesionPage', () => {
     });
 
     it('sin esos parámetros la pantalla queda como siempre', () => {
-      expect(texto()).not.toContain('Tu cuenta quedó creada');
+      expect(texto()).not.toContain('quedó');
       expect(campo('correo').value).toBe('');
     });
 
-    // El parámetro viene de la URL: cualquiera puede escribir lo que quiera ahí
-    it('ignora un correo que no parece un correo', async () => {
-      parametros = { aviso: 'cuenta-creada', correo: '<script>' };
-      await preparar();
-
-      expect(campo('correo').value).toBe('');
-    });
-
-    // El correo no tiene por qué quedar en el historial, ni el aviso volver a
-    // aparecer cada vez que se recargue esa dirección
-    it('saca los parámetros de la URL después de leerlos', async () => {
-      parametros = { aviso: 'cuenta-creada', correo: 'ana@mail.com' };
+    // El aviso no tiene por qué volver a aparecer cada vez que se recargue esa
+    // dirección
+    it('saca el aviso de la URL después de leerlo', async () => {
+      parametros = { aviso: 'contrasena-actualizada' };
       await preparar();
 
       expect(TestBed.inject(Location).path()).toBe('/inicio-sesion');
-      expect(campo('correo').value).toBe('ana@mail.com');
     });
 
     it('conserva el destino al limpiar la URL', async () => {
-      parametros = { aviso: 'cuenta-creada', correo: 'ana@mail.com' };
+      parametros = { aviso: 'contrasena-actualizada' };
       destino = '/usuarios';
       await preparar();
 
       expect(TestBed.inject(Location).path()).toBe('/inicio-sesion?destino=%2Fusuarios');
     });
 
-    it('el aviso de alta se va al intentar entrar', async () => {
-      parametros = { aviso: 'cuenta-creada', correo: 'ana@mail.com' };
+    it('el aviso se va al intentar entrar', async () => {
+      parametros = { aviso: 'contrasena-actualizada' };
       await preparar();
       autenticacion.respuesta = rechaza('CREDENCIALES_INCORRECTAS');
+      escribir('correo', 'ana@mail.com');
       escribir('contrasena', 'incorrecta');
 
       await enviar();
 
-      expect(texto()).not.toContain('Tu cuenta quedó creada');
+      expect(texto()).not.toContain('Tu contraseña quedó actualizada');
       expect(texto()).toContain('El correo o la contraseña no son correctos.');
     });
 
