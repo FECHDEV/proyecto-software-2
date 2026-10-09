@@ -113,6 +113,7 @@ describe('AppComponent', () => {
     expect(fijo.nativeElement.querySelector('button.salir').textContent?.trim()).toBe('Cerrar sesión');
   });
 
+  // HU-02 RF-11
   it('«Cerrar sesión» la cierra', () => {
     const sesion = TestBed.inject(SesionService);
     sesion.iniciar(sesionVigente());

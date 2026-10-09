@@ -81,6 +81,7 @@ class SeguridadJwtTest {
 		return mvc.get().uri(uri).header(HttpHeaders.AUTHORIZATION, authorization).exchange();
 	}
 
+	// HU-02 RF-9
 	@Test
 	void peticionSinTokenDevuelve401NoAutenticado() {
 		MvcTestResult resultado = mvc.get().uri("/api/prueba/sesion").exchange();
@@ -92,6 +93,7 @@ class SeguridadJwtTest {
 		then(autenticacionService).shouldHaveNoInteractions();
 	}
 
+	// HU-02 RF-9
 	@Test
 	void tokenValidoDeCuentaActivaAtiendeLaPeticionComoEseUsuario() {
 		given(autenticacionService.usuarioActivo(7L)).willReturn(Optional.of(cliente(7)));
@@ -103,6 +105,7 @@ class SeguridadJwtTest {
 		assertThat(resultado).bodyJson().extractingPath("$.roles").asArray().containsExactly("ROLE_CLIENTE");
 	}
 
+	// HU-02 RF-9
 	@Test
 	void rolSeTomaDeLaCuentaYNoDelToken() {
 		Usuario ahoraAdministrador = conId(Usuario.crearAdministrador("Ana", "Rojas", "ana@mail.com", "$2a$10$hash",
@@ -114,6 +117,7 @@ class SeguridadJwtTest {
 		assertThat(resultado).bodyJson().extractingPath("$.roles").asArray().containsExactly("ROLE_ADMINISTRADOR");
 	}
 
+	// HU-02 RF-9
 	@Test
 	void cuentaDesactivadaOInexistenteDevuelve401AunqueElTokenSigaVigente() {
 		given(autenticacionService.usuarioActivo(7L)).willReturn(Optional.empty());
@@ -125,6 +129,7 @@ class SeguridadJwtTest {
 		then(autenticacionService).should().usuarioActivo(7L);
 	}
 
+	// HU-02 RF-9
 	@Test
 	void contrasenaCambiadaDespuesDeEmitirElTokenDevuelve401() {
 		Usuario conContrasenaNueva = cliente(7);
@@ -137,6 +142,7 @@ class SeguridadJwtTest {
 		assertThat(resultado).bodyJson().extractingPath("$.codigo").isEqualTo("NO_AUTENTICADO");
 	}
 
+	// HU-02 RF-9
 	@Test
 	void tokenVencidoOInvalidoDevuelve401() {
 		String vencido = new TokenJwt(propiedades,
@@ -148,6 +154,7 @@ class SeguridadJwtTest {
 		then(autenticacionService).shouldHaveNoInteractions();
 	}
 
+	// HU-02 RF-9
 	@Test
 	void tokenSinPrefijoBearerSeIgnora() {
 		MvcTestResult resultado = pedir("/api/prueba/sesion", tokenJwt.emitir(cliente(7)).token());

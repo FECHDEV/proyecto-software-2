@@ -12,6 +12,7 @@ export const routes: Routes = [
   {
     path: 'inicio-sesion',
     title: `Iniciar sesión · ${MARCA.nombre}`,
+    canActivate: [visitanteGuard],
     loadComponent: () =>
       import('./features/inicio-sesion/inicio-sesion.page').then((m) => m.InicioSesionPage),
   },

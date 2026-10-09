@@ -119,7 +119,7 @@ describe('InicioSesionPage', () => {
     expect(campo('contrasena').type).toBe('password');
   });
 
-  // RF-12: sin datos no se intenta autenticar
+  // HU-02 RF-8: sin datos no se intenta autenticar
   it('con los campos vacíos no llama a la API y marca los dos campos', async () => {
     await enviar();
 
@@ -128,6 +128,7 @@ describe('InicioSesionPage', () => {
     expect(texto()).toContain('Escribe tu contraseña');
   });
 
+  // HU-02 RF-8
   it('avisa cuando el correo no tiene formato de correo', async () => {
     escribir('correo', 'esto-no-es-un-correo');
     escribir('contrasena', 'secreta12');
@@ -138,7 +139,7 @@ describe('InicioSesionPage', () => {
     expect(texto()).toContain('formato');
   });
 
-  // RF-1: entra y guarda la sesión
+  // HU-02 RF-1: entra y guarda la sesión
   it('con credenciales correctas inicia la sesión y entra', async () => {
     escribir('correo', 'ana@mail.com');
     escribir('contrasena', 'secreta12');
@@ -150,7 +151,7 @@ describe('InicioSesionPage', () => {
     expect(navegaciones).toEqual(['/']);
   });
 
-  // RF-11: mismo mensaje exista o no el correo
+  // HU-02 RF-3: mismo mensaje exista o no el correo
   it('muestra el mensaje de credenciales incorrectas y no entra', async () => {
     autenticacion.respuesta = rechaza('CREDENCIALES_INCORRECTAS');
     escribir('correo', 'ana@mail.com');
@@ -164,7 +165,7 @@ describe('InicioSesionPage', () => {
     expect(navegaciones).toEqual([]);
   });
 
-  // RF-14: cuenta desactivada
+  // HU-02 RF-4: cuenta desactivada
   it('muestra el mensaje propio de la cuenta desactivada', async () => {
     autenticacion.respuesta = rechaza('CUENTA_DESACTIVADA');
     escribir('correo', 'ana@mail.com');
@@ -175,7 +176,7 @@ describe('InicioSesionPage', () => {
     expect(texto()).toContain('desactivada');
   });
 
-  // RF-22: bloqueo por intentos fallidos
+  // HU-02 RF-5: bloqueo por intentos fallidos
   it('muestra cuánto hay que esperar tras demasiados intentos', async () => {
     autenticacion.respuesta = rechaza('INTENTOS_EXCEDIDOS');
     escribir('correo', 'ana@mail.com');
@@ -205,6 +206,7 @@ describe('InicioSesionPage', () => {
   });
 
   // El guard deja en la URL a dónde iba la persona
+  // HU-02 RF-1
   it('vuelve al destino que la persona quería', async () => {
     destino = '/usuarios';
     await preparar();
@@ -229,6 +231,7 @@ describe('InicioSesionPage', () => {
   });
 
   // Un destino externo sería un redirect abierto
+  // HU-02 RF-1
   it('ignora un destino que apunte fuera del sitio', async () => {
     destino = '//sitio-ajeno.example/phishing';
     await preparar();
@@ -266,6 +269,45 @@ describe('InicioSesionPage', () => {
     expect(crearCuenta()).toBe('/registro');
   });
 
+  function botonVerContrasena(): HTMLButtonElement {
+    return fijo.nativeElement.querySelector('button.ver-contrasena');
+  }
+
+  // HU-02 RF-13
+  it('la contraseña empieza oculta', () => {
+    expect(campo('contrasena').type).toBe('password');
+    expect(botonVerContrasena().getAttribute('aria-label')).toBe('Mostrar contraseña');
+  });
+
+  // HU-02 RF-13
+  it('mostrar contraseña la deja ver y ofrece ocultarla', () => {
+    escribir('contrasena', 'secreta12');
+
+    botonVerContrasena().click();
+    fijo.detectChanges();
+
+    expect(campo('contrasena').type).toBe('text');
+    expect(campo('contrasena').value).toBe('secreta12');
+    expect(botonVerContrasena().getAttribute('aria-label')).toBe('Ocultar contraseña');
+
+    botonVerContrasena().click();
+    fijo.detectChanges();
+
+    expect(campo('contrasena').type).toBe('password');
+  });
+
+  // HU-02 RF-13: el botón está dentro del formulario, pero no lo envía
+  it('mostrar contraseña no envía el formulario', () => {
+    escribir('correo', 'ana@mail.com');
+    escribir('contrasena', 'secreta12');
+
+    botonVerContrasena().click();
+    fijo.detectChanges();
+
+    expect(botonVerContrasena().type).toBe('button');
+    expect(navegaciones).toEqual([]);
+  });
+
   it('no menciona la universidad', () => {
     expect(texto().toLowerCase()).not.toContain('universidad');
   });
@@ -273,6 +315,27 @@ describe('InicioSesionPage', () => {
   // se llega acá desde el restablecimiento de la contraseña (el registro ya
   // entra directo: HU-01 RF-2)
   describe('avisos al llegar', () => {
+    // HU-02 RF-10
+    it('avisa que la sesión se cerró', async () => {
+      parametros = { aviso: 'sesion-cerrada' };
+      await preparar();
+
+      expect(texto()).toContain('Tu sesión se cerró. Inicia sesión de nuevo.');
+    });
+
+    // HU-02 RF-10: al volver a entrar, sigue donde estaba
+    it('después del aviso de sesión cerrada vuelve al destino', async () => {
+      parametros = { aviso: 'sesion-cerrada' };
+      destino = '/mis-datos';
+      await preparar();
+      escribir('correo', 'ana@mail.com');
+      escribir('contrasena', 'secreta12');
+
+      await enviar();
+
+      expect(navegaciones).toEqual(['/mis-datos']);
+    });
+
     it('avisa cuando se viene de restablecer la contraseña', async () => {
       parametros = { aviso: 'contrasena-actualizada' };
       await preparar();

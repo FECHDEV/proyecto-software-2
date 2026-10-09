@@ -45,6 +45,7 @@ describe('tokenInterceptor', () => {
 
   afterEach(() => servidor.verify());
 
+  // HU-02 RF-9
   it('agrega el token a las peticiones protegidas', () => {
     sesion.iniciar(sesionVigente());
 

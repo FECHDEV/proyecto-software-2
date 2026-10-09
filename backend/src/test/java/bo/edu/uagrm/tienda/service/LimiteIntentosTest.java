@@ -28,6 +28,7 @@ class LimiteIntentosTest {
 		}
 	}
 
+	// HU-02 RF-5
 	@Test
 	void cuatroFallosTodaviaPermitenElQuintoIntento() {
 		fallar(4, CORREO, IP);
@@ -35,6 +36,7 @@ class LimiteIntentosTest {
 		assertThatCode(() -> limite.registrarIntento(CORREO, IP)).doesNotThrowAnyException();
 	}
 
+	// HU-02 RF-5
 	@Test
 	void quintoFalloBloqueaEseCorreoDesdeEsaIpDuranteQuinceMinutos() {
 		fallar(5, CORREO, IP);
@@ -46,6 +48,7 @@ class LimiteIntentosTest {
 		assertThatCode(() -> limite.registrarIntento(CORREO, IP)).doesNotThrowAnyException();
 	}
 
+	// HU-02 RF-5
 	@Test
 	void otroCorreoUOtraIpNoQuedanBloqueados() {
 		fallar(5, CORREO, IP);
@@ -54,6 +57,7 @@ class LimiteIntentosTest {
 		assertThatCode(() -> limite.registrarIntento("beto@mail.com", IP)).doesNotThrowAnyException();
 	}
 
+	// HU-02 RF-5
 	@Test
 	void fallosFueraDeLaVentanaDeQuinceMinutosNoSeAcumulan() {
 		fallar(4, CORREO, IP);
@@ -63,6 +67,7 @@ class LimiteIntentosTest {
 		assertThatCode(() -> limite.registrarIntento(CORREO, IP)).doesNotThrowAnyException();
 	}
 
+	// HU-02 RF-5
 	@Test
 	void cincoFallosDentroDeCualquierVentanaDeQuinceMinutosBloquean() {
 		fallar(1, CORREO, IP);
@@ -75,6 +80,7 @@ class LimiteIntentosTest {
 		assertThatThrownBy(() -> limite.registrarIntento(CORREO, IP)).isInstanceOf(IntentosExcedidosException.class);
 	}
 
+	// HU-02 RF-5
 	@Test
 	void intentoAnuladoNoCuenta() {
 		fallar(4, CORREO, IP);
@@ -87,6 +93,7 @@ class LimiteIntentosTest {
 		assertThatThrownBy(() -> limite.registrarIntento(CORREO, IP)).isInstanceOf(IntentosExcedidosException.class);
 	}
 
+	// HU-02 RF-6
 	@Test
 	void inicioDeSesionExitosoReiniciaElConteo() {
 		fallar(4, CORREO, IP);
@@ -96,6 +103,7 @@ class LimiteIntentosTest {
 		assertThatCode(() -> limite.registrarIntento(CORREO, IP)).doesNotThrowAnyException();
 	}
 
+	// HU-02 RF-5
 	@Test
 	void terminadoElBloqueoEmpiezaUnConteoNuevo() {
 		fallar(5, CORREO, IP);

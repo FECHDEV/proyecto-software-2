@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AutenticacionService } from '../../core/api/autenticacion.service';
 import { mensajeDeError, mensajeDelCampo } from '../../core/api/mensajes-error';
 import { comoError, ErrorApi } from '../../core/modelos/error-api';
+import { SesionService } from '../../core/sesion/sesion.service';
 import { enfocarCampo, primerCampoRechazado } from '../../shared/formularios/primer-campo-con-error';
 import { bytesUtf8 } from '../../shared/validacion/reglas';
 
@@ -33,6 +34,7 @@ const esquema = schema<ContrasenaNueva>((ruta) => {
 export class RestablecerPage {
 	private readonly autenticacion = inject(AutenticacionService);
 	private readonly router = inject(Router);
+	private readonly sesion = inject(SesionService);
 	private readonly ruta = inject(ActivatedRoute);
 	private readonly elemento = inject(ElementRef<HTMLElement>);
 
@@ -82,6 +84,9 @@ export class RestablecerPage {
 				}
 				// Fuera del try: la contraseña ya cambió, y un problema al navegar no
 				// puede contarse como un restablecimiento fallido
+				// Con una sesión abierta en este navegador, su token ya no vale (cambió la
+				// contraseña): se cierra para que «Iniciar sesión» no lleve al inicio
+				this.sesion.cerrar();
 				try {
 					await this.router.navigate(['/inicio-sesion'], {
 						queryParams: { aviso: 'contrasena-actualizada' },

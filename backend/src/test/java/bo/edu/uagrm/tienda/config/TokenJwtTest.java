@@ -45,6 +45,7 @@ class TokenJwtTest {
 		return tokenJwt.leer(token).map(TokenLeido::idUsuario);
 	}
 
+	// HU-02 RF-1
 	@Test
 	void tokenEmitidoIdentificaAlUsuarioYVenceEnOchoHoras() {
 		Usuario ana = clienteConId(7, HASH);
@@ -72,6 +73,7 @@ class TokenJwtTest {
 		assertThat(claims.get("hc", String.class)).hasSize(22).doesNotContain("$2a", "hashDeLaContrasenaActual");
 	}
 
+	// HU-02 RF-9
 	@Test
 	void tokenEmitidoAntesDeUnCambioDeContrasenaNoCorrespondeALaCuenta() {
 		TokenJwt emisor = tokenJwt(CLAVE, AHORA);
@@ -82,6 +84,7 @@ class TokenJwtTest {
 				.hasValueSatisfying(leido -> assertThat(emisor.correspondeA(leido, conContrasenaNueva)).isFalse());
 	}
 
+	// HU-02 RF-9
 	@Test
 	void tokenSinHuellaNoSeAcepta() {
 		String sinHuella = Jwts.builder()
@@ -94,6 +97,7 @@ class TokenJwtTest {
 		assertThat(tokenJwt(CLAVE, AHORA).leer(sinHuella)).isEmpty();
 	}
 
+	// HU-02 RF-9
 	@Test
 	void tokenVencidoNoIdentificaANadie() {
 		String token = tokenJwt(CLAVE, AHORA).emitir(clienteConId(7, HASH)).token();
@@ -102,6 +106,7 @@ class TokenJwtTest {
 		assertThat(idLeido(tokenJwt(CLAVE, AHORA.plus(OCHO_HORAS).plusSeconds(1)), token)).isEmpty();
 	}
 
+	// HU-02 RF-9
 	@Test
 	void tokenFirmadoConOtraClaveNoIdentificaANadie() {
 		String token = tokenJwt(OTRA_CLAVE, AHORA).emitir(clienteConId(7, HASH)).token();
@@ -109,6 +114,7 @@ class TokenJwtTest {
 		assertThat(tokenJwt(CLAVE, AHORA).leer(token)).isEmpty();
 	}
 
+	// HU-02 RF-9
 	@Test
 	void tokenAlteradoNoIdentificaANadie() {
 		String[] partes = tokenJwt(CLAVE, AHORA).emitir(clienteConId(7, HASH)).token().split("\\.");
@@ -121,6 +127,7 @@ class TokenJwtTest {
 		assertThat(tokenJwt(CLAVE, AHORA).leer(alterado)).isEmpty();
 	}
 
+	// HU-02 RF-9
 	@Test
 	void textoQueNoEsUnTokenNoIdentificaANadie() {
 		assertThat(tokenJwt(CLAVE, AHORA).leer("basura")).isEmpty();
