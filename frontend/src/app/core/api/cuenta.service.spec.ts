@@ -49,7 +49,7 @@ describe('CuentaService', () => {
 
   afterEach(() => http.verify());
 
-  // RF-2: los datos de la cuenta de la sesión
+  // HU-04 RF-1: los datos de la cuenta de la sesión
   it('lee los datos personales', async () => {
     const recurso = TestBed.runInInjectionContext(() => servicio.datosPersonales());
     TestBed.tick();
@@ -62,7 +62,7 @@ describe('CuentaService', () => {
     expect(recurso.value()).toEqual(ANA);
   });
 
-  // RF-5 y RF-8: se envía limpio y el teléfono vacío viaja como null
+  // HU-04 RF-2, RF-3: se envía limpio y el teléfono vacío viaja como null
   it('actualiza nombre, apellido y teléfono', async () => {
     const promesa = servicio.actualizarDatos({ nombre: ' Ana ', apellido: 'Rojas ', telefono: '  ' });
 
@@ -74,7 +74,7 @@ describe('CuentaService', () => {
     await expect(promesa).resolves.toEqual(ANA);
   });
 
-  // RF-7: nada de correo, rol ni estado en la petición
+  // HU-04 RF-4: nada de correo, rol ni estado en la petición
   it('no envía datos que no se pueden modificar', async () => {
     const promesa = servicio.actualizarDatos({ nombre: 'Ana', apellido: 'Rojas', telefono: '70000000' });
 
@@ -94,7 +94,7 @@ describe('CuentaService', () => {
     await expect(promesa).rejects.toEqual(DATOS_INVALIDOS);
   });
 
-  // RF-10: la contraseña viaja tal cual y vuelve una sesión con token nuevo
+  // HU-04 RF-5: la contraseña viaja tal cual y vuelve una sesión con token nuevo
   it('cambia la contraseña y devuelve la sesión nueva', async () => {
     const promesa = servicio.cambiarContrasena({ contrasenaActual: ' actual ', contrasenaNueva: 'nueva-clave' });
 
@@ -106,7 +106,7 @@ describe('CuentaService', () => {
     await expect(promesa).resolves.toEqual(SESION_NUEVA);
   });
 
-  // RF-11
+  // HU-04 RF-7
   it('rechaza con la contraseña actual incorrecta', async () => {
     const promesa = servicio.cambiarContrasena({ contrasenaActual: 'otra', contrasenaNueva: 'nueva-clave' });
 
@@ -118,7 +118,7 @@ describe('CuentaService', () => {
     await expect(promesa).rejects.toMatchObject({ codigo: 'CONTRASENA_ACTUAL_INCORRECTA' });
   });
 
-  // RF-15
+  // HU-04 RF-7
   it('rechaza mientras el correo está bloqueado', async () => {
     const promesa = servicio.cambiarContrasena({ contrasenaActual: 'actual-1', contrasenaNueva: 'nueva-clave' });
 

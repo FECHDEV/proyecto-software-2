@@ -46,6 +46,7 @@ describe('cambiosSinGuardarGuard', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  // HU-04 RF-9
   it('sin cambios deja salir sin preguntar', () => {
     const confirmar = vi.spyOn(window, 'confirm');
 
@@ -53,6 +54,7 @@ describe('cambiosSinGuardarGuard', () => {
     expect(confirmar).not.toHaveBeenCalled();
   });
 
+  // HU-04 RF-9
   it('con cambios pregunta y respeta la respuesta', () => {
     vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
 
@@ -62,6 +64,7 @@ describe('cambiosSinGuardarGuard', () => {
 
   // Al cerrar sesión o al caer por un 401 no hay nada que guardar: preguntar
   // dejaría a la persona en una pantalla sin sesión
+  // HU-04 RF-9
   it('sin sesión deja salir sin preguntar', () => {
     TestBed.inject(SesionService).cerrar();
     const confirmar = vi.spyOn(window, 'confirm');

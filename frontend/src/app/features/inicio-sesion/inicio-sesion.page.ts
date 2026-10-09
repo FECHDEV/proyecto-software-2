@@ -2,13 +2,13 @@ import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, inject, signal } from '@angular/core';
 import { email, form, FormField, required, schema, submit } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { LucideEye, LucideEyeOff } from '@lucide/angular';
 
 import { AutenticacionService } from '../../core/api/autenticacion.service';
 import { mensajeDeError, primerMensaje } from '../../core/api/mensajes-error';
 import { comoError } from '../../core/modelos/error-api';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { enfocarCampo, primerCampoConError } from '../../shared/formularios/primer-campo-con-error';
+import { VerContrasena } from '../../shared/formularios/ver-contrasena';
 import { destinoInterno, parametrosDelDestino } from '../../shared/navegacion/destino-interno';
 
 // Lo que se viene a contar desde otra pantalla. Un solo parámetro con valores
@@ -36,7 +36,7 @@ const esquema = schema<Credenciales>((ruta) => {
 
 @Component({
 	selector: 'app-inicio-sesion',
-	imports: [FormField, RouterLink, LucideEye, LucideEyeOff],
+	imports: [FormField, RouterLink, VerContrasena],
 	templateUrl: './inicio-sesion.page.html',
 	styleUrl: './inicio-sesion.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -76,8 +76,6 @@ export class InicioSesionPage {
 	}
 	protected readonly formulario = form(this.credenciales, esquema);
 	protected readonly enviando = signal(false);
-	// HU-02 RF-13: la contraseña empieza oculta
-	protected readonly contrasenaVisible = signal(false);
 	protected readonly avisoDeError = signal('');
 
 	protected async enviar(evento: Event): Promise<void> {

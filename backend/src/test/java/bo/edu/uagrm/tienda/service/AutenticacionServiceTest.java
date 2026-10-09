@@ -289,6 +289,7 @@ class AutenticacionServiceTest {
 		}
 	}
 
+	// HU-04 RF-5
 	@Test
 	void contrasenaActualCorrectaGuardaLaNuevaYEntregaUnTokenDeLaNueva() {
 		Usuario ana = cliente(7, HASH_SECRETA12);
@@ -303,6 +304,7 @@ class AutenticacionServiceTest {
 		assertThat(tokenJwt.correspondeA(tokenAnterior, ana)).isFalse();
 	}
 
+	// HU-04 RF-7
 	@Test
 	void contrasenaActualIncorrectaNoCambiaLaContrasena() {
 		Usuario ana = cliente(7, HASH_SECRETA12);
@@ -316,6 +318,7 @@ class AutenticacionServiceTest {
 		assertThat(ana.getContrasena()).isEqualTo(HASH_SECRETA12);
 	}
 
+	// HU-04 RF-7
 	@Test
 	void contrasenaActualDeMasDe72BytesEsIncorrectaAunqueBcryptLaTruncaria() {
 		String hash72 = new BCryptPasswordEncoder().encode("a".repeat(72));
@@ -327,6 +330,7 @@ class AutenticacionServiceTest {
 		assertThat(ana.getContrasena()).isEqualTo(hash72);
 	}
 
+	// HU-04 RF-7
 	@Test
 	void cincoContrasenasActualesIncorrectasBloqueanElCambioAunqueLaSiguienteSeaCorrecta() {
 		Usuario ana = cliente(7, HASH_SECRETA12);
@@ -338,6 +342,7 @@ class AutenticacionServiceTest {
 		assertThat(ana.getContrasena()).isEqualTo(HASH_SECRETA12);
 	}
 
+	// HU-04 RF-7
 	@Test
 	void contrasenasActualesIncorrectasSumanAlLimiteDelInicioDeSesion() {
 		given(usuarioRepository.findConBloqueoByIdUsuario(7L)).willReturn(Optional.of(cliente(7, HASH_SECRETA12)));
@@ -348,6 +353,7 @@ class AutenticacionServiceTest {
 				.isInstanceOf(IntentosExcedidosException.class);
 	}
 
+	// HU-04 RF-7
 	@Test
 	void cambioExitosoReiniciaElConteoDeIntentos() {
 		given(usuarioRepository.findConBloqueoByIdUsuario(7L)).willReturn(Optional.of(cliente(7, HASH_SECRETA12)));

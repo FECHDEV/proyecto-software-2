@@ -6,6 +6,7 @@ import { AutenticacionService } from '../../core/api/autenticacion.service';
 import { mensajeDeError, mensajeDelCampo } from '../../core/api/mensajes-error';
 import { comoError, ErrorApi } from '../../core/modelos/error-api';
 import { SesionService } from '../../core/sesion/sesion.service';
+import { VerContrasena } from '../../shared/formularios/ver-contrasena';
 import { enfocarCampo, primerCampoRechazado } from '../../shared/formularios/primer-campo-con-error';
 import { bytesUtf8 } from '../../shared/validacion/reglas';
 
@@ -26,7 +27,7 @@ const esquema = schema<ContrasenaNueva>((ruta) => {
 
 @Component({
 	selector: 'app-restablecer',
-	imports: [FormField, RouterLink],
+	imports: [FormField, RouterLink, VerContrasena],
 	templateUrl: './restablecer.page.html',
 	styleUrl: './restablecer.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,

@@ -32,26 +32,16 @@
       <label for="contrasena">Contraseña</label>
       <div class="con-boton">
         <input
+          #clave
           id="contrasena"
-          [type]="contrasenaVisible() ? 'text' : 'password'"
+          type="password"
           autocomplete="current-password"
           spellcheck="false"
           [formField]="formulario.contrasena"
           [attr.aria-invalid]="formulario.contrasena().touched() && formulario.contrasena().invalid()"
           [attr.aria-describedby]="formulario.contrasena().touched() && formulario.contrasena().invalid() ? 'error-contrasena' : null"
         />
-        <button
-          type="button"
-          class="ver-contrasena"
-          [attr.aria-label]="contrasenaVisible() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-          (click)="contrasenaVisible.set(!contrasenaVisible())"
-        >
-          @if (contrasenaVisible()) {
-            <svg lucideEyeOff class="icono" aria-hidden="true"></svg>
-          } @else {
-            <svg lucideEye class="icono" aria-hidden="true"></svg>
-          }
-        </button>
+        <button appVerContrasena [campo]="clave"></button>
       </div>
       @if (formulario.contrasena().touched() && formulario.contrasena().invalid()) {
         <p class="error" id="error-contrasena">

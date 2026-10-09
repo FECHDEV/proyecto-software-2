@@ -10,14 +10,18 @@
       <div class="campo">
         @let error = mensajeDelCampo();
         <label for="contrasena">Contraseña nueva</label>
-        <input
-          id="contrasena"
-          type="password"
-          autocomplete="new-password"
-          [formField]="formulario.contrasena"
-          [attr.aria-invalid]="error ? 'true' : null"
-          [attr.aria-describedby]="error ? 'error-contrasena' : ayuda() ? 'ayuda-contrasena' : null"
-        />
+        <div class="con-boton">
+          <input
+            #clave
+            id="contrasena"
+            type="password"
+            autocomplete="new-password"
+            [formField]="formulario.contrasena"
+            [attr.aria-invalid]="error ? 'true' : null"
+            [attr.aria-describedby]="error ? 'error-contrasena' : ayuda() ? 'ayuda-contrasena' : null"
+          />
+          <button appVerContrasena [campo]="clave"></button>
+        </div>
         @if (error) {
           <p class="error" id="error-contrasena">{{ error }}</p>
         } @else if (ayuda()) {

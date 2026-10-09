@@ -22,6 +22,7 @@ import {
 	primerCampoRechazado,
 } from '../../shared/formularios/primer-campo-con-error';
 import { SesionService } from '../../core/sesion/sesion.service';
+import { VerContrasena } from '../../shared/formularios/ver-contrasena';
 import { destinoInterno, parametrosDelDestino } from '../../shared/navegacion/destino-interno';
 import { sinEspaciosSolos } from '../../shared/formularios/reglas-de-campo';
 import { bytesUtf8 } from '../../shared/validacion/reglas';
@@ -75,7 +76,7 @@ const esquema = schema<DatosDeRegistro>((ruta) => {
 
 @Component({
 	selector: 'app-registro',
-	imports: [FormField, RouterLink],
+	imports: [FormField, RouterLink, VerContrasena],
 	templateUrl: './registro.page.html',
 	styleUrl: './registro.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,

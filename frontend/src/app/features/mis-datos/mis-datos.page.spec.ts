@@ -119,7 +119,7 @@ describe('MisDatosPage', () => {
     return fijo.nativeElement.textContent as string;
   }
 
-  // RF-2: los datos de la cuenta, sin la contraseña
+  // HU-04 RF-1: los datos de la cuenta, sin la contraseña
   it('muestra los datos de la cuenta', () => {
     expect(campo('nombre').value).toBe('Ana');
     expect(campo('apellido').value).toBe('Rojas');
@@ -130,7 +130,7 @@ describe('MisDatosPage', () => {
     expect(texto()).toContain('14/09/2026');
   });
 
-  // RF-7: correo, rol y estado no se ofrecen para editar
+  // HU-04 RF-4: correo, rol y estado no se ofrecen para editar
   it('solo deja editar nombre, apellido y teléfono', () => {
     const editables = Array.from(
       fijo.nativeElement.querySelectorAll('#formulario-datos input') as NodeListOf<HTMLInputElement>,
@@ -139,7 +139,7 @@ describe('MisDatosPage', () => {
     expect(editables).toEqual(['nombre', 'apellido', 'telefono']);
   });
 
-  // RF-4: el mismo caso para todos los roles
+  // HU-04 RF-1: el mismo caso para todos los roles
   it('nombra al administrador', async () => {
     await preparar((falsa) =>
       falsa.recurso.value.set({ ...ANA, rol: 'ADMINISTRADOR' }),
@@ -156,6 +156,7 @@ describe('MisDatosPage', () => {
     expect(texto()).toContain('Empleado');
   });
 
+  // HU-04 RF-10
   it('mientras carga no muestra el formulario', async () => {
     await preparar((falsa) => {
       falsa.recurso.value.set(undefined);
@@ -166,6 +167,7 @@ describe('MisDatosPage', () => {
     expect(texto()).toContain('Cargando tus datos');
   });
 
+  // HU-04 RF-10
   it('si no se pudieron cargar, avisa y deja reintentar', async () => {
     await preparar((falsa) => {
       falsa.recurso.value.set(undefined);
@@ -179,7 +181,7 @@ describe('MisDatosPage', () => {
     expect(cuenta.recurso.reload).toHaveBeenCalledTimes(1);
   });
 
-  // RF-5
+  // HU-04 RF-2
   it('guarda los datos y confirma', async () => {
     const guardada: Usuario = { ...ANA, nombre: 'Ana María', telefono: '71111111' };
     cuenta.respuestaDatos = Promise.resolve(guardada);
@@ -196,6 +198,7 @@ describe('MisDatosPage', () => {
   });
 
   // El encabezado lee el nombre de la sesión: tiene que cambiar sin volver a entrar
+  // HU-04 RF-2
   it('actualiza el nombre de la sesión', async () => {
     cuenta.respuestaDatos = Promise.resolve({ ...ANA, nombre: 'Ana María' });
     escribir('nombre', 'Ana María');
@@ -206,6 +209,7 @@ describe('MisDatosPage', () => {
     expect(sesion.token()).toBe('jwt.de.prueba');
   });
 
+  // HU-04 RF-2
   it('el aviso de guardado se va al volver a editar', async () => {
     cuenta.respuestaDatos = Promise.resolve({ ...ANA, nombre: 'Ana María' });
     escribir('nombre', 'Ana María');
@@ -216,7 +220,7 @@ describe('MisDatosPage', () => {
     expect(texto()).not.toContain('Datos guardados.');
   });
 
-  // RF-6: las mismas reglas que el registro
+  // HU-04 RF-3: las mismas reglas que el registro
   it('sin nombre no llama a la API', async () => {
     escribir('nombre', '');
 
@@ -253,7 +257,7 @@ describe('MisDatosPage', () => {
     expect(texto()).toContain('El teléfono admite hasta 20 caracteres.');
   });
 
-  // RF-8: el teléfono es opcional
+  // HU-04 RF-3: el teléfono es opcional
   it('acepta dejar el teléfono vacío', async () => {
     cuenta.respuestaDatos = Promise.resolve({ ...ANA, telefono: null });
     escribir('telefono', '');
@@ -264,6 +268,7 @@ describe('MisDatosPage', () => {
     expect(texto()).toContain('Datos guardados.');
   });
 
+  // HU-04 RF-3
   it('reparte los errores del backend bajo cada campo', async () => {
     cuenta.respuestaDatos = rechaza({
       status: 400,
@@ -298,6 +303,20 @@ describe('MisDatosPage', () => {
     escribir('contrasenaNueva', nueva);
   }
 
+  // HU-04 RF-12: cada botón muestra solo su campo
+  it('la contraseña actual y la nueva tienen su botón para verlas', () => {
+    const botones: HTMLButtonElement[] = Array.from(fijo.nativeElement.querySelectorAll('button.ver-contrasena'));
+    const actual: HTMLInputElement = fijo.nativeElement.querySelector('#contrasenaActual');
+    const nueva: HTMLInputElement = fijo.nativeElement.querySelector('#contrasenaNueva');
+
+    expect(botones.length).toBe(2);
+    botones[1].click();
+    fijo.detectChanges();
+
+    expect(nueva.type).toBe('text');
+    expect(actual.type).toBe('password');
+  });
+
   it('pide la contraseña actual y la nueva', () => {
     expect(campo('contrasenaActual').type).toBe('password');
     expect(campo('contrasenaActual').getAttribute('autocomplete')).toBe('current-password');
@@ -305,7 +324,7 @@ describe('MisDatosPage', () => {
     expect(campo('contrasenaNueva').getAttribute('autocomplete')).toBe('new-password');
   });
 
-  // RF-10 y RF-13: el token anterior deja de valer, así que la sesión pasa al nuevo
+  // HU-04 RF-5, RF-6: el token anterior deja de valer, así que la sesión pasa al nuevo
   it('cambia la contraseña y sigue con el token nuevo', async () => {
     completarContrasenas('actual-123', 'nueva-clave-1');
 
@@ -318,7 +337,24 @@ describe('MisDatosPage', () => {
     expect(texto()).toContain('Contraseña actualizada.');
   });
 
+  // HU-04 RF-5, RF-12: la próxima contraseña que se escriba no queda a la vista
+  it('después del cambio vuelve a ocultar las contraseñas que se mostraron', async () => {
+    const botones: HTMLButtonElement[] = Array.from(fijo.nativeElement.querySelectorAll('button.ver-contrasena'));
+    botones.forEach((boton) => boton.click());
+    completarContrasenas('actual-123', 'nueva-clave-1');
+
+    await enviar('formulario-contrasena');
+
+    expect(campo('contrasenaActual').type).toBe('password');
+    expect(campo('contrasenaNueva').type).toBe('password');
+    expect(botones.map((boton) => boton.getAttribute('aria-label'))).toEqual([
+      'Mostrar contraseña',
+      'Mostrar contraseña',
+    ]);
+  });
+
   // Las contraseñas no quedan escritas en pantalla ni marcadas como error
+  // HU-04 RF-5
   it('después del cambio vacía los campos sin marcar errores', async () => {
     completarContrasenas('actual-123', 'nueva-clave-1');
 
@@ -339,7 +375,7 @@ describe('MisDatosPage', () => {
     expect(texto()).not.toContain('Contraseña actualizada.');
   });
 
-  // RF-12
+  // HU-04 RF-8
   it('sin contraseña actual no llama a la API', async () => {
     completarContrasenas('', 'nueva-clave-1');
 
@@ -349,6 +385,7 @@ describe('MisDatosPage', () => {
     expect(texto()).toContain('Escribe tu contraseña actual.');
   });
 
+  // HU-04 RF-8
   it('frena una contraseña nueva de 7 caracteres', async () => {
     completarContrasenas('actual-123', 'siete12');
 
@@ -358,6 +395,7 @@ describe('MisDatosPage', () => {
     expect(texto()).toContain('La contraseña nueva necesita al menos 8 caracteres.');
   });
 
+  // HU-04 RF-8
   it('frena una contraseña nueva de más de 72 bytes', async () => {
     completarContrasenas('actual-123', 'ñ'.repeat(37));
 
@@ -367,6 +405,7 @@ describe('MisDatosPage', () => {
     expect(texto()).toContain('demasiado larga');
   });
 
+  // HU-04 RF-8
   it('la ayuda del mínimo se va al cumplirlo', () => {
     escribir('contrasenaNueva', 'siete12');
     expect(texto()).toContain('Al menos 8 caracteres.');
@@ -375,7 +414,7 @@ describe('MisDatosPage', () => {
     expect(texto()).not.toContain('Al menos 8 caracteres.');
   });
 
-  // RF-11
+  // HU-04 RF-7
   it('avisa que la contraseña actual no es correcta', async () => {
     cuenta.respuestaContrasena = rechaza({
       status: 400,
@@ -392,7 +431,7 @@ describe('MisDatosPage', () => {
     expect(sesion.token()).toBe('jwt.de.prueba');
   });
 
-  // RF-15
+  // HU-04 RF-7
   it('avisa cuando hay que esperar por los intentos fallidos', async () => {
     cuenta.respuestaContrasena = rechaza({ status: 429, detail: 'x', codigo: 'INTENTOS_EXCEDIDOS' });
     completarContrasenas('otra-clave', 'nueva-clave-1');
@@ -402,6 +441,7 @@ describe('MisDatosPage', () => {
     expect(texto()).toContain('Espera 15 minutos');
   });
 
+  // HU-04 RF-8
   it('reparte los errores del backend bajo la contraseña nueva', async () => {
     cuenta.respuestaContrasena = rechaza({
       status: 400,
@@ -448,16 +488,19 @@ describe('MisDatosPage', () => {
     return fijo.componentInstance.tieneCambiosSinGuardar();
   }
 
+  // HU-04 RF-9
   it('recién cargada no tiene cambios sin guardar', () => {
     expect(conCambios()).toBe(false);
   });
 
+  // HU-04 RF-9
   it('editar un dato deja cambios sin guardar', () => {
     escribir('telefono', '71111111');
 
     expect(conCambios()).toBe(true);
   });
 
+  // HU-04 RF-9
   it('volver al valor guardado ya no cuenta como cambio', () => {
     escribir('nombre', 'Ana María');
     escribir('nombre', 'Ana');
@@ -465,6 +508,7 @@ describe('MisDatosPage', () => {
     expect(conCambios()).toBe(false);
   });
 
+  // HU-04 RF-9
   it('después de guardar no quedan cambios', async () => {
     cuenta.respuestaDatos = Promise.resolve({ ...ANA, nombre: 'Ana María' });
     escribir('nombre', 'Ana María');
@@ -474,6 +518,7 @@ describe('MisDatosPage', () => {
     expect(conCambios()).toBe(false);
   });
 
+  // HU-04 RF-9
   it('una contraseña a medio escribir cuenta como cambio', () => {
     escribir('contrasenaActual', 'actual-1');
 
@@ -481,6 +526,7 @@ describe('MisDatosPage', () => {
   });
 
   // Cerrar la pestaña o recargar también pierde lo escrito
+  // HU-04 RF-9
   it('avisa al cerrar la pestaña con cambios sin guardar', () => {
     escribir('nombre', 'Ana María');
     const evento = new Event('beforeunload', { cancelable: true });
@@ -490,6 +536,7 @@ describe('MisDatosPage', () => {
     expect(evento.defaultPrevented).toBe(true);
   });
 
+  // HU-04 RF-9
   it('sin cambios deja cerrar la pestaña', () => {
     const evento = new Event('beforeunload', { cancelable: true });
 

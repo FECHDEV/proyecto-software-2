@@ -96,11 +96,13 @@ class DatosPersonalesIntegracionTest {
 				.exchange();
 	}
 
+	// HU-04 RF-11
 	@Test
 	void sinSesionNoSeConsultanLosDatos() {
 		assertThat(mvc.get().uri(DATOS).exchange()).hasStatus(HttpStatus.UNAUTHORIZED);
 	}
 
+	// HU-04 RF-2, RF-4
 	@Test
 	void actualizaNombreApellidoYTelefonoSinTocarCorreoFechaRolEstadoNiContrasena() throws Exception {
 		String token = token("ana@mail.com", "secreta12");
@@ -123,6 +125,7 @@ class DatosPersonalesIntegracionTest {
 		assertThat(iniciarSesionDesde("127.0.0.1", "ana@mail.com", "secreta12")).hasStatus(HttpStatus.OK);
 	}
 
+	// HU-04 RF-3
 	@Test
 	void datosInvalidosNoModificanLaCuenta() throws Exception {
 		String token = token("ana@mail.com", "secreta12");
@@ -133,6 +136,7 @@ class DatosPersonalesIntegracionTest {
 		assertThat(consultar(token)).bodyJson().extractingPath("$.nombre").isEqualTo("Ana");
 	}
 
+	// HU-04 RF-5, RF-6
 	@Test
 	void cambioDeContrasenaEntregaUnTokenNuevoYElAnteriorDejaDeValer() throws Exception {
 		String tokenAnterior = token("ana@mail.com", "secreta12");
@@ -147,6 +151,7 @@ class DatosPersonalesIntegracionTest {
 		assertThat(iniciarSesionDesde("127.0.0.1", "ana@mail.com", "secreta12")).hasStatus(HttpStatus.UNAUTHORIZED);
 	}
 
+	// HU-04 RF-7
 	@Test
 	void contrasenaActualIncorrectaNoCambiaLaContrasena() throws Exception {
 		String token = token("ana@mail.com", "secreta12");
@@ -159,6 +164,7 @@ class DatosPersonalesIntegracionTest {
 		assertThat(iniciarSesionDesde("127.0.0.1", "ana@mail.com", "secreta12")).hasStatus(HttpStatus.OK);
 	}
 
+	// HU-04 RF-7
 	@Test
 	void cincoContrasenasActualesIncorrectasBloqueanElCambioYElInicioDeSesionDesdeEsaIp() throws Exception {
 		// IP propia: los contadores del límite viven en el contexto compartido con los otros tests de integración
@@ -176,6 +182,7 @@ class DatosPersonalesIntegracionTest {
 		assertThat(iniciarSesionDesde("127.0.0.1", "ana@mail.com", "secreta12")).hasStatus(HttpStatus.OK);
 	}
 
+	// HU-04 RF-1
 	@Test
 	void administradorConsultaSusDatosSinFechaDeNacimiento() throws Exception {
 		// La H2 es compartida y otro contexto pudo recrearla sin el administrador inicial; repetir el arranque es
@@ -188,6 +195,7 @@ class DatosPersonalesIntegracionTest {
 		assertThat(resultado).bodyJson().extractingPath("$.rol").isEqualTo("ADMINISTRADOR");
 	}
 
+	// HU-04 RF-6
 	@Test
 	void dosCambiosDeContrasenaSimultaneosSoloAplicanUno() throws Exception {
 		Long idAna = usuarioRepository.findByCorreo("ana@mail.com").orElseThrow().getIdUsuario();
