@@ -48,6 +48,7 @@ describe('rutas', () => {
   // antes, para que ese costo no cuente en el tiempo de cada prueba
   beforeAll(async () => {
     await import('./features/inicio-sesion/inicio-sesion.page');
+    await import('./features/categorias/categorias.page');
   }, 60_000);
 
   afterEach(() => localStorage.clear());
@@ -74,6 +75,12 @@ describe('rutas', () => {
   // HU-02 RF-12
   it('sin sesión, iniciar sesión se muestra', async () => {
     expect(await navegarComo(null, '/inicio-sesion')).toBe('/inicio-sesion');
+  });
+
+  // HU-06 RF-1: la gestión de categorías es del administrador
+  it('la gestión de categorías es solo del administrador', async () => {
+    expect(await navegarComo('ADMINISTRADOR', '/categorias')).toBe('/categorias');
+    expect(await navegarComo('EMPLEADO', '/categorias')).toBe('/');
   });
 
   // HU-05 RF-1

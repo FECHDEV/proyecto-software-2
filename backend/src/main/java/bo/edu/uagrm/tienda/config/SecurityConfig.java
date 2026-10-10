@@ -47,6 +47,9 @@ public class SecurityConfig {
 						// El rol se toma de la base en cada petición (JwtFiltroAutenticacion): un cambio de rol
 						// rige desde la siguiente
 						.requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
+						// Lo que lee el catálogo es público; la gestión de la tienda es del Administrador (HU-06)
+						.requestMatchers(HttpMethod.GET, "/api/categorias/**").permitAll()
+						.requestMatchers("/api/gestion/**").hasRole("ADMINISTRADOR")
 						.anyRequest().authenticated())
 				// El 401 y el 403 pasan por ManejadorErrores para salir con el mismo formato que el resto de la
 				// API; el 401 anuncia además el esquema de autenticación esperado (RFC 6750)

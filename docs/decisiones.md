@@ -17,7 +17,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Paleta y modos](#paleta-y-modos) · [Tipografía](#tipografía) · [Reglas que valen para toda la interfaz](#reglas-que-valen-para-toda-la-interfaz) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
-- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d)
+- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Categorías del catálogo](#categorías-del-catálogo)
 
 ---
 
@@ -475,4 +475,21 @@ cliente gira, acerca, aleja y mueve (HU-15 y HU-16).
 Haven tiene unos 70 modelos de herramientas con licencia CC0 y calidad
 realista, y el prototipo del spike (#14) los mostró con `<model-viewer>` sin
 problemas.
+
+### Categorías del catálogo
+
+*10/10/2026 (HU-06).* Un solo nivel, sin subcategorías. Cada categoría tiene
+nombre (obligatorio, único sin importar mayúsculas ni tildes, hasta 60
+caracteres: «Jardin» y «Jardín» son la misma),
+descripción opcional (hasta 300) e imagen opcional (reglas de «Imágenes
+subidas»; sin imagen, un ícono genérico). Se muestran en orden alfabético.
+Cada producto pertenece a **una sola** categoría.
+
+- **Una categoría con productos no se borra: se oculta.** Oculta no aparece
+  en el catálogo y sus productos no se listan por ella; se puede volver a
+  mostrar. Sin productos se borra del todo, con su imagen.
+
+**Motivo:** el catálogo de demostración tiene 15 a 25 productos en 4 a 6
+categorías; un nivel alcanza, y ocultar evita perder productos y el
+historial de ventas por categoría.
 

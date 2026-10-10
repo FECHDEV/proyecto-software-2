@@ -1,0 +1,165 @@
+// Formulario y botones de _formulario.scss; acá la lista de categorías
+@use '../../../styles/formulario';
+@use '../../../styles/pagina';
+
+:host {
+	@include pagina.pagina-angosta(720px);
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-6);
+}
+
+h1 {
+	font-size: 34px;
+}
+
+h2 {
+	font-size: 22px;
+}
+
+// La tarjeta del formulario ocupa todo el ancho de la pantalla
+.tarjeta {
+	max-width: none;
+	margin: 0;
+}
+
+textarea {
+	font: inherit;
+	font-size: 15px;
+	padding: var(--app-espacio-3);
+	border: 1px solid var(--app-borde-control);
+	border-radius: var(--app-radio-control);
+	background: var(--app-fondo);
+	color: var(--app-texto);
+	resize: vertical;
+}
+
+.acciones {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-3);
+}
+
+.boton.secundario {
+	display: inline-flex;
+	align-items: center;
+	background: transparent;
+	border-color: var(--app-borde-control);
+	color: var(--app-texto);
+	cursor: pointer;
+}
+
+.boton.secundario:hover:not([disabled]) {
+	background: var(--app-superficie-alta);
+}
+
+.boton.peligro {
+	color: var(--app-error);
+}
+
+.lista {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-3);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.categoria {
+	display: grid;
+	grid-template-columns: 64px minmax(0, 1fr);
+	gap: var(--app-espacio-3) var(--app-espacio-4);
+	padding: var(--app-espacio-4);
+	border: 1px solid var(--app-borde);
+	border-radius: var(--app-radio);
+	background: var(--app-superficie);
+}
+
+// Oculta: el estado se lee también en el texto, no solo en el color
+.categoria.oculta {
+	border-style: dashed;
+}
+
+.miniatura {
+	display: grid;
+	place-items: center;
+	width: 64px;
+	height: 64px;
+	border-radius: var(--app-radio-control);
+	background: var(--app-superficie-alta);
+	color: var(--app-texto-suave);
+	overflow: hidden;
+}
+
+.miniatura img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.icono {
+	width: 28px;
+	height: 28px;
+}
+
+.datos {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-1);
+}
+
+.nombre {
+	margin: 0;
+	font-family: var(--app-familia-titulos);
+	font-size: 20px;
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+.descripcion,
+.detalle {
+	margin: 0;
+	color: var(--app-texto-suave);
+	font-size: 14px;
+	overflow-wrap: anywhere;
+}
+
+.detalle {
+	font-family: var(--app-familia-datos);
+	font-size: 12px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.estado.visible {
+	color: var(--app-exito);
+}
+
+.botones {
+	grid-column: 1 / -1;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-2);
+}
+
+// El input de archivo se usa con su etiqueta «Imagen»; queda accesible pero fuera de la vista
+.archivo {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+}
+
+// Con teclado, el foco está en el input invisible: se muestra en su etiqueta, que es lo que se ve
+.archivo:focus-visible + .boton {
+	outline: 3px solid var(--app-acento-texto);
+	outline-offset: 2px;
+}
+
+.cargando,
+.vacio {
+	margin: 0;
+	color: var(--app-texto-suave);
+}
