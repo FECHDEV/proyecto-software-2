@@ -11,6 +11,7 @@ import { TemaService } from './core/tema/tema.service';
 // Ocultarlos según el rol es usabilidad: quien autoriza es el backend
 const MODULOS: readonly { ruta: string; nombre: string; roles: readonly Rol[] }[] = [
   { ruta: '/usuarios', nombre: 'Usuarios', roles: ['ADMINISTRADOR'] },
+  { ruta: '/categorias', nombre: 'Categorías', roles: ['ADMINISTRADOR'] },
 ];
 
 @Component({

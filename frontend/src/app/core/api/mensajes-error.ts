@@ -21,6 +21,8 @@ const MENSAJES: Record<string, string> = {
 	CUENTA_PROPIA_NO_DESACTIVABLE: 'No puedes desactivar tu propia cuenta.',
 	ULTIMO_ADMINISTRADOR_ACTIVO: 'Debe quedar al menos un administrador activo. Nombra a otro antes de hacer este cambio.',
 	OPERACION_SIMULTANEA: 'Otra persona está modificando estos datos. Vuelve a intentar.',
+	CATEGORIA_EXISTENTE: 'Ya existe una categoría con ese nombre.',
+	CATEGORIA_NO_ENCONTRADA: 'Esa categoría ya no existe. Recarga la página.',
 	IMAGEN_INVALIDA: 'Ese archivo no es una imagen JPG, PNG o WebP.',
 	IMAGEN_DEMASIADO_GRANDE: 'La imagen pesa más de 2 MB. Elige una más liviana.',
 	SIN_CONEXION: 'No pudimos conectar con el servidor. Intenta de nuevo.',

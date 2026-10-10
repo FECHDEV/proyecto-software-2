@@ -58,5 +58,12 @@ export const routes: Routes = [
     data: { rol: 'ADMINISTRADOR' },
     loadComponent: () => import('./features/usuarios/usuarios.page').then((m) => m.UsuariosPage),
   },
+  {
+    path: 'categorias',
+    title: `Categorías · ${MARCA.nombre}`,
+    canActivate: [rolGuard],
+    data: { rol: 'ADMINISTRADOR' },
+    loadComponent: () => import('./features/categorias/categorias.page').then((m) => m.CategoriasPage),
+  },
   { path: '**', redirectTo: '' },
 ];

@@ -99,4 +99,18 @@ describe('PanelPage', () => {
     expect(enlace?.textContent).toContain('Usuarios');
     expect(fijo.nativeElement.textContent).not.toContain('Disponible pronto');
   });
+
+  // HU-06 RF-1: el acceso a categorías solo para el administrador
+  it('el administrador tiene el acceso a categorías', () => {
+    sesion.iniciar(sesionCon('ADMINISTRADOR'));
+
+    expect(crear().querySelector('a[href="/categorias"]')?.textContent).toContain('Categorías');
+  });
+
+  // HU-06 RF-1
+  it('un cliente no ve el acceso a categorías', () => {
+    sesion.iniciar(sesionCon('CLIENTE'));
+
+    expect(crear().querySelector('a[href="/categorias"]')).toBeNull();
+  });
 });

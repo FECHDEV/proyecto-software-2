@@ -3,7 +3,6 @@ package bo.edu.uagrm.tienda.repository;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -52,11 +51,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
 	// correo es la única restricción UNIQUE de la tabla usuario
 	static boolean esCorreoDuplicado(DataIntegrityViolationException ex) {
-		for (Throwable causa = ex.getCause(); causa != null; causa = causa.getCause()) {
-			if (causa instanceof ConstraintViolationException violacion) {
-				return violacion.getKind() == ConstraintViolationException.ConstraintKind.UNIQUE;
-			}
-		}
-		return false;
+		return ViolacionesDeIntegridad.esViolacionUnica(ex);
 	}
 }

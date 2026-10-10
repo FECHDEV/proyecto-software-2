@@ -1,0 +1,99 @@
+<h1>Categorías</h1>
+
+<section class="tarjeta" aria-labelledby="titulo-formulario">
+  <h2 id="titulo-formulario">{{ editando() ? 'Editar «' + editando()!.nombre + '»' : 'Nueva categoría' }}</h2>
+
+  <form (submit)="guardar($event)" novalidate>
+    <div class="campo">
+      @let errorNombre = mensajeDelNombre();
+      <label for="nombre">Nombre</label>
+      <input
+        id="nombre"
+        type="text"
+        [formField]="formulario.nombre"
+        [attr.aria-invalid]="errorNombre ? 'true' : null"
+        [attr.aria-describedby]="errorNombre ? 'error-nombre' : null"
+      />
+      @if (errorNombre) {
+        <p class="error" id="error-nombre">{{ errorNombre }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="descripcion">Descripción <span class="opcional">(opcional)</span></label>
+      <textarea id="descripcion" rows="2" [formField]="formulario.descripcion"></textarea>
+      @if (formulario.descripcion().touched() && formulario.descripcion().invalid()) {
+        <p class="error">{{ formulario.descripcion().errors()[0]?.message }}</p>
+      }
+    </div>
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Crear categoría' }}
+      </button>
+      @if (editando()) {
+        <button type="button" class="boton secundario" (click)="cancelarEdicion()">Cancelar</button>
+      }
+    </div>
+  </form>
+</section>
+
+@if (aviso()) {
+  <p class="aviso" role="alert">{{ aviso() }}</p>
+}
+
+@if (recurso.isLoading() && !recurso.hasValue()) {
+  <p class="cargando" role="status">Cargando las categorías…</p>
+} @else if (recurso.error()) {
+  <p class="aviso" role="alert">No pudimos cargar las categorías.</p>
+  <button type="button" class="boton" (click)="recurso.reload()">Reintentar</button>
+} @else if (lista().length === 0) {
+  <p class="vacio">Todavía no hay categorías. Crea la primera con el formulario de arriba.</p>
+} @else {
+  <ul class="lista" aria-label="Categorías">
+    @for (categoria of lista(); track categoria.idCategoria) {
+      <li class="categoria" [class.oculta]="!categoria.visible">
+        <div class="miniatura">
+          @if (categoria.tieneImagen) {
+            <img [src]="urlDeImagen(categoria)" alt="" width="64" height="64" />
+          } @else {
+            <svg lucideTag class="icono" aria-hidden="true"></svg>
+          }
+        </div>
+
+        <div class="datos">
+          <p class="nombre">{{ categoria.nombre }}</p>
+          @if (categoria.descripcion) {
+            <p class="descripcion">{{ categoria.descripcion }}</p>
+          }
+          <p class="detalle">
+            <span class="estado" [class.visible]="categoria.visible">{{ categoria.visible ? 'Visible' : 'Oculta' }}</span>
+            · {{ categoria.productos }} {{ categoria.productos === 1 ? 'producto' : 'productos' }}
+          </p>
+        </div>
+
+        <div class="botones">
+          <button type="button" class="boton secundario" (click)="editar(categoria)">Editar</button>
+          <input
+            class="archivo"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            [id]="'imagen-' + categoria.idCategoria"
+            [attr.aria-label]="'Imagen de ' + categoria.nombre"
+            (change)="elegirImagen(categoria, $event)"
+          />
+          <label class="boton secundario" [attr.for]="'imagen-' + categoria.idCategoria">Imagen</label>
+          @if (categoria.tieneImagen) {
+            <button type="button" class="boton secundario" (click)="quitarImagen(categoria)">Quitar imagen</button>
+          }
+          <button type="button" class="boton secundario" (click)="cambiarVisibilidad(categoria)">
+            {{ categoria.visible ? 'Ocultar' : 'Mostrar' }}
+          </button>
+          <button type="button" class="boton secundario peligro" (click)="borrar(categoria)">Borrar</button>
+        </div>
+      </li>
+    }
+  </ul>
+}
+
+<app-dialogo-confirmacion />
