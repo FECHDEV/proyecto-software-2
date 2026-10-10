@@ -178,6 +178,7 @@ class UsuarioRepositoryTest {
 		return pagina.getContent().stream().map(Usuario::getCorreo).toList();
 	}
 
+	// HU-05 RF-4, RF-5
 	@Test
 	void rolYEstadoSeGuardanYLaFechaDeNacimientoSeConserva() {
 		Long id = em.persistAndGetId(cliente("ana@mail.com"), Long.class);
@@ -201,6 +202,7 @@ class UsuarioRepositoryTest {
 		assertThat(usuarioRepository.findById(id).orElseThrow().estaActiva()).isTrue();
 	}
 
+	// HU-05 RF-9
 	@Test
 	void administradoresActivosConBloqueoExcluyeLosDesactivadosYLosOtrosRolesYVienenOrdenadosPorId() {
 		vaciarUsuarios();
@@ -217,6 +219,7 @@ class UsuarioRepositoryTest {
 				.extracting(Usuario::getIdUsuario).containsExactly(primero, segundo);
 	}
 
+	// HU-05 RF-2
 	@Test
 	void buscarSinFiltrosDevuelveTodosDelRegistroMasRecienteAlMasAntiguoPorPaginas() {
 		vaciarUsuarios();
@@ -233,6 +236,7 @@ class UsuarioRepositoryTest {
 		assertThat(correos(usuarioRepository.buscar(null, null, null, PageRequest.of(7, 2, orden)))).isEmpty();
 	}
 
+	// HU-05 RF-3
 	@Test
 	void buscarCombinaRolEstadoYTextoEnCorreoNombreYApellido() {
 		vaciarUsuarios();
@@ -249,6 +253,7 @@ class UsuarioRepositoryTest {
 		assertThat(correos(usuarioRepository.buscar(null, EstadoCuenta.DESACTIVADA, "%ana%", TODOS))).isEmpty();
 	}
 
+	// HU-05 RF-9
 	@Test
 	void laTablaUsuarioTieneUnIndicePorRolYEstado() {
 		// El bloqueo de administradores activos filtra por rol y estado: sin índice, MySQL bloquea en cada operación de
@@ -263,6 +268,7 @@ class UsuarioRepositoryTest {
 				.containsExactly("rol", "estado");
 	}
 
+	// HU-05 RF-3
 	@Test
 	void comodinesEscapadosDelTextoSeBuscanLiteralmente() {
 		vaciarUsuarios();

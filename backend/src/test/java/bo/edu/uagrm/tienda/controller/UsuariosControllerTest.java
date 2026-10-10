@@ -133,6 +133,7 @@ class UsuariosControllerTest {
 		then(gestionUsuariosService).shouldHaveNoInteractions();
 	}
 
+	// HU-05 RF-2, RF-3
 	@Test
 	void listadoPasaLosFiltrosYDevuelveLaPaginaSinDatosSensibles() throws Exception {
 		given(gestionUsuariosService.listar(Rol.CLIENTE, EstadoCuenta.ACTIVA, "ana", 1, 5))
@@ -177,6 +178,7 @@ class UsuariosControllerTest {
 		then(gestionUsuariosService).shouldHaveNoInteractions();
 	}
 
+	// HU-05 RF-4
 	@Test
 	void cambioDeRolUsaElAdministradorDeLaSesionYDevuelveElResumen() {
 		given(gestionUsuariosService.cambiarRol(1L, 7L, Rol.EMPLEADO)).willReturn(ana);
@@ -211,6 +213,7 @@ class UsuariosControllerTest {
 		assertThat(resultado).bodyJson().extractingPath("$.errores[*].campo").asArray().containsExactly("idUsuario");
 	}
 
+	// HU-05 RF-5
 	@Test
 	void cambioDeEstadoUsaElAdministradorDeLaSesion() {
 		given(gestionUsuariosService.cambiarEstado(1L, 7L, EstadoCuenta.DESACTIVADA)).willReturn(ana);

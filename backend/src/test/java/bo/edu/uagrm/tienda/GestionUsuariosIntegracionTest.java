@@ -126,6 +126,7 @@ class GestionUsuariosIntegracionTest {
 				Integer.class);
 	}
 
+	// HU-05 RF-1
 	@Test
 	void sinSesionDevuelve401YUnClienteRecibe403() throws Exception {
 		assertThat(mvc.get().uri("/api/usuarios").exchange()).hasStatus(HttpStatus.UNAUTHORIZED);
@@ -136,6 +137,7 @@ class GestionUsuariosIntegracionTest {
 		assertThat(cliente).bodyJson().extractingPath("$.codigo").isEqualTo("ACCESO_DENEGADO");
 	}
 
+	// HU-05 RF-2, RF-3
 	@Test
 	void administradorListaFiltraYBuscaSinDatosSensibles() throws Exception {
 		String tokenAdmin = token(ADMIN, CLAVE_ADMIN);
@@ -154,6 +156,7 @@ class GestionUsuariosIntegracionTest {
 		assertThat(invalido).bodyJson().extractingPath("$.codigo").isEqualTo("DATOS_INVALIDOS");
 	}
 
+	// HU-05 RF-4
 	@Test
 	void cambioDeRolRigeEnLaSiguientePeticionDelMismoTokenYConservaLaFecha() throws Exception {
 		String tokenAdmin = token(ADMIN, CLAVE_ADMIN);
@@ -175,6 +178,7 @@ class GestionUsuariosIntegracionTest {
 		assertThat(listar(tokenAna, "")).hasStatus(HttpStatus.FORBIDDEN);
 	}
 
+	// HU-05 RF-5, RF-6, RF-10
 	@Test
 	void desactivarRechazaElTokenYElInicioDeSesionYReactivarLoDevuelve() throws Exception {
 		String tokenAdmin = token(ADMIN, CLAVE_ADMIN);
@@ -198,6 +202,20 @@ class GestionUsuariosIntegracionTest {
 		assertThat(reactivada).bodyJson().extractingPath("$.usuario.rol").isEqualTo("CLIENTE");
 	}
 
+	// HU-05 RF-5, RF-6: reactivar no revive las sesiones que tenía antes de desactivarla
+	@Test
+	void tokenEmitidoAntesDeDesactivarNoValeDespuesDeReactivar() throws Exception {
+		String tokenAdmin = token(ADMIN, CLAVE_ADMIN);
+		String tokenViejo = token("ana@mail.com", "secreta12");
+
+		assertThat(cambiarEstado(tokenAdmin, idAna, "DESACTIVADA")).hasStatus(HttpStatus.OK);
+		assertThat(cambiarEstado(tokenAdmin, idAna, "ACTIVA")).hasStatus(HttpStatus.OK);
+
+		assertThat(datosPersonales(tokenViejo)).hasStatus(HttpStatus.UNAUTHORIZED);
+		assertThat(datosPersonales(token("ana@mail.com", "secreta12"))).hasStatus(HttpStatus.OK);
+	}
+
+	// HU-05 RF-7, RF-8, RF-11
 	@Test
 	void operacionesSobreLaPropiaCuentaYUsuarioInexistenteSeRechazan() throws Exception {
 		String tokenAdmin = token(ADMIN, CLAVE_ADMIN);
@@ -217,6 +235,7 @@ class GestionUsuariosIntegracionTest {
 		assertThat(datos).bodyJson().extractingPath("$.estado").isEqualTo("ACTIVA");
 	}
 
+	// HU-05 RF-9
 	@Test
 	void dosAdministradoresQueSeQuitanElRolAlMismoTiempoNoDejanAlSistemaSinAdministradores() throws Exception {
 		gestionUsuariosService.cambiarRol(idAdmin, idAna, Rol.ADMINISTRADOR);

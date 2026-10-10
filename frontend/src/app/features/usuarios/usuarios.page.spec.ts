@@ -131,7 +131,7 @@ describe('UsuariosPage', () => {
     await harness.fixture.whenStable();
   }
 
-  // RF-3: nombre, correo, rol, estado y fecha de alta
+  // HU-05 RF-2: nombre, correo, rol, estado y fecha de alta
   it('muestra los usuarios de la página', async () => {
     await abrir();
 
@@ -143,7 +143,7 @@ describe('UsuariosPage', () => {
     expect(texto()).toContain('Administrador Inicial');
   });
 
-  // RF-4: totales de usuarios y de páginas
+  // HU-05 RF-2: totales de usuarios y de páginas
   it('informa la página y el total', async () => {
     await abrir();
 
@@ -152,6 +152,7 @@ describe('UsuariosPage', () => {
   });
 
   // Recargar o compartir el enlace conserva la vista
+  // HU-05 RF-3
   it('toma los filtros y la página de la URL', async () => {
     await abrir('/usuarios?rol=CLIENTE&estado=ACTIVA&texto=ana&pagina=1');
 
@@ -159,13 +160,14 @@ describe('UsuariosPage', () => {
   });
 
   // Un enlace alterado no llega al backend como un 400
+  // HU-05 RF-3
   it('descarta valores de la URL que no son válidos', async () => {
     await abrir('/usuarios?rol=JEFE&estado=BORRADA&pagina=-3');
 
     expect(usuarios.filtros?.()).toEqual({ rol: null, estado: null, texto: '', pagina: 0 });
   });
 
-  // RF-5
+  // HU-05 RF-3
   it('filtrar por rol lo lleva a la URL y vuelve a la primera página', async () => {
     await abrir('/usuarios?pagina=1');
 
@@ -175,6 +177,7 @@ describe('UsuariosPage', () => {
     expect(usuarios.filtros?.().rol).toBe('EMPLEADO');
   });
 
+  // HU-05 RF-3
   it('filtrar por estado lo lleva a la URL', async () => {
     await abrir();
 
@@ -183,6 +186,7 @@ describe('UsuariosPage', () => {
     expect(url()).toBe('/usuarios?estado=DESACTIVADA');
   });
 
+  // HU-05 RF-3
   it('volver a «Todos» quita el filtro', async () => {
     await abrir('/usuarios?rol=CLIENTE');
 
@@ -192,6 +196,7 @@ describe('UsuariosPage', () => {
   });
 
   // La búsqueda espera a que se deje de escribir para no pedir una lista por letra
+  // HU-05 RF-3
   it('la búsqueda por texto se aplica al dejar de escribir', async () => {
     await abrir();
     const busqueda: HTMLInputElement = pantalla().querySelector('#filtro-texto')!;
@@ -220,6 +225,7 @@ describe('UsuariosPage', () => {
     expect((pantalla().querySelector('#filtro-estado') as HTMLSelectElement).value).toBe('DESACTIVADA');
   });
 
+  // HU-05 RF-2
   it('pasa a la página siguiente conservando los filtros', async () => {
     await abrir('/usuarios?rol=CLIENTE');
 
@@ -241,6 +247,7 @@ describe('UsuariosPage', () => {
   });
 
   // Caso límite: filtros sin resultados no son un error
+  // HU-05 RF-3
   it('sin resultados lo dice en vez de mostrar una tabla vacía', async () => {
     await abrir('/usuarios?texto=nadie', (falso) =>
       falso.recurso.value.set(pagina([], { totalElementos: 0, totalPaginas: 0 })),
@@ -250,6 +257,7 @@ describe('UsuariosPage', () => {
     expect(texto()).toContain('No hay usuarios con esos filtros.');
   });
 
+  // HU-05 RF-2
   it('mientras carga lo avisa', async () => {
     await abrir('/usuarios', (falso) => {
       falso.recurso.value.set(undefined);
@@ -259,7 +267,7 @@ describe('UsuariosPage', () => {
     expect(texto()).toContain('Cargando usuarios…');
   });
 
-  // RF-2: si otro administrador le quitó el rol, el backend responde 403
+  // HU-05 RF-1, RF-12: si otro administrador le quitó el rol, el backend responde 403
   it('explica un acceso denegado con el diccionario', async () => {
     await abrir('/usuarios', (falso) => {
       falso.recurso.value.set(undefined);
@@ -275,6 +283,7 @@ describe('UsuariosPage', () => {
     expect(texto()).not.toContain('detalle técnico');
   });
 
+  // HU-05 RF-2
   it('si la lista no carga deja reintentar', async () => {
     await abrir('/usuarios', (falso) => {
       falso.recurso.value.set(undefined);
@@ -325,7 +334,7 @@ describe('UsuariosPage', () => {
     return fila(correo).querySelector('button') as HTMLButtonElement;
   }
 
-  // RF-13 y RF-14: sobre la propia cuenta no hay nada que ofrecer
+  // HU-05 RF-7, RF-8: sobre la propia cuenta no hay nada que ofrecer
   it('la fila propia no ofrece acciones', async () => {
     await abrir();
 
@@ -336,6 +345,20 @@ describe('UsuariosPage', () => {
   });
 
   // Cada control dice de quién es: en una tabla, «Tipo de cuenta» solo no alcanza
+  // HU-05 RF-13: los cuatro roles fijos, ni uno más
+  it('el selector de cada fila ofrece los cuatro roles fijos', async () => {
+    await abrir();
+
+    const selector = fila('ana@mail.com').querySelector('select') as HTMLSelectElement;
+    expect(Array.from(selector.options).map((opcion) => opcion.textContent?.trim())).toEqual([
+      'Cliente',
+      'Administrador',
+      'Empleado',
+      'Contador',
+    ]);
+  });
+
+  // HU-05 RF-4, RF-5
   it('los controles nombran a la persona de la fila', async () => {
     await abrir();
 
@@ -344,7 +367,7 @@ describe('UsuariosPage', () => {
     expect(botonDeFila('ana@mail.com').getAttribute('aria-label')).toBe('Desactivar a Ana Rojas');
   });
 
-  // RF-7, con confirmación
+  // HU-05 RF-4, con confirmación
   it('cambiar el rol pide confirmación nombrando a la persona', async () => {
     await abrir();
 
@@ -378,7 +401,7 @@ describe('UsuariosPage', () => {
     expect((fila('ana@mail.com').querySelector('select') as HTMLSelectElement).value).toBe('CLIENTE');
   });
 
-  // RF-10, con confirmación
+  // HU-05 RF-5, con confirmación
   it('desactivar pide confirmación y al confirmar desactiva', async () => {
     await abrir();
     usuarios.respuesta = Promise.resolve({ ...ANA, estado: 'DESACTIVADA' });
@@ -406,7 +429,7 @@ describe('UsuariosPage', () => {
     expect(fila('ana@mail.com').textContent).toContain('Activa');
   });
 
-  // RF-11: reactivar solo devuelve el acceso, no pregunta
+  // HU-05 RF-6: reactivar solo devuelve el acceso, no pregunta
   it('reactivar no pide confirmación', async () => {
     const desactivada: UsuarioResumen = { ...ANA, estado: 'DESACTIVADA' };
     await abrir('/usuarios', (falso) => falso.recurso.value.set(pagina([desactivada, ADMIN])));
@@ -421,7 +444,7 @@ describe('UsuariosPage', () => {
     expect(texto()).toContain('La cuenta de Ana Rojas quedó reactivada.');
   });
 
-  // RF-16: primero hay que reactivarla
+  // HU-05 RF-10: primero hay que reactivarla
   it('en una cuenta desactivada no se puede cambiar el rol', async () => {
     const desactivada: UsuarioResumen = { ...ANA, estado: 'DESACTIVADA' };
     await abrir('/usuarios', (falso) => falso.recurso.value.set(pagina([desactivada, ADMIN])));
@@ -432,7 +455,7 @@ describe('UsuariosPage', () => {
     expect(ayuda?.textContent).toContain('Reactívala');
   });
 
-  // FA-02: el motivo del rechazo, y la fila como estaba
+  // HU-05 RF-12: el motivo del rechazo, y la fila como estaba
   it('si el backend rechaza el cambio avisa el motivo y no toca la fila', async () => {
     await abrir('/usuarios', (falso) => {
       falso.respuesta = Promise.reject({
@@ -454,6 +477,7 @@ describe('UsuariosPage', () => {
   });
 
   // Un segundo clic mientras se guarda no puede mandar otra petición
+  // HU-05 RF-12
   it('mientras se guarda, los controles de la fila quedan deshabilitados', async () => {
     let terminar: (usuario: UsuarioResumen) => void = () => {};
     await abrir('/usuarios', (falso) => {
@@ -498,6 +522,7 @@ describe('UsuariosPage', () => {
   });
 
   // Dos operaciones a la vez: que termine una no habilita la otra
+  // HU-05 RF-12
   it('cada fila queda deshabilitada hasta que termina su propia operación', async () => {
     const LUIS: UsuarioResumen = { ...ANA, idUsuario: 8, nombre: 'Luis', correo: 'luis@mail.com', estado: 'DESACTIVADA' };
     const terminar: Array<(usuario: UsuarioResumen) => void> = [];
@@ -520,6 +545,7 @@ describe('UsuariosPage', () => {
   });
 
   // Un número que el backend no puede leer como página sería un error de carga
+  // HU-05 RF-2
   it('descarta una página demasiado grande', async () => {
     await abrir('/usuarios?pagina=1e20');
 
@@ -527,6 +553,7 @@ describe('UsuariosPage', () => {
   });
 
   // Una página que ya no existe ofrece volver al principio, no retroceder de a una
+  // HU-05 RF-2
   it('fuera de rango ofrece volver a la primera página', async () => {
     await abrir('/usuarios?rol=CLIENTE&pagina=50', (falso) =>
       falso.recurso.value.set(pagina([], { pagina: 50, totalElementos: 21, totalPaginas: 2 })),

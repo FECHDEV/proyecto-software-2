@@ -65,6 +65,7 @@ class GestionUsuariosServiceTest {
 		given(usuarioRepository.buscar(any(), any(), any(), any())).willReturn(new PageImpl<>(List.of()));
 	}
 
+	// HU-05 RF-2
 	@Test
 	void listarPideLaPaginaIndicadaDelRegistroMasRecienteAlMasAntiguo() {
 		Page<Usuario> pagina = new PageImpl<>(List.of(conId(Usuario.registrarCliente("Ana", "Rojas", "ana@mail.com",
@@ -87,6 +88,7 @@ class GestionUsuariosServiceTest {
 		then(usuarioRepository).should().buscar(null, null, null, PageRequest.of(0, 20, ORDEN));
 	}
 
+	// HU-05 RF-3
 	@Test
 	void textoSeBuscaRecortadoEnMinusculasYConLosComodinesEscapados() {
 		listadoVacio();
@@ -96,6 +98,7 @@ class GestionUsuariosServiceTest {
 		then(usuarioRepository).should().buscar(null, null, "%ana!_50!%!!%", PageRequest.of(0, 20, ORDEN));
 	}
 
+	// HU-05 RF-3
 	@Test
 	void textoVacioOEnBlancoNoFiltra() {
 		listadoVacio();
@@ -131,6 +134,7 @@ class GestionUsuariosServiceTest {
 
 	// --- cambiarRol ---
 
+	// HU-05 RF-4, RF-9
 	@Test
 	void asignaElRolBloqueandoPrimeroLosAdministradoresYConservaLaFecha() {
 		Usuario ana = ana();
@@ -145,6 +149,7 @@ class GestionUsuariosServiceTest {
 		orden.verify(usuarioRepository).findConBloqueoByIdUsuario(ID_ANA);
 	}
 
+	// HU-05 RF-4
 	@Test
 	void cuentaConFechaVuelveAClienteDesdeOtroRol() {
 		Usuario ana = ana();
@@ -155,6 +160,7 @@ class GestionUsuariosServiceTest {
 		assertThat(servicio.cambiarRol(ID_ADMIN, ID_ANA, Rol.CLIENTE).getRol()).isEqualTo(Rol.CLIENTE);
 	}
 
+	// HU-05 RF-7
 	@Test
 	void propioRolSeRechazaAunqueSeaElMismoSinTocarLaBase() {
 		assertThatThrownBy(() -> servicio.cambiarRol(ID_ADMIN, ID_ADMIN, Rol.ADMINISTRADOR))
@@ -162,6 +168,7 @@ class GestionUsuariosServiceTest {
 		then(usuarioRepository).shouldHaveNoInteractions();
 	}
 
+	// HU-05 RF-11
 	@Test
 	void usuarioInexistenteAlCambiarElRol() {
 		administradoresActivos(administrador(ID_ADMIN));
@@ -171,6 +178,7 @@ class GestionUsuariosServiceTest {
 				.isInstanceOf(UsuarioNoEncontradoException.class);
 	}
 
+	// HU-05 RF-9
 	@Test
 	void quitarElRolAlUltimoAdministradorActivoSeRechaza() {
 		// Solo se alcanza con operaciones simultáneas: quien opera ya dejó de ser administrador al llegar el bloqueo
@@ -183,6 +191,7 @@ class GestionUsuariosServiceTest {
 		assertThat(ultimo.getRol()).isEqualTo(Rol.ADMINISTRADOR);
 	}
 
+	// HU-05 RF-9
 	@Test
 	void quitarElRolAUnAdministradorConOtroActivoSePermite() {
 		Usuario otro = administrador(ID_OTRO_ADMIN);
@@ -192,6 +201,7 @@ class GestionUsuariosServiceTest {
 		assertThat(servicio.cambiarRol(ID_ADMIN, ID_OTRO_ADMIN, Rol.EMPLEADO).getRol()).isEqualTo(Rol.EMPLEADO);
 	}
 
+	// HU-05 RF-9
 	@Test
 	void filaQueYaNoEsAdministradorActivoNoCuentaComoOtroAdministrador() {
 		Usuario yaDegradado = administrador(ID_ADMIN);
@@ -204,6 +214,7 @@ class GestionUsuariosServiceTest {
 				.isInstanceOf(UltimoAdministradorActivoException.class);
 	}
 
+	// HU-05 RF-10
 	@Test
 	void rolDeCuentaDesactivadaSeRechazaAunqueSeaElMismo() {
 		Usuario ana = ana();
@@ -215,6 +226,7 @@ class GestionUsuariosServiceTest {
 				.isInstanceOf(RolDeCuentaDesactivadaException.class);
 	}
 
+	// HU-05 RF-9
 	@Test
 	void ultimoAdministradorSinFechaRespondePrimeroPorElUltimoAdministrador() {
 		Usuario ultimo = administrador(ID_OTRO_ADMIN);
@@ -225,6 +237,7 @@ class GestionUsuariosServiceTest {
 				.isInstanceOf(UltimoAdministradorActivoException.class);
 	}
 
+	// HU-05 RF-10
 	@Test
 	void cuentaDesactivadaSinFechaRespondePrimeroPorLaCuentaDesactivada() {
 		Usuario desactivado = administrador(ID_OTRO_ADMIN);
@@ -238,6 +251,7 @@ class GestionUsuariosServiceTest {
 
 	// --- cambiarEstado ---
 
+	// HU-05 RF-5
 	@Test
 	void desactivaLaCuentaDeOtroUsuarioSinCambiarSuRol() {
 		Usuario ana = ana();
@@ -253,6 +267,7 @@ class GestionUsuariosServiceTest {
 		orden.verify(usuarioRepository).findConBloqueoByIdUsuario(ID_ANA);
 	}
 
+	// HU-05 RF-6
 	@Test
 	void reactivaUnaCuentaDesactivadaSinOtrasReglas() {
 		Usuario ana = ana();
@@ -264,6 +279,7 @@ class GestionUsuariosServiceTest {
 	}
 
 	// HU-03 RF-9: el enlace pedido antes de desactivar deja de servir, también si después se reactiva la cuenta
+	// HU-05 RF-5
 	@Test
 	void desactivarAnulaLosEnlacesDeRecuperacionPendientes() {
 		Usuario ana = ana();
@@ -277,6 +293,7 @@ class GestionUsuariosServiceTest {
 		assertThat(pendiente.isUsado()).isTrue();
 	}
 
+	// HU-05 RF-6
 	@Test
 	void reactivarNoTocaLosEnlacesDeRecuperacion() {
 		Usuario ana = ana();
@@ -287,6 +304,7 @@ class GestionUsuariosServiceTest {
 		then(recuperacionRepository).shouldHaveNoInteractions();
 	}
 
+	// HU-05 RF-8
 	@Test
 	void desactivarLaPropiaCuentaSeRechazaSinTocarLaBase() {
 		assertThatThrownBy(() -> servicio.cambiarEstado(ID_ADMIN, ID_ADMIN, EstadoCuenta.DESACTIVADA))
@@ -294,6 +312,7 @@ class GestionUsuariosServiceTest {
 		then(usuarioRepository).shouldHaveNoInteractions();
 	}
 
+	// HU-05 RF-6
 	@Test
 	void activarLaPropiaCuentaNoTieneReglaExtra() {
 		Usuario admin = administrador(ID_ADMIN);
@@ -303,6 +322,7 @@ class GestionUsuariosServiceTest {
 				.isEqualTo(EstadoCuenta.ACTIVA);
 	}
 
+	// HU-05 RF-6
 	@Test
 	void reactivarNoCuentaNiBloqueaALosAdministradores() {
 		// Reactivar nunca puede dejar al sistema sin administradores activos, así que no hay nada que contar: bloquearlos
@@ -316,6 +336,7 @@ class GestionUsuariosServiceTest {
 		then(usuarioRepository).should(never()).findConBloqueoByRolAndEstadoOrderByIdUsuario(any(), any());
 	}
 
+	// HU-05 RF-9
 	@Test
 	void desactivarAlUltimoAdministradorActivoSeRechaza() {
 		Usuario ultimo = administrador(ID_OTRO_ADMIN);
@@ -327,6 +348,7 @@ class GestionUsuariosServiceTest {
 		assertThat(ultimo.estaActiva()).isTrue();
 	}
 
+	// HU-05 RF-9
 	@Test
 	void desactivarAUnAdministradorConOtroActivoSePermite() {
 		Usuario otro = administrador(ID_OTRO_ADMIN);
@@ -336,6 +358,7 @@ class GestionUsuariosServiceTest {
 		assertThat(servicio.cambiarEstado(ID_ADMIN, ID_OTRO_ADMIN, EstadoCuenta.DESACTIVADA).estaActiva()).isFalse();
 	}
 
+	// HU-05 RF-9
 	@Test
 	void desactivarUnAdministradorYaDesactivadoNoLoCuentaComoElUltimo() {
 		Usuario desactivado = administrador(ID_OTRO_ADMIN);
@@ -346,6 +369,7 @@ class GestionUsuariosServiceTest {
 		assertThat(servicio.cambiarEstado(ID_ADMIN, ID_OTRO_ADMIN, EstadoCuenta.DESACTIVADA).estaActiva()).isFalse();
 	}
 
+	// HU-05 RF-11
 	@Test
 	void usuarioInexistenteAlCambiarElEstado() {
 		administradoresActivos(administrador(ID_ADMIN));

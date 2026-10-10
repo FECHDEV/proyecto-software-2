@@ -30,6 +30,7 @@ import io.jsonwebtoken.security.WeakKeyException;
 public class TokenJwt {
 
 	private static final String HUELLA = "hc";
+	private static final String VERSION_SESION = "vs";
 	private static final int BYTES_HUELLA = 16;
 
 	private final SecretKey clave;
@@ -60,6 +61,7 @@ public class TokenJwt {
 				.issuedAt(Date.from(emitido))
 				.expiration(Date.from(expiracion))
 				.claim(HUELLA, huella(usuario.getContrasena()))
+				.claim(VERSION_SESION, usuario.getVersionSesion())
 				.signWith(clave, Jwts.SIG.HS256)
 				.compact();
 		return new TokenEmitido(token, expiracion);
@@ -69,18 +71,20 @@ public class TokenJwt {
 		try {
 			Claims claims = lector.parseSignedClaims(token).getPayload();
 			String huella = claims.get(HUELLA, String.class);
-			if (huella == null) {
+			// Un token sin versión de sesión es de antes de que existiera: no se acepta
+			Integer version = claims.get(VERSION_SESION, Integer.class);
+			if (huella == null || version == null) {
 				return Optional.empty();
 			}
-			return Optional.of(new TokenLeido(Long.valueOf(claims.getSubject()), huella));
+			return Optional.of(new TokenLeido(Long.valueOf(claims.getSubject()), huella, version));
 		} catch (JwtException | IllegalArgumentException e) {
 			return Optional.empty();
 		}
 	}
 
-	// El token deja de corresponder a la cuenta si su contraseña cambió después de emitirlo
+	// El token deja de corresponder a la cuenta si su contraseña cambió o la cuenta se desactivó después de emitirlo
 	public boolean correspondeA(TokenLeido leido, Usuario usuario) {
-		return MessageDigest.isEqual(leido.huellaContrasena().getBytes(StandardCharsets.US_ASCII),
+		return leido.versionSesion() == usuario.getVersionSesion() && MessageDigest.isEqual(leido.huellaContrasena().getBytes(StandardCharsets.US_ASCII),
 				huella(usuario.getContrasena()).getBytes(StandardCharsets.US_ASCII));
 	}
 

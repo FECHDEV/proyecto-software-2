@@ -46,7 +46,7 @@ describe('UsuariosService', () => {
     await TestBed.inject(ApplicationRef).whenStable();
   }
 
-  // RF-3 y RF-4: la primera página, sin filtros que el backend no pidió
+  // HU-05 RF-2: la primera página, sin filtros que el backend no pidió
   it('pide la lista sin parámetros de más', async () => {
     const recurso = TestBed.runInInjectionContext(() => servicio.listado(signal(SIN_FILTROS)));
     TestBed.tick();
@@ -60,7 +60,7 @@ describe('UsuariosService', () => {
     expect(recurso.value()).toEqual(PAGINA);
   });
 
-  // RF-5: rol, estado, texto y página viajan como parámetros
+  // HU-05 RF-3: rol, estado, texto y página viajan como parámetros
   it('envía los filtros y la página', async () => {
     TestBed.runInInjectionContext(() =>
       servicio.listado(signal({ rol: 'CLIENTE', estado: 'ACTIVA', texto: '  ana ', pagina: 1 })),
@@ -103,7 +103,7 @@ describe('UsuariosService', () => {
     await estable();
   });
 
-  // RF-7
+  // HU-05 RF-4
   it('cambia el rol y devuelve el usuario actualizado', async () => {
     const promesa = servicio.cambiarRol(7, 'EMPLEADO');
 
@@ -115,7 +115,7 @@ describe('UsuariosService', () => {
     await expect(promesa).resolves.toEqual({ ...ANA, rol: 'EMPLEADO' });
   });
 
-  // RF-10
+  // HU-05 RF-5, RF-6
   it('cambia el estado y devuelve el usuario actualizado', async () => {
     const promesa = servicio.cambiarEstado(7, 'DESACTIVADA');
 
@@ -127,7 +127,7 @@ describe('UsuariosService', () => {
     await expect(promesa).resolves.toEqual({ ...ANA, estado: 'DESACTIVADA' });
   });
 
-  // RF-15: los 409 llegan con su código para el diccionario
+  // HU-05 RF-12: los 409 llegan con su código para el diccionario
   it('devuelve el código de una operación rechazada', async () => {
     const promesa = servicio.cambiarEstado(1, 'DESACTIVADA');
 
