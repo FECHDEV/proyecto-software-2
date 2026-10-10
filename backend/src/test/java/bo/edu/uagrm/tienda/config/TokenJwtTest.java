@@ -68,7 +68,7 @@ class TokenJwtTest {
 				.clock(() -> Date.from(AHORA))
 				.build().parseSignedClaims(token).getPayload();
 
-		assertThat(claims).containsOnlyKeys("sub", "iat", "exp", "hc");
+		assertThat(claims).containsOnlyKeys("sub", "iat", "exp", "hc", "vs");
 		assertThat(claims.getSubject()).isEqualTo("7");
 		assertThat(claims.get("hc", String.class)).hasSize(22).doesNotContain("$2a", "hashDeLaContrasenaActual");
 	}
@@ -95,6 +95,51 @@ class TokenJwtTest {
 				.compact();
 
 		assertThat(tokenJwt(CLAVE, AHORA).leer(sinHuella)).isEmpty();
+	}
+
+	// HU-05 RF-5: el token lleva la versión de sesión de la cuenta
+	@Test
+	void tokenLlevaLaVersionDeSesionDeLaCuenta() {
+		Usuario ana = clienteConId(7, HASH);
+		ReflectionTestUtils.setField(ana, "versionSesion", 3);
+
+		String token = tokenJwt(CLAVE, AHORA).emitir(ana).token();
+
+		assertThat(tokenJwt(CLAVE, AHORA).leer(token))
+				.hasValueSatisfying(leido -> assertThat(leido.versionSesion()).isEqualTo(3));
+	}
+
+	// HU-05 RF-6: desactivar sube la versión; el token anterior ya no corresponde, aunque se reactive
+	@Test
+	void tokenDeUnaVersionAnteriorNoCorrespondeALaCuenta() {
+		Usuario ana = clienteConId(7, HASH);
+		TokenJwt tokens = tokenJwt(CLAVE, AHORA);
+		TokenLeido anterior = tokens.leer(tokens.emitir(ana).token()).orElseThrow();
+
+		ana.desactivar();
+		ana.activar();
+
+		assertThat(tokens.correspondeA(anterior, ana)).isFalse();
+		assertThat(tokens.correspondeA(tokens.leer(tokens.emitir(ana).token()).orElseThrow(), ana)).isTrue();
+	}
+
+	// HU-05 RF-6: un token emitido antes de la versión de sesión no se acepta
+	@Test
+	void tokenSinVersionDeSesionNoSeAcepta() {
+		String emitido = tokenJwt(CLAVE, AHORA).emitir(clienteConId(7, HASH)).token();
+		Claims claims = Jwts.parser()
+				.verifyWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(CLAVE)))
+				.clock(() -> Date.from(AHORA))
+				.build().parseSignedClaims(emitido).getPayload();
+		String sinVersion = Jwts.builder()
+				.subject("7")
+				.issuedAt(Date.from(AHORA))
+				.expiration(Date.from(AHORA.plus(OCHO_HORAS)))
+				.claim("hc", claims.get("hc", String.class))
+				.signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(CLAVE)), Jwts.SIG.HS256)
+				.compact();
+
+		assertThat(tokenJwt(CLAVE, AHORA).leer(sinVersion)).isEmpty();
 	}
 
 	// HU-02 RF-9

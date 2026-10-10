@@ -170,6 +170,7 @@ class SeguridadJwtTest {
 		assertThat(pedir("/api/no-existe", bearer(cliente(7)))).hasStatus(HttpStatus.NOT_FOUND);
 	}
 
+	// HU-05 RF-1
 	@Test
 	void accesoDenegadoDevuelve403ConCodigo() {
 		given(autenticacionService.usuarioActivo(7L)).willReturn(Optional.of(cliente(7)));

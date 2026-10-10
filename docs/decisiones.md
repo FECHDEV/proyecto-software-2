@@ -134,10 +134,12 @@ Spring Security con el token en el header `Authorization`.
   arranca, porque con una clave conocida cualquiera podría fabricar tokens.
 - El token lleva el id del usuario (`sub`), `iat`, `exp` y `hc`, una huella de
   la contraseña: HMAC-SHA256 del hash BCrypt con la clave del token, truncado a
-  16 bytes, que no permite reconstruir el hash. El rol, el estado y la huella se
-  comparan con la base en cada petición: si se desactiva una cuenta, se le
-  cambia el rol o la contraseña, vale desde la siguiente petición y no recién
-  al vencer el token.
+  16 bytes, que no permite reconstruir el hash. Desde HU-05 lleva también
+  `vs`, la versión de sesión de la cuenta, que sube al desactivarla. El rol, el
+  estado, la huella y la versión se comparan con la base en cada petición: si
+  se desactiva una cuenta, se le cambia el rol o la contraseña, vale desde la
+  siguiente petición y no recién al vencer el token. Un token sin `vs` no se
+  acepta.
 - Un token inválido o vencido no autentica, pero tampoco bloquea la petición:
   los endpoints públicos la atienden igual, para que un token viejo guardado en
   el frontend no impida volver a iniciar sesión.
@@ -264,9 +266,15 @@ código:
 - **Listado paginado:** 20 por página (100 como máximo), del más reciente al
   más antiguo, con filtro por rol y estado y búsqueda en correo, nombre y
   apellido. No muestra el teléfono.
-- **Aceptado:** al reactivar una cuenta, los tokens emitidos antes de
-  desactivarla vuelven a valer hasta que vencen. Para cortar de verdad las
-  sesiones de una cuenta hay que cambiarle la contraseña.
+- *10/10/2026 (HU-05).* **Desactivar invalida las sesiones para siempre:** la
+  cuenta lleva una versión de sesión que viaja en el token y se compara en cada
+  petición, como la huella de la contraseña; desactivar la incrementa, así los
+  tokens emitidos antes no vuelven a valer al reactivarla. Reemplaza el riesgo
+  aceptado anterior (los tokens viejos revivían hasta vencer). Al desactivar
+  también se anulan los enlaces de recuperación pendientes (HU-03).
+  **Consecuencia aceptada:** al desplegar este cambio, los tokens que ya
+  estaban emitidos no tienen `vs` y dejan de valer: todos inician sesión una
+  vez más.
 
 ---
 

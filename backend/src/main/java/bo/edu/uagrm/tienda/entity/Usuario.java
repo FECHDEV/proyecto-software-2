@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Objects;
 
+import org.hibernate.annotations.ColumnDefault;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -56,6 +58,13 @@ public class Usuario {
 	@Column(name = "fecha_registro", nullable = false)
 	private LocalDateTime fechaRegistro;
 
+	// Viaja en el token y se compara en cada petición: desactivar la sube, así los tokens emitidos antes no vuelven
+	// a valer si se reactiva la cuenta (decisiones.md → Gestión de usuarios). El 0 por defecto es para las filas
+	// que ya existían cuando se agregó la columna
+	@ColumnDefault("0")
+	@Column(name = "version_sesion", nullable = false)
+	private int versionSesion;
+
 	public static Usuario registrarCliente(String nombre, String apellido, String correo, String contrasenaHash,
 			String telefono, LocalDateTime fechaRegistro) {
 		Usuario usuario = new Usuario();
@@ -106,6 +115,9 @@ public class Usuario {
 	}
 
 	public void desactivar() {
+		if (estado == EstadoCuenta.ACTIVA) {
+			versionSesion++;
+		}
 		estado = EstadoCuenta.DESACTIVADA;
 	}
 

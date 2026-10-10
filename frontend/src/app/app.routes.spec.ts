@@ -54,6 +54,7 @@ describe('rutas', () => {
 
   // La gestión de usuarios es del administrador: los demás vuelven al inicio (usabilidad; el
   // backend igual responde 403)
+  // HU-05 RF-1
   it('la gestión de usuarios es solo del administrador', async () => {
     expect(await navegarComo('ADMINISTRADOR', '/usuarios')).toBe('/usuarios');
     expect(await navegarComo('CLIENTE', '/usuarios')).toBe('/');
@@ -75,6 +76,7 @@ describe('rutas', () => {
     expect(await navegarComo(null, '/inicio-sesion')).toBe('/inicio-sesion');
   });
 
+  // HU-05 RF-1
   it('sin sesión la gestión de usuarios lleva a iniciar sesión', async () => {
     expect(await navegarComo(null, '/usuarios')).toBe('/inicio-sesion?destino=%2Fusuarios');
   });
