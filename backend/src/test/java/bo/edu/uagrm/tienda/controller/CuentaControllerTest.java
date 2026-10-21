@@ -40,6 +40,7 @@ import bo.edu.uagrm.tienda.exception.IntentosExcedidosException;
 import bo.edu.uagrm.tienda.service.AutenticacionService;
 import bo.edu.uagrm.tienda.service.SesionIniciada;
 import bo.edu.uagrm.tienda.service.UsuarioService;
+import bo.edu.uagrm.tienda.service.VerificacionCorreoService;
 
 // Autentica con un token real, como SeguridadJwtTest: el id de la cuenta sale del filtro, nunca de la petición
 @WebMvcTest(CuentaController.class)
@@ -61,6 +62,9 @@ class CuentaControllerTest {
 
 	@MockitoBean
 	private UsuarioService usuarioService;
+
+	@MockitoBean
+	private VerificacionCorreoService verificacionCorreoService;
 
 	private final Usuario ana = conId(Usuario.registrarCliente("Ana", "Rojas", "ana@mail.com", "$2a$10$hash",
 			"70000000", LocalDateTime.of(2026, 9, 12, 11, 0)), 7L);

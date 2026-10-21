@@ -43,6 +43,54 @@ h2 {
 	overflow-wrap: anywhere;
 }
 
+// El botón de 44 px agranda el valor: la etiqueta se centra con él
+.correo {
+	align-items: center;
+}
+
+.correo dd {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--app-espacio-1) var(--app-espacio-2);
+}
+
+.estado-correo {
+	color: var(--app-exito);
+	font-size: 12.5px;
+}
+
+.estado-correo.sin-verificar {
+	color: var(--app-aviso);
+}
+
+.reenviar {
+	min-height: var(--app-area-tocable);
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-weight: 700;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	cursor: pointer;
+}
+
+.resultado {
+	flex-basis: 100%;
+	color: var(--app-texto-suave);
+	font-weight: 400;
+	text-align: right;
+}
+
+@media (max-width: 640px) {
+	.correo dd {
+		justify-content: flex-start;
+	}
+}
+
 .cargando {
 	margin: 0;
 	color: var(--app-texto-suave);

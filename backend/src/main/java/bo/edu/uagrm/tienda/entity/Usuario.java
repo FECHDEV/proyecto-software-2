@@ -65,6 +65,12 @@ public class Usuario {
 	@Column(name = "version_sesion", nullable = false)
 	private int versionSesion;
 
+	// Sin verificar no se confirman pedidos (HU-20). El true por defecto es para las cuentas que ya existían cuando se
+	// agregó la columna, de cualquier rol (RF-2): solo el registro crea una cuenta sin verificar
+	@ColumnDefault("true")
+	@Column(name = "correo_verificado", nullable = false)
+	private boolean correoVerificado;
+
 	public static Usuario registrarCliente(String nombre, String apellido, String correo, String contrasenaHash,
 			String telefono, LocalDateTime fechaRegistro) {
 		Usuario usuario = new Usuario();
@@ -76,6 +82,7 @@ public class Usuario {
 		usuario.fechaRegistro = Objects.requireNonNull(fechaRegistro);
 		usuario.rol = Rol.CLIENTE;
 		usuario.estado = EstadoCuenta.ACTIVA;
+		usuario.correoVerificado = false;
 		return usuario;
 	}
 
@@ -89,6 +96,7 @@ public class Usuario {
 		usuario.fechaRegistro = Objects.requireNonNull(fechaRegistro);
 		usuario.rol = Rol.ADMINISTRADOR;
 		usuario.estado = EstadoCuenta.ACTIVA;
+		usuario.correoVerificado = true;
 		return usuario;
 	}
 
@@ -108,6 +116,10 @@ public class Usuario {
 		this.nombre = Objects.requireNonNull(nombre);
 		this.apellido = Objects.requireNonNull(apellido);
 		this.telefono = telefonoONulo(telefono);
+	}
+
+	public void marcarCorreoVerificado() {
+		correoVerificado = true;
 	}
 
 	public void asignarRol(Rol rol) {

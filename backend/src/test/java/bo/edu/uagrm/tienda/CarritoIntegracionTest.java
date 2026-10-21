@@ -29,6 +29,7 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
 import com.jayway.jsonpath.JsonPath;
 
+import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
 import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
@@ -172,6 +173,18 @@ class CarritoIntegracionTest {
 	private void ajustarStock(Integer idProducto, String contada) {
 		assertThat(post("/api/inventario/{id}/ajustes", admin, "{\"contada\":%s,\"motivo\":\"CONTEO\"}"
 				.formatted(contada), idProducto)).hasStatus(HttpStatus.CREATED);
+	}
+
+	// HU-20 RF-7, RF-15: el carrito dice si se puede confirmar, y se pone al día sin volver a iniciar sesión
+	@Test
+	void elCarritoDiceSiElCorreoEstaVerificado() {
+		assertThat(get(CARRITO, ana)).bodyJson().extractingPath("$.correoVerificado").isEqualTo(false);
+
+		Usuario cuenta = usuarioRepository.findByCorreo("ana.hu11@mail.com").orElseThrow();
+		cuenta.marcarCorreoVerificado();
+		usuarioRepository.save(cuenta);
+
+		assertThat(get(CARRITO, ana)).bodyJson().extractingPath("$.correoVerificado").isEqualTo(true);
 	}
 
 	// HU-11 RF-1

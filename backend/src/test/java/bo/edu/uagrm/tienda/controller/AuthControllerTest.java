@@ -44,6 +44,7 @@ import bo.edu.uagrm.tienda.service.AutenticacionService;
 import bo.edu.uagrm.tienda.service.RecuperacionContrasenaService;
 import bo.edu.uagrm.tienda.service.SesionIniciada;
 import bo.edu.uagrm.tienda.service.UsuarioService;
+import bo.edu.uagrm.tienda.service.VerificacionCorreoService;
 
 @WebMvcTest(AuthController.class)
 @Import(SecurityConfig.class)
@@ -67,6 +68,9 @@ class AuthControllerTest {
 
 	@MockitoBean
 	private RecuperacionContrasenaService recuperacionContrasenaService;
+
+	@MockitoBean
+	private VerificacionCorreoService verificacionCorreoService;
 
 	private static Map<String, String> datosValidos() {
 		Map<String, String> datos = new LinkedHashMap<>();

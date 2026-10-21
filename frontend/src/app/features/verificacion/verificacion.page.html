@@ -1,0 +1,20 @@
+<section class="tarjeta">
+  <h1>Verificar el correo</h1>
+
+  @switch (estado()) {
+    @case ('verificando') {
+      <p class="bajada" role="status">Verificando su correo…</p>
+    }
+    @case ('verificado') {
+      <p #resultado class="aviso exito" role="status" tabindex="-1">Su correo quedó verificado. Ya puede confirmar sus pedidos.</p>
+      <a class="boton" routerLink="/">Ir a la tienda</a>
+    }
+    @case ('fallido') {
+      <p #resultado class="aviso" role="alert" tabindex="-1">{{ aviso() }}</p>
+      @if (sePuedeReintentar()) {
+        <button type="button" class="boton" (click)="reintentar()">Reintentar</button>
+      }
+      <p class="enlace-cruzado"><a routerLink="/">Ir a la tienda</a></p>
+    }
+  }
+</section>

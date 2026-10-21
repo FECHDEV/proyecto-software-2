@@ -14,6 +14,8 @@ export interface Usuario {
 	rol: Rol;
 	estado: EstadoCuenta;
 	fechaRegistro: string;
+	// Sin verificar no se confirman pedidos (HU-20)
+	correoVerificado: boolean;
 }
 
 export const ROLES: readonly Rol[] = ['CLIENTE', 'ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'];

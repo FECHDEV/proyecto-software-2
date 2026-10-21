@@ -20,6 +20,7 @@ function sesion(expiracion: string, rol: 'CLIENTE' | 'ADMINISTRADOR' = 'CLIENTE'
       rol,
       estado: 'ACTIVA',
       fechaRegistro: '2026-09-14T10:00:00',
+      correoVerificado: true,
     },
   };
 }

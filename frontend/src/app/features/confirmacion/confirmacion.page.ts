@@ -84,6 +84,7 @@ export class ConfirmacionPage {
 		return (
 			carrito !== undefined &&
 			carrito.idPedidoPendiente === null &&
+			carrito.correoVerificado !== false &&
 			carrito.lineas.length > 0 &&
 			carrito.lineas.every((linea) => linea.estado === 'DISPONIBLE')
 		);
@@ -181,7 +182,8 @@ export class ConfirmacionPage {
 
 	private rechazar(error: ErrorApi): void {
 		this.rechazo.set(error);
-		if (error.codigo === 'TOTAL_CAMBIADO') {
+		// Con el carrito pedido de nuevo queda el aviso de verificar el correo (HU-20 RF-6, RF-7)
+		if (error.codigo === 'TOTAL_CAMBIADO' || error.codigo === 'CORREO_SIN_VERIFICAR') {
 			this.recurso.reload();
 		}
 		const campo = primerCampoRechazado(CAMPOS, error.errores);

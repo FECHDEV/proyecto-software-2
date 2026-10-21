@@ -22,6 +22,7 @@ const RESPUESTA: Sesion = {
     rol: 'CLIENTE',
     estado: 'ACTIVA',
     fechaRegistro: '2026-09-14T10:00:00',
+    correoVerificado: true,
   },
 };
 
@@ -146,6 +147,7 @@ const CLIENTE_REGISTRADO: Usuario = {
   rol: 'CLIENTE',
   estado: 'ACTIVA',
   fechaRegistro: '2026-09-17T10:00:00',
+  correoVerificado: true,
 };
 
 // HU-01 RF-2: el registro responde con la sesión, igual que el inicio de sesión
@@ -356,6 +358,30 @@ describe('AutenticacionService, recuperacion de contrasena', () => {
     peticion.flush({ mensaje: 'La contraseña se actualizó. Ya puede iniciar sesión con la nueva contraseña.' });
 
     await expect(promesa).resolves.toBeUndefined();
+  });
+
+  // HU-20 RF-4: el token viaja como vino, sin espacios de sobra
+  it('verifica el correo con el token del enlace', async () => {
+    const promesa = servicio.verificarCorreo('  token-del-enlace  ');
+
+    const peticion = http.expectOne('/api/auth/verificacion');
+    expect(peticion.request.method).toBe('POST');
+    expect(peticion.request.body).toEqual({ token: 'token-del-enlace' });
+    peticion.flush({ mensaje: 'Su correo quedó verificado.' });
+
+    await expect(promesa).resolves.toBeUndefined();
+  });
+
+  // HU-20 RF-5
+  it('rechaza la verificación con TOKEN_VERIFICACION_INVALIDO', async () => {
+    const promesa = servicio.verificarCorreo('token-usado');
+
+    http.expectOne('/api/auth/verificacion').flush(
+      { status: 400, detail: 'El enlace no sirve', codigo: 'TOKEN_VERIFICACION_INVALIDO' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+
+    await expect(promesa).rejects.toMatchObject({ codigo: 'TOKEN_VERIFICACION_INVALIDO' });
   });
 
   // HU-03 RF-9: token inexistente, vencido o ya usado, todos iguales

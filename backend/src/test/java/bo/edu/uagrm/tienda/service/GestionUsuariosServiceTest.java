@@ -49,11 +49,14 @@ class GestionUsuariosServiceTest {
 	@Mock
 	private RecuperacionContrasenaRepository recuperacionRepository;
 
+	@Mock
+	private VerificacionCorreoService verificacionCorreo;
+
 	private GestionUsuariosService servicio;
 
 	@BeforeEach
 	void crearServicio() {
-		servicio = new GestionUsuariosService(usuarioRepository, recuperacionRepository);
+		servicio = new GestionUsuariosService(usuarioRepository, recuperacionRepository, verificacionCorreo);
 	}
 
 	private static Usuario conId(Usuario usuario, long id) {

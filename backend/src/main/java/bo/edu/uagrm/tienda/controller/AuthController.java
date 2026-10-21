@@ -13,9 +13,11 @@ import bo.edu.uagrm.tienda.dto.MensajeResponse;
 import bo.edu.uagrm.tienda.dto.RegistroClienteRequest;
 import bo.edu.uagrm.tienda.dto.RestablecimientoContrasenaRequest;
 import bo.edu.uagrm.tienda.dto.SolicitudRecuperacionRequest;
+import bo.edu.uagrm.tienda.dto.VerificacionCorreoRequest;
 import bo.edu.uagrm.tienda.service.AutenticacionService;
 import bo.edu.uagrm.tienda.service.RecuperacionContrasenaService;
 import bo.edu.uagrm.tienda.service.UsuarioService;
+import bo.edu.uagrm.tienda.service.VerificacionCorreoService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +31,12 @@ public class AuthController {
 			"Si el correo está registrado, le enviamos las instrucciones para recuperar la contraseña.");
 	private static final MensajeResponse CONTRASENA_RESTABLECIDA = new MensajeResponse(
 			"La contraseña se actualizó. Ya puede iniciar sesión con la nueva contraseña.");
+	private static final MensajeResponse CORREO_VERIFICADO = new MensajeResponse("Su correo quedó verificado.");
 
 	private final UsuarioService usuarioService;
 	private final AutenticacionService autenticacionService;
 	private final RecuperacionContrasenaService recuperacionContrasenaService;
+	private final VerificacionCorreoService verificacionCorreoService;
 
 	// Responde con la sesión iniciada, como el inicio de sesión. La IP alimenta el límite de registros, con la misma
 	// salvedad del proxy inverso
@@ -64,5 +68,12 @@ public class AuthController {
 	public MensajeResponse restablecerContrasena(@Valid @RequestBody RestablecimientoContrasenaRequest solicitud) {
 		recuperacionContrasenaService.restablecer(solicitud);
 		return CONTRASENA_RESTABLECIDA;
+	}
+
+	// Pública: el enlace del correo funciona sin sesión y no la inicia (HU-20 RF-4)
+	@PostMapping("/verificacion")
+	public MensajeResponse verificarCorreo(@Valid @RequestBody VerificacionCorreoRequest solicitud) {
+		verificacionCorreoService.verificar(solicitud.token());
+		return CORREO_VERIFICADO;
 	}
 }

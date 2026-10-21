@@ -57,4 +57,9 @@ export class AutenticacionService {
 			}),
 		);
 	}
+
+	// Como el de la recuperación: el token viaja como llegó, sin espacios de sobra (HU-20 RF-4)
+	async verificarCorreo(token: string): Promise<void> {
+		await escribir(this.http.post('/api/auth/verificacion', { token: token.trim() }));
+	}
 }

@@ -21,6 +21,7 @@ const ANA: Usuario = {
   rol: 'CLIENTE',
   estado: 'ACTIVA',
   fechaRegistro: '2026-09-14T10:00:00',
+  correoVerificado: true,
 };
 
 function sesionDe(usuario: Usuario, token = 'jwt.de.prueba'): Sesion {
@@ -48,6 +49,8 @@ class CuentaFalsa {
   respuestaDatos: Promise<Usuario> = Promise.resolve(ANA);
   llamadasDatos: DatosPersonales[] = [];
   respuestaContrasena: Promise<Sesion> = Promise.resolve(sesionDe(ANA, 'jwt.nuevo'));
+  respuestaReenvio: Promise<string> = Promise.resolve('Le enviamos el correo a ana@mail.com.');
+  readonly reenviarVerificacion = vi.fn(() => this.respuestaReenvio);
   llamadasContrasena: CambioDeContrasena[] = [];
 
   datosPersonales() {
@@ -129,6 +132,51 @@ describe('MisDatosPage', () => {
     expect(texto()).toContain('Activa');
     expect(texto()).toContain('14/09/2026');
   });
+
+  // HU-20 RF-8
+  it('dice que el correo está verificado, sin ofrecer el reenvío', () => {
+    expect(fijo.nativeElement.querySelector('.estado-correo')?.textContent).toContain('Verificado');
+    expect(texto()).not.toContain('Reenviar el correo');
+  });
+
+  // HU-20 RF-8, RF-9
+  it('sin verificar ofrece reenviar el correo y avisa', async () => {
+    await preparar((falsa) => falsa.recurso.value.set({ ...ANA, correoVerificado: false }));
+    expect(fijo.nativeElement.querySelector('.estado-correo')?.textContent).toContain('Sin verificar');
+
+    botonReenviar().click();
+    await fijo.whenStable();
+    fijo.detectChanges();
+
+    expect(cuenta.reenviarVerificacion).toHaveBeenCalledTimes(1);
+    expect(fijo.nativeElement.querySelector('.correo [aria-live]')?.textContent).toContain(
+      'Le enviamos el correo a ana@mail.com.',
+    );
+  });
+
+  // HU-20 RF-11: ya estaba verificado (otra pestaña). Dice «Verificado» sin pedir la cuenta otra vez, que
+  // reiniciaría el formulario y borraría lo que no se guardó
+  it('si el correo ya estaba verificado lo muestra sin perder lo escrito', async () => {
+    await preparar((falsa) => {
+      falsa.recurso.value.set({ ...ANA, correoVerificado: false });
+      falsa.respuestaReenvio = Promise.reject({ status: 409, detail: 'detalle', codigo: 'CORREO_YA_VERIFICADO' });
+    });
+    escribir('nombre', 'Anita');
+
+    botonReenviar().click();
+    await fijo.whenStable();
+    fijo.detectChanges();
+
+    expect(cuenta.recurso.reload).not.toHaveBeenCalled();
+    expect(fijo.nativeElement.querySelector('.estado-correo')?.textContent).toContain('Verificado');
+    expect(campo('nombre').value).toBe('Anita');
+  });
+
+  function botonReenviar(): HTMLButtonElement {
+    return Array.from<HTMLButtonElement>(fijo.nativeElement.querySelectorAll('button')).find((cada) =>
+      cada.textContent?.includes('Reenviar el correo'),
+    )!;
+  }
 
   // HU-04 RF-4: correo, rol y estado no se ofrecen para editar
   it('solo deja editar nombre, apellido y teléfono', () => {

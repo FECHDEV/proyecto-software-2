@@ -32,6 +32,7 @@ const CON_DOS: Carrito = {
   total: 201,
   cantidadLineas: 2,
   idPedidoPendiente: null,
+  correoVerificado: true,
 };
 
 const ANA: Usuario = {
@@ -43,6 +44,7 @@ const ANA: Usuario = {
   rol: 'CLIENTE',
   estado: 'ACTIVA',
   fechaRegistro: '2026-10-17T09:00:00',
+  correoVerificado: true,
 };
 
 const PEDIDO = { idPedido: 12 } as Pedido;
@@ -264,6 +266,27 @@ describe('ConfirmacionPage', () => {
     expect(pantalla().querySelector('form')).toBeNull();
   });
 
+  // HU-20 RF-6, RF-7: abierta a mano, sin el correo verificado no ofrece confirmar
+  it('sin el correo verificado no muestra el formulario y lleva al carrito', async () => {
+    await abrir({ ...CON_DOS, correoVerificado: false });
+
+    expect(pantalla().querySelector('form')).toBeNull();
+    expect(texto()).toContain('Verifique su correo para confirmar');
+    expect(pantalla().querySelector('a[href="/carrito"]')).not.toBeNull();
+  });
+
+  // HU-20 RF-6: el backend lo rechaza igual; el carrito se pide de nuevo y queda el aviso
+  it('el rechazo por el correo sin verificar lo avisa y recarga el carrito', async () => {
+    await abrir();
+    carrito.carrito.reload.mockClear();
+    pedidos.confirmar.mockRejectedValueOnce(rechazo('CORREO_SIN_VERIFICAR', { status: 403 }));
+
+    await confirmar();
+
+    expect(texto(pantalla().querySelector('[role="alert"]'))).toContain('Verifique su correo');
+    expect(carrito.carrito.reload).toHaveBeenCalled();
+  });
+
   // HU-12 RF-5: si el pedido se confirmó en otra pestaña, el rechazo también enlaza
   it('el rechazo por un pedido pendiente enlaza a ese pedido', async () => {
     await abrir();
@@ -280,7 +303,7 @@ describe('ConfirmacionPage', () => {
     expect(pantalla().querySelector('form')).toBeNull();
     expect(pantalla().querySelector('a[href="/carrito"]')).not.toBeNull();
 
-    await abrir({ lineas: [], total: 0, cantidadLineas: 0, idPedidoPendiente: null });
+    await abrir({ lineas: [], total: 0, cantidadLineas: 0, idPedidoPendiente: null, correoVerificado: true });
     expect(pantalla().querySelector('form')).toBeNull();
     expect(texto()).toContain('Su carrito está vacío');
   });

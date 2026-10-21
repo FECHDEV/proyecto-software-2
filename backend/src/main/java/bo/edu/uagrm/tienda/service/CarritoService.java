@@ -140,7 +140,9 @@ public class CarritoService {
 				.map(CarritoService::linea).toList();
 		BigDecimal total = lineas.stream().map(LineaCarritoResponse::subtotal).filter(subtotal -> subtotal != null)
 				.reduce(BigDecimal.ZERO.setScale(2), BigDecimal::add);
-		return new CarritoResponse(lineas, total, lineas.size(), pedidoService.idDelPendiente(idUsuario).orElse(null));
+		boolean correoVerificado = usuarioRepository.findById(idUsuario).map(Usuario::isCorreoVerificado).orElse(false);
+		return new CarritoResponse(lineas, total, lineas.size(), pedidoService.idDelPendiente(idUsuario).orElse(null),
+				correoVerificado);
 	}
 
 	// Lee la categoría y las imágenes del producto: dentro de la transacción

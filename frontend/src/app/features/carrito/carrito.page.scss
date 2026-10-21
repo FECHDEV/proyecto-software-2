@@ -258,7 +258,29 @@ input[aria-invalid='true'] {
 	height: var(--app-icono);
 }
 
-.pendiente a {
+.verificacion {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: var(--app-espacio-2);
+}
+
+// El resultado del reenvío reserva su línea: al llegar no empuja la página
+.verificacion .nota {
+	min-height: 1lh;
+}
+
+.pendiente button {
+	padding: 0;
+	border: 0;
+	background: none;
+	font: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.pendiente a,
+.pendiente button {
 	display: inline-flex;
 	align-items: center;
 	min-height: var(--app-area-tocable);
@@ -282,6 +304,10 @@ input[aria-invalid='true'] {
 	.nota {
 		text-align: left;
 		justify-content: flex-start;
+	}
+
+	.verificacion {
+		align-items: stretch;
 	}
 }
 

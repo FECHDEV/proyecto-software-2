@@ -19,6 +19,7 @@ const ANA: Usuario = {
   rol: 'CLIENTE',
   estado: 'ACTIVA',
   fechaRegistro: '2026-09-14T10:00:00',
+  correoVerificado: true,
 };
 
 const SESION_NUEVA: Sesion = {
@@ -60,6 +61,17 @@ describe('CuentaService', () => {
     await TestBed.inject(ApplicationRef).whenStable();
 
     expect(recurso.value()).toEqual(ANA);
+  });
+
+  // HU-20 RF-9: devuelve el mensaje del backend, que nombra el correo
+  it('reenvía el correo de verificación', async () => {
+    const promesa = servicio.reenviarVerificacion();
+
+    const peticion = http.expectOne('/api/cuenta/verificacion');
+    expect(peticion.request.method).toBe('POST');
+    peticion.flush({ mensaje: 'Le enviamos el correo a ana@mail.com.' }, { status: 202, statusText: 'Accepted' });
+
+    await expect(promesa).resolves.toBe('Le enviamos el correo a ana@mail.com.');
   });
 
   // HU-04 RF-2, RF-3: se envía limpio y el teléfono vacío viaja como null

@@ -5,4 +5,6 @@ package bo.edu.uagrm.tienda.service;
 public interface NotificadorCorreo {
 
 	void enviarRecuperacion(String correo, String nombre, String token);
+
+	void enviarVerificacion(String correo, String nombre, String token);
 }

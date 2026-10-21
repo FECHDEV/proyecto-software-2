@@ -34,6 +34,13 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/restablecer/restablecer.page').then((m) => m.RestablecerPage),
   },
+  // Sin guard: el enlace del correo funciona con sesión y sin ella (HU-20 RF-4)
+  {
+    path: 'verificacion',
+    title: `Verificar el correo · ${MARCA.nombre}`,
+    loadComponent: () =>
+      import('./features/verificacion/verificacion.page').then((m) => m.VerificacionPage),
+  },
   // La portada es la tienda, para todos (HU-09). El panel con los accesos de
   // cada rol pasa a /panel
   {

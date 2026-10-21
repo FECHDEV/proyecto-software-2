@@ -48,6 +48,9 @@ class UsuarioServiceTest {
 	@Mock
 	private UsuarioRepository usuarioRepository;
 
+	@Mock
+	private VerificacionCorreoService verificacionCorreo;
+
 	private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 	private final TokenJwt tokenJwt = new TokenJwt(
 			new JwtProperties("Y2xhdmUtZGUtcHJ1ZWJhcy1wYXJhLXRva2Vucy1qd3QtZXZlbnRvcw==", Duration.ofHours(8)), RELOJ);
@@ -57,7 +60,8 @@ class UsuarioServiceTest {
 
 	@BeforeEach
 	void crearServicio() {
-		usuarioService = new UsuarioService(usuarioRepository, passwordEncoder, RELOJ, tokenJwt, limiteRegistros);
+		usuarioService = new UsuarioService(usuarioRepository, passwordEncoder, RELOJ, tokenJwt, limiteRegistros,
+				verificacionCorreo);
 	}
 
 	private void guardarConId() {

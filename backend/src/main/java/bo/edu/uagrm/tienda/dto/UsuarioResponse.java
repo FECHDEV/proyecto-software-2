@@ -7,11 +7,11 @@ import bo.edu.uagrm.tienda.entity.Rol;
 import bo.edu.uagrm.tienda.entity.Usuario;
 
 public record UsuarioResponse(Long idUsuario, String nombre, String apellido, String correo, String telefono,
-		Rol rol, EstadoCuenta estado, LocalDateTime fechaRegistro) {
+		Rol rol, EstadoCuenta estado, LocalDateTime fechaRegistro, boolean correoVerificado) {
 
 	public static UsuarioResponse from(Usuario usuario) {
 		return new UsuarioResponse(usuario.getIdUsuario(), usuario.getNombre(), usuario.getApellido(),
 				usuario.getCorreo(), usuario.getTelefono(), usuario.getRol(),
-				usuario.getEstado(), usuario.getFechaRegistro());
+				usuario.getEstado(), usuario.getFechaRegistro(), usuario.isCorreoVerificado());
 	}
 }

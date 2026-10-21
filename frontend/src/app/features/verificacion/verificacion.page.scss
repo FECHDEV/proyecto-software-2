@@ -1,0 +1,11 @@
+@use '../../../styles/formulario';
+
+:host {
+	display: block;
+}
+
+a.boton {
+	display: block;
+	text-align: center;
+	text-decoration: none;
+}

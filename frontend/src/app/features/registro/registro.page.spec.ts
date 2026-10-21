@@ -18,6 +18,7 @@ const CLIENTE: Usuario = {
   rol: 'CLIENTE',
   estado: 'ACTIVA',
   fechaRegistro: '2026-09-17T10:00:00',
+  correoVerificado: true,
 };
 
 const SESION: Sesion = { token: 'token.de.ana', tipo: 'Bearer', expiracion: '2026-10-09T23:00:00Z', usuario: CLIENTE };
