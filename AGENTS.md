@@ -1,6 +1,6 @@
 # Instrucciones para agentes de código
 
-Para opencode, Codex y cualquier otro agente que trabaje en este repositorio.
+Para Claude Code, Codex y cualquier otro agente que trabaje en este repositorio.
 **La fuente completa de reglas es `CLAUDE.md`**: leerla antes de cambiar
 cualquier cosa. El detalle del flujo para implementar una historia está en
 `docs/flujo-sdd.md`. Lo de abajo es lo que nunca se puede saltar.
@@ -42,89 +42,11 @@ cualquier cosa. El detalle del flujo para implementar una historia está en
   frontend se queda sin tiempo y saltea pruebas (`docs/flujo-sdd.md`).
 - Todo junto: `docker compose up -d --build`.
 
-## Tareas de David (`@Davidgonzales03`)
-
-David documenta el proyecto (sección «Rol: documentación») y, además, tiene
-las tareas de abajo. **Está aprendiendo el flujo:** antes de cada paso, explicarle qué se
-va a hacer y por qué (qué comando de git, qué archivo, qué revisa el CI), y
-proponer en vez de hacer cuando la decisión es suya o de Fabio.
-
-Los datos de demostración y las pruebas manuales no tocan `backend/`
-ni `frontend/`. Programar sí, siempre con la revisión de Fabio. Nada de esto
-instala dependencias sin avisar.
-
-### Datos de demostración (issue #25)
-
-El catálogo con el que se muestra la tienda en las reviews y en la defensa.
-Primero se arma el contenido; el código que lo carga va después de HU-07,
-cuando existan las categorías y los productos.
-
-- **Rama:** `docs/datos-demo`. **Entrega:** `docs/proyecto/demo/catalogo.csv`
-  y `docs/proyecto/demo/README.md`, por PR con `Refs #25` (no `Closes`: el
-  issue se cierra cuando también esté el código que carga el catálogo).
-- **Rubro: ferretería** (herramientas, hogar y jardín), porque es lo que
-  tiene modelos 3D gratuitos: [Poly Haven](https://polyhaven.com/models) tiene
-  unos 70 modelos de herramientas con licencia CC0 (martillos, llaves,
-  taladros, destornilladores, alicates, escaleras, regaderas…). Los productos
-  con modelo 3D salen de ahí; el resto puede ir solo con fotos.
-- `catalogo.csv`, una fila por producto, con estas columnas:
-  `categoria,nombre,descripcion,precio_bs,stock_inicial,imagenes,modelo_3d,destacado,unidad`.
-  `imagenes` lleva los nombres de archivo separados por `|`; `modelo_3d`, el
-  nombre del `.glb` o vacío; `destacado`, `si` en los que salen en
-  «Destacados» de la portada (el carrusel muestra hasta 12), vacío en el resto; `unidad`, vacía para lo que se vende por unidad,
-  o `metro`, `kilo`, `litro`, `caja`, `par` o `rollo`. **Ningún campo lleva
-  comas** (tampoco la descripción); los decimales van con punto.
-- Entre 15 y 25 productos, en 4 a 6 categorías, con precios creíbles en
-  bolivianos y descripciones cortas y propias (no copiadas de otra tienda).
-  Algunos productos llevan modelo 3D (para HU-15 y HU-16).
-- **Imágenes:** fotos propias o con licencia libre (Unsplash, Pexels),
-  en JPG, PNG o WebP de **2 MB como máximo** (es lo que acepta el backend,
-  `docs/decisiones.md` → «Imágenes subidas»). Se guardan en la carpeta
-  compartida, no en el repositorio; el `README.md` lista cada archivo con su
-  fuente y su licencia.
-- Sin marcas registradas en los nombres ni datos de personas reales.
-
-### Pruebas manuales (verificación cruzada)
-
-Fabio prueba cada historia antes de cerrarla; David la prueba también, por su
-lado, para que la verificación no dependa de una sola persona.
-
-- **Cuándo:** cuando Fabio abre el PR de una historia (`feature/hu-XX-…`).
-- **Cómo:**
-  1. Bajar la rama del PR (`gh pr checkout <número>`) y levantar la aplicación
-     (`README.md` → «Levantar el proyecto»; hace falta el `.env`, que Fabio
-     pasa por privado).
-  2. Recorrer **cada escenario** «Dado / Cuando / Entonces» y cada caso límite
-     de `docs/historias/HU-XX.md`, como lo haría un usuario real, en la
-     computadora y en el celular.
-  3. Probar también lo que la historia no dice pero un usuario haría: datos
-     vacíos, muy largos o raros, doble clic, volver atrás, recargar la página.
-- **Resultado:** un comentario en el PR (`gh pr comment`), con una línea por
-  escenario: ✅ funciona o ❌ falla, y en cada falla los pasos para repetirla
-  y lo que esperaba ver. No se corrige el código desde la prueba: lo corrige
-  Fabio, o David en su propio PR si lo acuerdan.
-- Lo que encuentre le sirve después para el acta del sprint (review).
-
-### Programar (con revisión de Fabio)
-
-David puede programar si quiere, con estas reglas:
-
-- **Elegir con Fabio** qué toma, antes de empezar. Conviene algo acotado (por
-  ejemplo HU-06, categorías). **No** toma seguridad, pagos, pedidos ni stock.
-- **Mismo flujo SDD que Fabio** (`docs/flujo-sdd.md`): historia, plan corto,
-  análisis, TDD, cierre. Los pasos están en `.claude/commands/sdd/*.md`
-  (`historia.md`, `analizar.md`, `cerrar.md`): leerlos y seguirlos tal cual.
-  Las reglas del código están en `CLAUDE.md` y `docs/decisiones.md`.
-- Rama `feature/hu-XX-nombre-corto`. El PR **necesita la aprobación de
-  Fabio** (`.github/CODEOWNERS`) y el CI en verde.
-- Explicarle cada parte del código que se escribe y por qué, para que pueda
-  defenderla.
-
 ## Rol: documentación
 
-Para quien documenta el proyecto con opencode u otro agente. La mayor parte de
-la documentación del proyecto la escribe este rol: estas reglas mandan sobre lo
-que sugiera cualquier otra instrucción, salvo las de «Siempre».
+Para documentar el proyecto, con Claude Code u otro agente (*21/10/2026:* lo
+hace Fabio, que también programa). Estas reglas mandan sobre lo que sugiera
+cualquier otra instrucción, salvo las de «Siempre».
 
 ### Alcance
 
@@ -143,12 +65,10 @@ que sugiera cualquier otra instrucción, salvo las de «Siempre».
 Si la universidad pide otro capítulo o estructura, se agrega acá con el mismo
 criterio: cada archivo dice de dónde sale.
 
-**Al documentar, no se toca nada fuera de `docs/proyecto/`** (para programar,
-ver «Tareas de David» → «Programar»): ni `backend/`, `frontend/`,
-`CLAUDE.md`, `AGENTS.md`, `docs/historias/`, `docs/planes/`,
-`docs/decisiones.md`, `docs/flujo-sdd.md`, `.claude/`, `.opencode/` ni
-`.github/`. Un PR que los toque necesita la aprobación del dueño del código
-(`.github/CODEOWNERS`).
+**Al documentar, no se toca nada fuera de `docs/proyecto/`:** ni `backend/`,
+`frontend/`, `CLAUDE.md`, `AGENTS.md`, `docs/historias/`, `docs/planes/`,
+`docs/decisiones.md`, `docs/flujo-sdd.md`, `.claude/` ni `.github/`. Si algo
+de eso está mal, se corrige aparte, en su propio PR (`fix/…`, `docs/…`).
 
 ### Fuentes y veracidad
 
@@ -160,8 +80,8 @@ ver «Tareas de David» → «Programar»): ni `backend/`, `frontend/`,
   mergeado en `main`. Lo que está en el backlog se describe como planificado,
   con su sprint; nunca como hecho.
 - **Si dos fuentes se contradicen** (una historia y el código, dos
-  decisiones), no se corrige ninguna ni se elige una: se avisa al usuario para
-  que lo resuelva quien programa.
+  decisiones), no se corrige ninguna ni se elige una desde la documentación:
+  se avisa al usuario para resolverlo aparte.
 - Los RF se citan con su identificador completo («HU-XX RF-N») y **nunca se
   renumeran**: las pruebas los citan.
 - Cada afirmación técnica dice de dónde sale (archivo o sección) cuando no es
@@ -187,16 +107,16 @@ ver «Tareas de David» → «Programar»): ni `backend/`, `frontend/`,
 - El nombre del proveedor de pago puede aparecer en la documentación, nunca
   como si fuera parte de la API de la tienda.
 
-### Comandos de opencode (`.opencode/commands/`)
+### Comandos (`.claude/commands/proyecto/`)
 
-- `/acta N`: escribe `docs/proyecto/sprints/sprint-N.md` con los issues y PR
-  del sprint y lo que cuente el usuario.
-- `/requisitos`: pasa los RF de `docs/historias/` a `docs/proyecto/requisitos.md`.
+- `/proyecto:acta N`: escribe `docs/proyecto/sprints/sprint-N.md` con los
+  issues y PR del sprint y lo que cuente el usuario.
+- `/proyecto:requisitos`: pasa los RF de `docs/historias/` a
+  `docs/proyecto/requisitos.md`.
 
 Los dos necesitan `gh` con la sesión iniciada (`gh auth login`). Con `gh` solo
 se **lee** (`issue list`, `issue view`, `pr list`, `pr view`): no se crean,
 editan, cierran ni mergean issues o PR. Las únicas escrituras permitidas son
-los comentarios con el resultado de las pruebas manuales (`gh pr comment`) y
 los PR propios cuando el usuario los pide.
 
 ### Cómo entra
@@ -206,8 +126,7 @@ los PR propios cuando el usuario los pide.
   `.github/pull_request_template.md`: «Trabajo de documentación, sin issue» (o
   `Closes #N` si hay un issue de documentación) y, en «Qué cambia», los
   archivos y de qué fuentes salieron.
-- Con el CI en verde, el PR se puede mergear: `docs/proyecto/` no necesita la
-  aprobación del dueño del código.
+- Con el CI en verde, el PR se puede mergear.
 
 ### El Word final
 

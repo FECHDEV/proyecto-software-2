@@ -25,8 +25,9 @@ Cada PR cierra su issue (`Closes #N`), y el issue pasa a *Hecho* al mergear.
 
 ### Scrum adaptado
 
-*19/10/2026.* El equipo es de dos personas con dedicación parcial: Fabio
-programa con Claude Code y David documenta. Por eso Scrum se usa adaptado:
+*19/10/2026.* El equipo era de dos personas con dedicación parcial. *21/10/2026:*
+David se retiró y el proyecto queda a cargo de Fabio solo, que programa y
+documenta con Claude Code. Por eso Scrum se usa adaptado:
 
 - **Sprints por objetivo, no por calendario.** Cada sprint tiene un objetivo
   (un incremento que se puede mostrar, como «el cliente arma su carrito») y
@@ -38,10 +39,12 @@ programa con Claude Code y David documenta. Por eso Scrum se usa adaptado:
 - **Eventos juntos y breves:** la planning es elegir las historias del
   siguiente objetivo y pasarlas a *Sprint*. La review es la prueba manual de
   cada historia más la demo de lo mergeado. La retro son los ajustes con
-  fecha en este archivo y en `decisiones.md`. No hay daily: con dos
-  personas, el tablero y los PR cumplen ese papel.
-- **Roles:** Fabio es Product Owner y desarrollador; David documenta y
-  revisa. No hay Scrum Master aparte: el flujo SDD hace cumplir el proceso.
+  fecha en este archivo y en `decisiones.md`. No hay daily: con una
+  persona, el tablero y los PR cumplen ese papel.
+- **Roles:** Fabio es Product Owner, desarrollador y quien documenta. No hay
+  Scrum Master aparte: el flujo SDD hace cumplir el proceso, y las revisiones
+  antes del PR (subagente de interfaz, `/code-review`, `/security-review`)
+  reemplazan la revisión de un compañero.
 - **En el Project,** el campo «Sprint» (opciones fijas, sin fechas) dice a
   qué sprint pertenece cada issue.
 
@@ -52,7 +55,7 @@ programa con Claude Code y David documenta. Por eso Scrum se usa adaptado:
 | 3 | Compra | HU-11 a HU-14, HU-20 |
 | 4 | Operación y 3D | HU-15 a HU-19 |
 
-**Motivo:** con dos personas y horarios variables, un sprint de fecha fija
+**Motivo:** con poca gente y horarios variables, un sprint de fecha fija
 cierra a medias o queda vacío. El objetivo por sprint conserva lo que importa
 de Scrum, que es entregar incrementos que funcionan, revisarlos y ajustar el
 proceso, sin inventar fechas.

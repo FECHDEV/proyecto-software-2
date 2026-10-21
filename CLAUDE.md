@@ -13,7 +13,7 @@ Integral del Norte, Montero, Santa Cruz, Bolivia. Metodología **Scrum**.
 | Marca | **Tienda Montero** (en el código, `frontend/src/app/core/marca.ts` y `TIENDA_MARCA`) |
 | Repositorio | `git@github.com:FECHDEV/proyecto-software-2.git` (público) |
 | Plazo | 2 meses y medio como máximo, desde el 07/10/2026 |
-| Equipo | Fabio (`@FECHDEV`): código, con Claude Code. David (`@Davidgonzales03`): documentación y algo de código, con opencode |
+| Equipo | Fabio (`@FECHDEV`): todo el proyecto (código y documentación), con Claude Code. *21/10/2026:* David se retiró del proyecto |
 
 ---
 
@@ -111,6 +111,10 @@ El repositorio puede ser **público**:
   propuesta y la regla que choca, y cambiarla con fecha y motivo. No
   esquivarla en silencio ni descartar la mejora por la regla. Quedan firmes
   las de seguridad, las de commits y PR, y avisar antes de instalar.
+- **Documentación del proyecto** (`docs/proyecto/`: perfil, metodología,
+  requisitos, arquitectura, actas): también con Claude Code, con las reglas de
+  `AGENTS.md` → «Rol: documentación» y los comandos `/proyecto:acta N` y
+  `/proyecto:requisitos`.
 - Responder en español. Comandos de PowerShell en una sola línea.
 
 ### Uso de skills
