@@ -11,6 +11,11 @@
       <p>Tiene un pedido esperando el pago. Páguelo o cancélelo antes de confirmar otro.</p>
       <a class="principal" [routerLink]="['/mis-pedidos', carrito.idPedidoPendiente]"><span>Ver el pedido</span></a>
     </section>
+  } @else if (carrito.correoVerificado === false) {
+    <section class="sin-confirmar">
+      <p>Verifique su correo para confirmar el pedido. Puede pedir el correo otra vez desde su carrito.</p>
+      <a class="principal" routerLink="/carrito"><span>Volver al carrito</span></a>
+    </section>
   } @else if (carrito.lineas.length === 0) {
     <section class="sin-confirmar">
       <p>Su carrito está vacío.</p>

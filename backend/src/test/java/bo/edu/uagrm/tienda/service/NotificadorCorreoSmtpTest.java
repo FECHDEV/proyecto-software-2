@@ -103,6 +103,48 @@ class NotificadorCorreoSmtpTest {
 				.doesNotContain("token-secreto");
 	}
 
+	// HU-20 RF-14
+	@Test
+	void laVerificacionLlevaElAsuntoYElEnlaceEnTextoYEnHtml() throws Exception {
+		notificador.enviarVerificacion("ana@mail.com", "Ana", "token-de-prueba");
+
+		MimeMessage mensaje = enviado();
+		assertThat(mensaje.getAllRecipients()).containsExactly(new InternetAddress("ana@mail.com"));
+		assertThat(mensaje.getSubject()).isEqualTo("Confirme su correo en Tienda");
+		assertThat(partes(mensaje)).hasSize(2)
+				.allSatisfy(parte -> assertThat(parte)
+						.contains("https://tienda.bo/verificacion?token=token-de-prueba")
+						.contains("24 horas"));
+	}
+
+	// HU-20 RF-14
+	@Test
+	void laVerificacionEscapaElNombreEnElHtml() throws Exception {
+		notificador.enviarVerificacion("ana@mail.com", "<b>Ana</b>", "token-de-prueba");
+
+		String html = partes(enviado()).get(1);
+		assertThat(html).doesNotContain("<b>Ana</b>").contains("&lt;b&gt;Ana&lt;/b&gt;");
+	}
+
+	// HU-20 RF-14: el texto del HTML sale de un bloque de texto; un corte de línea mal hecho deja tabulaciones
+	@Test
+	void elHtmlDeLaVerificacionNoLlevaTabulaciones() throws Exception {
+		notificador.enviarVerificacion("ana@mail.com", "Ana", "token-de-prueba");
+
+		assertThat(partes(enviado()).get(1)).doesNotContain("\t");
+	}
+
+	// HU-20 RF-13
+	@Test
+	void unFalloDeLaVerificacionSeRegistraSinPropagarseNiMostrarElToken(CapturedOutput salida) {
+		willThrow(new MailSendException("servidor caído")).given(mailSender).send(any(MimeMessage.class));
+
+		assertThatCode(() -> notificador.enviarVerificacion("ana@mail.com", "Ana", "token-secreto"))
+				.doesNotThrowAnyException();
+		assertThat(salida.getOut()).contains("No se pudo enviar el correo de verificación")
+				.doesNotContain("token-secreto");
+	}
+
 	@Test
 	void unErrorInesperadoTambienSeRegistraSinPropagarse(CapturedOutput salida) {
 		willThrow(new IllegalStateException("sesión de correo rota")).given(mailSender).send(any(MimeMessage.class));

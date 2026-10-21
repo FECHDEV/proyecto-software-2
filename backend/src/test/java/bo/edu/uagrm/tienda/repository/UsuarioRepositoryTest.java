@@ -61,6 +61,28 @@ class UsuarioRepositoryTest {
 		assertThat(leido.getFechaRegistro()).isEqualTo(FECHA_REGISTRO);
 	}
 
+	// HU-20 RF-2: una cuenta que ya existía cuando se agregó la columna queda verificada
+	@Test
+	void unaFilaSinLaColumnaDelCorreoVerificadoQuedaVerificada() {
+		em.getEntityManager().createNativeQuery("""
+				INSERT INTO usuario (nombre, apellido, correo, contrasena, rol, estado, fecha_registro)
+				VALUES ('Beto', 'Paz', 'beto@mail.com', '$2a$10$hash', 'EMPLEADO', 'ACTIVA', CURRENT_TIMESTAMP)
+				""").executeUpdate();
+		em.clear();
+
+		assertThat(usuarioRepository.findByCorreo("beto@mail.com").orElseThrow().isCorreoVerificado()).isTrue();
+	}
+
+	// HU-20 RF-1
+	@Test
+	void unClienteRegistradoQuedaSinVerificar() {
+		Long id = em.persistAndGetId(cliente("ana@mail.com"), Long.class);
+		em.flush();
+		em.clear();
+
+		assertThat(usuarioRepository.findById(id).orElseThrow().isCorreoVerificado()).isFalse();
+	}
+
 	@Test
 	void existsByCorreoDistingueCorreosRegistrados() {
 		em.persist(cliente("ana@mail.com"));

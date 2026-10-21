@@ -39,6 +39,7 @@ import com.jayway.jsonpath.JsonPath;
 import bo.edu.uagrm.tienda.dto.RetiroResponse;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.TipoMovimiento;
+import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
 import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
@@ -152,6 +153,7 @@ class PedidoIntegracionTest {
 						.formatted(correo))
 				.exchange();
 		assertThat(registro).hasStatus(HttpStatus.CREATED);
+		verificarCorreo(correo);
 		String token = JsonPath.read(registro.getResponse().getContentAsString(), "$.token");
 		if (rol != null) {
 			Integer idUsuario = JsonPath.read(registro.getResponse().getContentAsString(), "$.usuario.idUsuario");
@@ -159,6 +161,24 @@ class PedidoIntegracionTest {
 					.hasStatus(HttpStatus.OK);
 		}
 		return token;
+	}
+
+	// Como recién registrada: sin el enlace del correo abierto
+	private String clienteSinVerificar(String correo) throws Exception {
+		MvcTestResult registro = mvc.post().uri("/api/auth/registro").with(ipNueva())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"nombre\":\"Carla\",\"apellido\":\"Paz\",\"correo\":\"%s\",\"contrasena\":\"secreta12\"}"
+						.formatted(correo))
+				.exchange();
+		assertThat(registro).hasStatus(HttpStatus.CREATED);
+		return JsonPath.read(registro.getResponse().getContentAsString(), "$.token");
+	}
+
+	// Para confirmar hace falta el correo verificado (HU-20 RF-6); el enlace se prueba en VerificacionCorreoIntegracionTest
+	private void verificarCorreo(String correo) {
+		Usuario usuario = usuarioRepository.findByCorreo(correo).orElseThrow();
+		usuario.marcarCorreoVerificado();
+		usuarioRepository.save(usuario);
 	}
 
 	private Integer producto(String nombre, String unidad, String precio, String stock) throws Exception {
@@ -233,6 +253,33 @@ class PedidoIntegracionTest {
 
 	private EstadoPedido estado(Integer idPedido) {
 		return pedidoRepository.findById(idPedido.longValue()).orElseThrow().getEstado();
+	}
+
+	// HU-20 RF-6: el rechazo llega antes de tocar el carrito o el stock
+	@Test
+	void sinElCorreoVerificadoNoConfirmaNiReservaStock() throws Exception {
+		String carla = clienteSinVerificar("con.hu12@mail.com");
+		agregar(carla, martillo, "2");
+
+		MvcTestResult rechazo = confirmar(carla, "171");
+
+		assertThat(rechazo).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(rechazo).bodyJson().extractingPath("$.codigo").isEqualTo("CORREO_SIN_VERIFICAR");
+		assertThat(pedidoRepository.count()).isZero();
+		assertThat(stock(martillo)).isEqualTo(10.0);
+		assertThat(get(CARRITO, carla)).bodyJson().extractingPath("$.cantidadLineas").isEqualTo(1);
+	}
+
+	// HU-20 RF-6, RF-15: al verificar, la misma sesión confirma sin volver a entrar
+	@Test
+	void alVerificarElCorreoYaPuedeConfirmar() throws Exception {
+		String carla = clienteSinVerificar("con.hu12@mail.com");
+		agregar(carla, martillo, "2");
+		assertThat(confirmar(carla, "171")).hasStatus(HttpStatus.FORBIDDEN);
+
+		verificarCorreo("con.hu12@mail.com");
+
+		assertThat(confirmar(carla, "171")).hasStatus(HttpStatus.CREATED);
 	}
 
 	// HU-12 RF-2

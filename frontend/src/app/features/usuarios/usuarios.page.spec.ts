@@ -42,7 +42,7 @@ const SESION_ADMIN: Sesion = {
   token: 'jwt.admin',
   tipo: 'Bearer',
   expiracion: new Date(Date.now() + 3_600_000).toISOString(),
-  usuario: { ...ADMIN, telefono: null },
+  usuario: { ...ADMIN, telefono: null, correoVerificado: true },
 };
 
 // Lo que la pantalla usa del httpResource

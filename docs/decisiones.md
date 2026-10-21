@@ -14,7 +14,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 ## Índice
 
 - **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas)
-- **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios)
+- **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
 - **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Catálogo de demostración](#catálogo-de-demostración)
@@ -177,7 +177,9 @@ archivo versionado, como haría un `data.sql`.
 ### Registro
 
 - Todo usuario que se registra por sí mismo obtiene rol **Cliente**, y la
-  cuenta queda **activa**, sin confirmación por correo.
+  cuenta queda **activa**, sin confirmación por correo. *21/10/2026 (HU-20):*
+  sigue entrando directo, pero con el correo sin verificar no confirma
+  pedidos (ver «Verificación del correo»).
 - El correo se guarda en minúsculas y sin espacios alrededor, y los duplicados
   se buscan igual: `Juan@mail.com` y `juan@mail.com` son la misma cuenta. El
   inicio de sesión lo normaliza del mismo modo.
@@ -240,6 +242,40 @@ archivo versionado, como haría un `data.sql`.
 - *09/10/2026 (HU-03).* El correo usa los colores de la marca (entonces
   grafito y amarillo de señalización; desde el 16/10/2026 la marca es la de
   `DESIGN.md`, y el correo todavía no se actualizó).
+
+### Verificación del correo
+
+*21/10/2026 (HU-20).* **Verificar para comprar, no para entrar** (forma
+acordada el 09/10/2026 en el issue #32):
+
+- Al registrarse, la sesión queda iniciada como siempre y llega el correo
+  «Confirme su correo» con un enlace a `/verificacion`. Sin verificar se ve
+  el catálogo y se arma el carrito, pero **no se confirma un pedido**; el
+  backend lo rechaza aunque la petición llegue directo.
+- **Las cuentas que ya existían quedan verificadas,** de cualquier rol, y
+  también el Administrador inicial.
+- El enlace sigue el esquema de la recuperación (token de 256 bits, la base
+  guarda su SHA-256, un solo uso) y **vale 24 horas**. «Reenviar el correo»
+  manda uno nuevo e invalida los anteriores, con un límite de **3 reenvíos
+  por cuenta cada 15 minutos** (429). Enlace vencido, usado, inexistente o de
+  una cuenta desactivada: el mismo mensaje. A una cuenta desactivada no se le
+  envía.
+- **El enlace funciona sin sesión** y no la inicia: muestra «Su correo quedó
+  verificado» con un enlace a la tienda.
+- Solo se avisa en el carrito (en lugar de «Confirmar pedido») y en «Mis
+  datos», cada uno con «Reenviar el correo».
+- *21/10/2026 (revisión de HU-20).* **Bloqueos: primero la cuenta, después
+  sus enlaces.** Reenviar y verificar bloquean la fila de la cuenta antes de
+  tocar los enlaces; verificar lee el id de la cuenta del token sin bloqueo y
+  recién después trae el enlace bloqueado. En el orden contrario, un reenvío
+  y una verificación a la vez se traban y uno responde 500.
+- *21/10/2026 (revisión de HU-20).* **Desactivar una cuenta invalida sus
+  enlaces de verificación**, así no vuelven a servir si se la reactiva.
+
+**Motivo:** sin verificar, cualquiera podía comprar con un correo ajeno, y
+los avisos del pedido y la recuperación irían a otra persona. Pedirlo recién
+al confirmar no frena a quien solo mira la tienda; un día de vigencia alcanza
+para quien lee el correo más tarde.
 
 ### Datos personales
 

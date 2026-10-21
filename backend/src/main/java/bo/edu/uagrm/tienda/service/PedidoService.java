@@ -42,6 +42,7 @@ import bo.edu.uagrm.tienda.entity.Pedido;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.exception.CarritoVacioException;
+import bo.edu.uagrm.tienda.exception.CorreoSinVerificarException;
 import bo.edu.uagrm.tienda.exception.PedidoNoEncontradoException;
 import bo.edu.uagrm.tienda.exception.PedidoNoPendienteException;
 import bo.edu.uagrm.tienda.exception.PedidoPendienteException;
@@ -96,6 +97,10 @@ public class PedidoService {
 	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public PedidoResponse confirmar(Long idUsuario, ConfirmacionRequest solicitud) {
 		Usuario cliente = bloquearCliente(idUsuario);
+		// Con la cuenta bloqueada, una verificación simultánea ya terminó o espera (HU-20 RF-6)
+		if (!cliente.isCorreoVerificado()) {
+			throw new CorreoSinVerificarException();
+		}
 		LocalDateTime ahora = LocalDateTime.now(clock);
 		// Uno vencido no bloquea (RF-5): vence acá mismo y sus líneas vuelven al carrito antes de leerlo. Se leen sin
 		// bloquearlos: todo lo que cambia un pedido bloquea antes al cliente, y en MySQL un SELECT … FOR UPDATE sin

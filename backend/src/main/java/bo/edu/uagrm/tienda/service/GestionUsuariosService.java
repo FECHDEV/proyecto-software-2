@@ -29,6 +29,7 @@ public class GestionUsuariosService {
 
 	private final UsuarioRepository usuarioRepository;
 	private final RecuperacionContrasenaRepository recuperacionRepository;
+	private final VerificacionCorreoService verificacionCorreo;
 
 	@Transactional(readOnly = true)
 	public Page<Usuario> listar(Rol rol, EstadoCuenta estado, String texto, int pagina, int tamano) {
@@ -71,8 +72,10 @@ public class GestionUsuariosService {
 			throw new UltimoAdministradorActivoException();
 		}
 		usuario.desactivar();
-		// Un enlace de recuperación pendiente no puede revivir si después se reactiva la cuenta (HU-03 RF-9)
+		// Un enlace de recuperación o de verificación pendiente no puede revivir si después se reactiva la cuenta
+		// (HU-03 RF-9, HU-20 RF-5)
 		recuperacionRepository.findByUsuarioAndUsadoFalse(usuario).forEach(RecuperacionContrasena::marcarUsada);
+		verificacionCorreo.invalidarPendientes(usuario);
 		return usuario;
 	}
 

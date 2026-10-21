@@ -48,6 +48,7 @@ import bo.edu.uagrm.tienda.entity.EstadoCobro;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.LineaCarrito;
 import bo.edu.uagrm.tienda.entity.TipoMovimiento;
+import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
 import bo.edu.uagrm.tienda.repository.CobroRepository;
 import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
@@ -179,6 +180,7 @@ class PagoIntegracionTest {
 						.formatted(correo))
 				.exchange();
 		assertThat(registro).hasStatus(HttpStatus.CREATED);
+		verificarCorreo(correo);
 		String token = JsonPath.read(registro.getResponse().getContentAsString(), "$.token");
 		if (rol != null) {
 			Integer idUsuario = JsonPath.read(registro.getResponse().getContentAsString(), "$.usuario.idUsuario");
@@ -186,6 +188,13 @@ class PagoIntegracionTest {
 					.hasStatus(HttpStatus.OK);
 		}
 		return token;
+	}
+
+	// Para confirmar hace falta el correo verificado (HU-20 RF-6); el enlace se prueba en VerificacionCorreoIntegracionTest
+	private void verificarCorreo(String correo) {
+		Usuario usuario = usuarioRepository.findByCorreo(correo).orElseThrow();
+		usuario.marcarCorreoVerificado();
+		usuarioRepository.save(usuario);
 	}
 
 	private Integer producto(String nombre, String unidad, String precio, String stock) throws Exception {

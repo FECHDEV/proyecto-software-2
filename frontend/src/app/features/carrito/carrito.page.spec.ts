@@ -5,6 +5,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { vi } from 'vitest';
 
 import { CarritoService } from '../../core/api/carrito.service';
+import { CuentaService } from '../../core/api/cuenta.service';
 import { Carrito, LineaDeCarrito } from '../../core/modelos/carrito';
 import { ErrorApi } from '../../core/modelos/error-api';
 import { CarritoPage } from './carrito.page';
@@ -32,9 +33,10 @@ const CON_DOS: Carrito = {
   total: 201,
   cantidadLineas: 2,
   idPedidoPendiente: null,
+  correoVerificado: true,
 };
 
-const VACIO: Carrito = { lineas: [], total: 0, cantidadLineas: 0, idPedidoPendiente: null };
+const VACIO: Carrito = { lineas: [], total: 0, cantidadLineas: 0, idPedidoPendiente: null, correoVerificado: true };
 
 class CarritoFalso {
   readonly carrito = {
@@ -66,14 +68,21 @@ class CarritoFalso {
   }
 }
 
+class CuentaFalsa {
+  respuesta: Promise<string> = Promise.resolve('Le enviamos el correo a ana@mail.com.');
+  readonly reenviarVerificacion = vi.fn(() => this.respuesta);
+}
+
 // HU-11: la página del carrito
 describe('CarritoPage', () => {
   let harness: RouterTestingHarness;
   let carrito: CarritoFalso;
+  let cuenta: CuentaFalsa;
 
   async function abrir(contenido: Carrito | undefined = CON_DOS): Promise<void> {
     TestBed.resetTestingModule();
     carrito = new CarritoFalso();
+    cuenta = new CuentaFalsa();
     carrito.carrito.value.set(contenido);
     TestBed.configureTestingModule({
       providers: [
@@ -83,6 +92,7 @@ describe('CarritoPage', () => {
           { path: 'producto/:id', children: [] },
         ]),
         { provide: CarritoService, useValue: carrito },
+        { provide: CuentaService, useValue: cuenta },
       ],
     });
     harness = await RouterTestingHarness.create();
@@ -174,6 +184,77 @@ describe('CarritoPage', () => {
     expect(pantalla().querySelector('a[href="/confirmar-pedido"]')).toBeNull();
   });
 
+  // HU-20 RF-7
+  it('sin el correo verificado avisa en lugar de ofrecer confirmar', async () => {
+    await abrir({ ...CON_DOS, correoVerificado: false });
+
+    expect(texto()).toContain('Verifique su correo para confirmar');
+    expect(pantalla().querySelector('a[href="/confirmar-pedido"]')).toBeNull();
+    expect(boton('Reenviar el correo')).toBeTruthy();
+  });
+
+  // HU-20 RF-7: el resto del carrito funciona como siempre
+  it('sin el correo verificado puede cambiar cantidades y quitar líneas', async () => {
+    await abrir({ ...CON_DOS, correoVerificado: false });
+
+    await escribirCantidad('Martillo', '3');
+    boton('Quitar', fila('Cable')).click();
+    await harness.fixture.whenStable();
+
+    expect(carrito.cambiarCantidad).toHaveBeenCalledWith(7, 3);
+    expect(carrito.quitar).toHaveBeenCalledWith(9);
+  });
+
+  // HU-20 RF-9
+  it('Reenviar el correo avisa y no se manda dos veces mientras envía', async () => {
+    let terminar!: (mensaje: string) => void;
+    await abrir({ ...CON_DOS, correoVerificado: false });
+    cuenta.respuesta = new Promise((resolver) => (terminar = resolver));
+
+    boton('Reenviar el correo').click();
+    await harness.fixture.whenStable();
+    expect(boton('Enviando').getAttribute('aria-disabled')).toBe('true');
+    boton('Enviando').click();
+    terminar('Le enviamos el correo a ana@mail.com.');
+    await harness.fixture.whenStable();
+
+    expect(cuenta.reenviarVerificacion).toHaveBeenCalledTimes(1);
+    expect(textoDe(pantalla().querySelector('.verificacion [aria-live]'))).toContain(
+      'Le enviamos el correo a ana@mail.com.',
+    );
+  });
+
+  // HU-20 RF-10
+  it('el límite de reenvíos dice que espere', async () => {
+    await abrir({ ...CON_DOS, correoVerificado: false });
+    cuenta.respuesta = Promise.reject({ status: 429, detail: 'detalle', codigo: 'REENVIOS_EXCEDIDOS' });
+
+    boton('Reenviar el correo').click();
+    await harness.fixture.whenStable();
+
+    expect(textoDe(pantalla().querySelector('.verificacion [aria-live]'))).toContain('Espere unos minutos');
+  });
+
+  // HU-20 RF-11: otra pestaña ya lo verificó; el carrito se pide de nuevo y ofrece confirmar
+  it('si el correo ya estaba verificado recarga el carrito', async () => {
+    await abrir({ ...CON_DOS, correoVerificado: false });
+    carrito.carrito.reload.mockClear();
+    cuenta.respuesta = Promise.reject({ status: 409, detail: 'detalle', codigo: 'CORREO_YA_VERIFICADO' });
+
+    boton('Reenviar el correo').click();
+    await harness.fixture.whenStable();
+
+    expect(carrito.carrito.reload).toHaveBeenCalled();
+  });
+
+  // HU-20 RF-15
+  it('con el correo verificado ofrece confirmar', async () => {
+    await abrir({ ...CON_DOS, correoVerificado: true });
+
+    expect(texto()).not.toContain('Verifique su correo');
+    expect(pantalla().querySelector('a[href="/confirmar-pedido"]')).not.toBeNull();
+  });
+
   // HU-11 RF-9
   it('las líneas agotadas o no disponibles van marcadas y fuera del total', async () => {
     await abrir({
@@ -185,6 +266,7 @@ describe('CarritoPage', () => {
       total: 0,
       cantidadLineas: 3,
       idPedidoPendiente: null,
+      correoVerificado: true,
     });
 
     expect(textoDe(fila('Martillo'))).toContain('Agotado');
@@ -333,6 +415,7 @@ describe('CarritoPage', () => {
       total: 0,
       cantidadLineas: 1,
       idPedidoPendiente: null,
+      correoVerificado: true,
     });
 
     const campo = fila('Martillo').querySelector('input')!;
@@ -377,7 +460,7 @@ describe('CarritoPage', () => {
 
   // HU-11 RF-15
   it('− en 1 no hace nada', async () => {
-    await abrir({ lineas: [linea({ cantidad: 1, subtotal: 85.5 })], total: 85.5, cantidadLineas: 1, idPedidoPendiente: null });
+    await abrir({ lineas: [linea({ cantidad: 1, subtotal: 85.5 })], total: 85.5, cantidadLineas: 1, idPedidoPendiente: null, correoVerificado: true });
 
     const restar = boton('Restar uno a Martillo');
     expect(restar.getAttribute('aria-disabled')).toBe('true');

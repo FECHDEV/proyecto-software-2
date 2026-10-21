@@ -23,6 +23,7 @@ function sesionCon(rol: Rol): Sesion {
       rol,
       estado: 'ACTIVA',
       fechaRegistro: '2026-09-14T10:00:00',
+      correoVerificado: true,
     },
   };
 }
@@ -166,6 +167,12 @@ describe('rutas', () => {
     expect(await navegarComo(null, '/inicio-sesion')).toBe('/inicio-sesion');
     expect(await navegarComo(null, '/registro')).toBe('/registro');
     expect(await navegarComo(null, '/recuperacion')).toBe('/recuperacion');
+  });
+
+  // HU-20 RF-4: el enlace del correo funciona con sesión y sin ella
+  it('la verificación del correo es pública', async () => {
+    expect(await navegarComo(null, '/verificacion')).toBe('/verificacion');
+    expect(await navegarComo('CLIENTE', '/verificacion')).toBe('/verificacion');
   });
 
   it('una ruta desconocida vuelve a la portada', async () => {

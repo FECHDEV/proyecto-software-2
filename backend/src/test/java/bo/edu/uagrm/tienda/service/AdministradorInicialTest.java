@@ -79,6 +79,8 @@ class AdministradorInicialTest {
 		assertThat(admin.getApellido()).isEqualTo("Inicial");
 		assertThat(admin.getFechaRegistro()).isEqualTo(LocalDateTime.of(2026, 9, 14, 11, 0));
 		assertThat(passwordEncoder.matches("clave-admin-1", admin.getContrasena())).isTrue();
+		// HU-20 RF-2
+		assertThat(admin.isCorreoVerificado()).isTrue();
 	}
 
 	@Test

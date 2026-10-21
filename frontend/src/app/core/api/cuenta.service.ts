@@ -40,4 +40,10 @@ export class CuentaService {
 			}),
 		);
 	}
+
+	// Reenvía el enlace «Confirme su correo» (HU-20 RF-9). El mensaje nombra el correo al que salió
+	async reenviarVerificacion(): Promise<string> {
+		const respuesta = await escribir(this.http.post<{ mensaje: string }>('/api/cuenta/verificacion', null));
+		return respuesta.mensaje;
+	}
 }

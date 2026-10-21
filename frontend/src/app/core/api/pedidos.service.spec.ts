@@ -28,7 +28,7 @@ const PEDIDO: Pedido = {
   cobro: null,
 };
 
-const VACIO: Carrito = { lineas: [], total: 0, cantidadLineas: 0, idPedidoPendiente: null };
+const VACIO: Carrito = { lineas: [], total: 0, cantidadLineas: 0, idPedidoPendiente: null, correoVerificado: true };
 
 // HU-12: llamadas a /api/pedidos
 describe('PedidosService', () => {

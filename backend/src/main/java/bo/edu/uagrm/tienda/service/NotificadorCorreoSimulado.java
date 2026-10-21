@@ -16,4 +16,9 @@ public class NotificadorCorreoSimulado implements NotificadorCorreo {
 	public void enviarRecuperacion(String correo, String nombre, String token) {
 		log.info("[Correo simulado] Recuperación de contraseña para {} <{}>. Token: {}", nombre, correo, token);
 	}
+
+	@Override
+	public void enviarVerificacion(String correo, String nombre, String token) {
+		log.info("[Correo simulado] Verificación del correo para {} <{}>. Token: {}", nombre, correo, token);
+	}
 }

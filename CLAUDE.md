@@ -69,7 +69,9 @@ de asumir.
   o diga el cliente.
 
 ### Correos
-- Recuperación de contraseña. *(Sumar acá cada correo nuevo que decida el
+- Recuperación de contraseña.
+- Verificación del correo (*21/10/2026*, HU-20): «Confirme su correo», al
+  registrarse y al pedir el reenvío. *(Sumar acá cada correo nuevo que decida el
   proyecto; no proponer correos que no estén en esta lista.)*
 
 *(Las reglas del negocio van acá, por tema, a medida que se deciden en las

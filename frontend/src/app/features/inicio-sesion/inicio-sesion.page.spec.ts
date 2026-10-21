@@ -21,6 +21,7 @@ const SESION: Sesion = {
     rol: 'CLIENTE',
     estado: 'ACTIVA',
     fechaRegistro: '2026-09-14T10:00:00',
+    correoVerificado: true,
   },
 };
 

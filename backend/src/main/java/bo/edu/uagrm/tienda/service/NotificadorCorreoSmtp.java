@@ -57,6 +57,33 @@ public class NotificadorCorreoSmtp implements NotificadorCorreo {
 		enviar("recuperación", correo, "Recupera tu contraseña de " + marca, texto, html);
 	}
 
+	// De usted, como la tienda (HU-20 RF-14)
+	@Async
+	@Override
+	public void enviarVerificacion(String correo, String nombre, String token) {
+		String enlace = propiedades.urlDelSitio() + "/verificacion?token=" + token;
+		String marca = propiedades.marca();
+		String texto = """
+				Hola, %s:
+
+				Para confirmar pedidos en %s necesitamos verificar su correo. Abra este enlace:
+
+				%s
+
+				El enlace vence en 24 horas y sirve una sola vez. Si usted no creó una cuenta, ignore este correo.
+				""".formatted(nombre, marca, enlace);
+		String html = """
+				<p>Hola, %s:</p>
+				<p>Para confirmar pedidos en %s necesitamos verificar su correo.</p>
+				%s
+				<p>O copie este enlace en su navegador:<br><a href="%s" style="color:#8a5a00;word-break:break-all">%s</a></p>
+				<p style="color:#5d636b">El enlace vence en 24 horas y sirve una sola vez. Si usted no creó una cuenta, \
+				ignore este correo.</p>
+				""".formatted(htmlEscape(nombre), htmlEscape(marca), boton("Verificar mi correo", enlace), enlace,
+				enlace);
+		enviar("verificación", correo, "Confirme su correo en " + marca, texto, html);
+	}
+
 	private void enviar(String cual, String para, String asunto, String texto, String cuerpoHtml) {
 		try {
 			MimeMessage mensaje = mailSender.createMimeMessage();

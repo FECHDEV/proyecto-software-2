@@ -88,6 +88,15 @@ export class MisDatosPage implements ConCambiosSinGuardar {
 	// Un 401 lo resuelve el interceptor cerrando la sesión; cualquier otro fallo
 	// de la lectura se ofrece reintentar
 	protected readonly cargaFallida = computed(() => this.recurso.error() !== undefined);
+	// «Reenviar el correo» de la verificación (HU-20 RF-8, RF-9)
+	protected readonly enviandoCorreo = signal(false);
+	protected readonly resultadoDelReenvio = signal('');
+	// Verificado en otra pestaña (RF-11). No se pide la cuenta otra vez: el formulario de datos sale de ella, y se
+	// reiniciaría perdiendo lo que no se guardó
+	private readonly verificadoEnOtraPestana = signal(false);
+	protected readonly correoVerificado = computed(
+		() => this.verificadoEnOtraPestana() || (this.usuario()?.correoVerificado ?? false),
+	);
 
 	// --- Datos personales ---
 
@@ -160,6 +169,25 @@ export class MisDatosPage implements ConCambiosSinGuardar {
 		if (this.hayCambios()) {
 			evento.preventDefault();
 		}
+	}
+
+	// Como en el carrito: mientras envía, un segundo toque no manda otro correo
+	protected async reenviarCorreo(): Promise<void> {
+		if (this.enviandoCorreo()) {
+			return;
+		}
+		this.enviandoCorreo.set(true);
+		this.resultadoDelReenvio.set('');
+		try {
+			this.resultadoDelReenvio.set(await this.cuenta.reenviarVerificacion());
+		} catch (error: unknown) {
+			const problema = comoError(error);
+			this.resultadoDelReenvio.set(mensajeDeError(problema));
+			if (problema.codigo === 'CORREO_YA_VERIFICADO') {
+				this.verificadoEnOtraPestana.set(true);
+			}
+		}
+		this.enviandoCorreo.set(false);
 	}
 
 	protected nombreDeRol(rol: Rol): string {

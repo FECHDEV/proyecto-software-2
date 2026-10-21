@@ -43,7 +43,8 @@ public class SecurityConfig {
 						// /error directamente es un despacho REQUEST y sigue exigiendo sesión
 						.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/registro", "/api/auth/inicio-sesion",
-								"/api/auth/recuperacion", "/api/auth/recuperacion/restablecimiento").permitAll()
+								"/api/auth/recuperacion", "/api/auth/recuperacion/restablecimiento",
+								"/api/auth/verificacion").permitAll()
 						// El rol se toma de la base en cada petición (JwtFiltroAutenticacion): un cambio de rol
 						// rige desde la siguiente
 						.requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")

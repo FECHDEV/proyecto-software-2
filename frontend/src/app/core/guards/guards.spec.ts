@@ -28,6 +28,7 @@ function sesionCon(rol: Rol): Sesion {
       rol,
       estado: 'ACTIVA',
       fechaRegistro: '2026-09-14T10:00:00',
+      correoVerificado: true,
     },
   };
 }

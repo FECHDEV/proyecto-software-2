@@ -18,4 +18,13 @@ class NotificadorCorreoSimuladoTest {
 
 		assertThat(salida.getOut()).contains("ana@mail.com").contains("token-de-prueba");
 	}
+
+	// HU-20 RF-1
+	@Test
+	void escribeEnElLogLaVerificacionConSuToken(CapturedOutput salida) {
+		new NotificadorCorreoSimulado().enviarVerificacion("ana@mail.com", "Ana", "token-de-verificacion");
+
+		assertThat(salida.getOut()).contains("Verificación del correo").contains("ana@mail.com")
+				.contains("token-de-verificacion");
+	}
 }

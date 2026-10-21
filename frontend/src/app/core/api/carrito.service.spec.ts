@@ -25,9 +25,10 @@ const CON_MARTILLO: Carrito = {
   total: 171,
   cantidadLineas: 1,
   idPedidoPendiente: null,
+  correoVerificado: true,
 };
 
-const VACIO: Carrito = { lineas: [], total: 0, cantidadLineas: 0, idPedidoPendiente: null };
+const VACIO: Carrito = { lineas: [], total: 0, cantidadLineas: 0, idPedidoPendiente: null, correoVerificado: true };
 
 function usuario(idUsuario: number, rol: Rol): Usuario {
   return {
@@ -39,6 +40,7 @@ function usuario(idUsuario: number, rol: Rol): Usuario {
     rol,
     estado: 'ACTIVA',
     fechaRegistro: '2026-10-17T09:00:00',
+    correoVerificado: true,
   };
 }
 

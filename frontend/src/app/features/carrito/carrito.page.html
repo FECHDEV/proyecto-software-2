@@ -104,6 +104,17 @@
           <span>Tiene un pedido esperando el pago.</span>
           <a [routerLink]="['/mis-pedidos', carrito.idPedidoPendiente]">Ver el pedido</a>
         </p>
+      } @else if (carrito.correoVerificado === false) {
+        <div class="verificacion">
+          <p class="pendiente">
+            <svg lucideMail aria-hidden="true"></svg>
+            <span>Verifique su correo para confirmar el pedido.</span>
+            <button type="button" [attr.aria-disabled]="enviandoCorreo() ? 'true' : null" (click)="reenviarCorreo()">
+              {{ enviandoCorreo() ? 'Enviando…' : 'Reenviar el correo' }}
+            </button>
+          </p>
+          <p class="nota" aria-live="polite">{{ resultadoDelReenvio() }}</p>
+        </div>
       } @else if (todoComprable()) {
         <a class="principal" routerLink="/confirmar-pedido"><span>Confirmar pedido</span></a>
       } @else {

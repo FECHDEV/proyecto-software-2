@@ -5,9 +5,20 @@
     <h2 id="titulo-datos">Sus datos</h2>
 
     <dl class="fijos">
-      <div>
+      <div class="correo">
         <dt>Correo</dt>
-        <dd>{{ usuario.correo }}</dd>
+        <dd>
+          {{ usuario.correo }}
+          <span class="estado-correo" [class.sin-verificar]="!correoVerificado()">
+            {{ correoVerificado() ? 'Verificado' : 'Sin verificar' }}
+          </span>
+          @if (!correoVerificado()) {
+            <button type="button" class="reenviar" [attr.aria-disabled]="enviandoCorreo() ? 'true' : null" (click)="reenviarCorreo()">
+              {{ enviandoCorreo() ? 'Enviando…' : 'Reenviar el correo' }}
+            </button>
+            <span class="resultado" aria-live="polite">{{ resultadoDelReenvio() }}</span>
+          }
+        </dd>
       </div>
       <div>
         <dt>Tipo de cuenta</dt>

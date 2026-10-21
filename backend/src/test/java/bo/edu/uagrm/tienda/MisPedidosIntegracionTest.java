@@ -26,6 +26,7 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import com.jayway.jsonpath.JsonPath;
 
 import bo.edu.uagrm.tienda.PedidoIntegracionTest.RelojDePrueba;
+import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
 import bo.edu.uagrm.tienda.repository.CobroRepository;
 import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
@@ -147,6 +148,7 @@ class MisPedidosIntegracionTest {
 						.formatted(correo))
 				.exchange();
 		assertThat(registro).hasStatus(HttpStatus.CREATED);
+		verificarCorreo(correo);
 		String token = JsonPath.read(registro.getResponse().getContentAsString(), "$.token");
 		if (rol != null) {
 			Integer idUsuario = JsonPath.read(registro.getResponse().getContentAsString(), "$.usuario.idUsuario");
@@ -155,6 +157,13 @@ class MisPedidosIntegracionTest {
 					.content("{\"rol\":\"%s\"}".formatted(rol)).exchange()).hasStatus(HttpStatus.OK);
 		}
 		return token;
+	}
+
+	// Para confirmar hace falta el correo verificado (HU-20 RF-6); el enlace se prueba en VerificacionCorreoIntegracionTest
+	private void verificarCorreo(String correo) {
+		Usuario usuario = usuarioRepository.findByCorreo(correo).orElseThrow();
+		usuario.marcarCorreoVerificado();
+		usuarioRepository.save(usuario);
 	}
 
 	private MvcTestResult post(String uri, String token, String cuerpo, Object... variables) {
