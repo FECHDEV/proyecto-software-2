@@ -1,3 +1,6 @@
+# 21/10/2026: el proyecto queda a cargo de una sola persona (David se retiró) y
+# la regla «main: revisión de CODEOWNERS» está desactivada. Este archivo queda
+# como registro de qué es código y reglas; ya no bloquea ningún merge.
 # El código lo aprueba su dueño: un PR que toca backend/ o frontend/ necesita su
 # revisión. Con el ruleset de main pidiendo la aprobación del dueño, el dueño
 # va como «bypass» (sus propios PR no los puede aprobar él). La documentación del equipo
@@ -12,7 +15,6 @@
 /CLAUDE.md               @FECHDEV
 /AGENTS.md               @FECHDEV
 /.claude/                @FECHDEV
-/.opencode/              @FECHDEV
 /docs/historias/         @FECHDEV
 /docs/planes/            @FECHDEV
 /docs/decisiones.md      @FECHDEV
