@@ -1,9 +1,12 @@
 package bo.edu.uagrm.tienda.repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -39,6 +42,20 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 			from Pedido p where p.estado = :estado and p.vence <= :ahora order by p.vence, p.idPedido""")
 	List<PedidoAVencer> findByEstadoAndVenceLessThanEqual(@Param("estado") EstadoPedido estado,
 			@Param("ahora") LocalDateTime ahora);
+
+	// «Mis pedidos» (HU-14 RF-1): una página del Cliente, el más nuevo primero, con la cantidad de líneas contada en
+	// la misma consulta (sin cargar las líneas de cada pedido)
+	@Query(value = """
+			select new bo.edu.uagrm.tienda.repository.PedidoRepository$FilaDePedido(
+				p.idPedido, p.estado, p.confirmado, size(p.lineas), p.total, p.vence)
+			from Pedido p where p.usuario.idUsuario = :idUsuario
+			order by p.confirmado desc, p.idPedido desc""",
+			countQuery = "select count(p) from Pedido p where p.usuario.idUsuario = :idUsuario")
+	Page<FilaDePedido> misPedidos(@Param("idUsuario") Long idUsuario, Pageable pagina);
+
+	record FilaDePedido(Long idPedido, EstadoPedido estado, LocalDateTime confirmado, int cantidadProductos,
+			BigDecimal total, LocalDateTime vence) {
+	}
 
 	record PedidoAVencer(Long idPedido, Long idUsuario) {
 	}

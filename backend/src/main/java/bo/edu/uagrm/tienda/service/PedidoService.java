@@ -15,6 +15,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -25,7 +27,10 @@ import bo.edu.uagrm.tienda.dto.CancelacionResponse;
 import bo.edu.uagrm.tienda.dto.CobroResponse;
 import bo.edu.uagrm.tienda.dto.ConfirmacionRequest;
 import bo.edu.uagrm.tienda.dto.EstadoLineaCarrito;
+import bo.edu.uagrm.tienda.dto.MisPedidosResponse;
+import bo.edu.uagrm.tienda.dto.PaginaResponse;
 import bo.edu.uagrm.tienda.dto.PedidoResponse;
+import bo.edu.uagrm.tienda.dto.PedidoResumenResponse;
 import bo.edu.uagrm.tienda.dto.RetiroResponse;
 import bo.edu.uagrm.tienda.entity.Cobro;
 import bo.edu.uagrm.tienda.entity.EstadoCobro;
@@ -48,6 +53,7 @@ import bo.edu.uagrm.tienda.repository.CobroRepository;
 import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
 import bo.edu.uagrm.tienda.repository.PedidoRepository;
+import bo.edu.uagrm.tienda.repository.PedidoRepository.FilaDePedido;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +71,7 @@ import lombok.RequiredArgsConstructor;
 public class PedidoService {
 
 	public static final Duration VIGENCIA = Duration.ofMinutes(30);
+	static final int POR_PAGINA = 10;
 
 	private final PedidoRepository pedidoRepository;
 	private final LineaCarritoRepository lineaCarritoRepository;
@@ -177,6 +184,25 @@ public class PedidoService {
 			bloquearCliente(idUsuario);
 			vencerLosDelCliente(idUsuario, ahora);
 		}
+	}
+
+	// «Mis pedidos» (HU-14). Primero vence el del Cliente si ya pasó la hora (RF-4), con READ_COMMITTED como todo lo
+	// que puede vencer un pedido. Una página después de la última muestra la última (RF-8)
+	@Transactional(isolation = Isolation.READ_COMMITTED)
+	public MisPedidosResponse misPedidos(Long idUsuario, int pagina) {
+		vencerSiCorresponde(idUsuario);
+		LocalDateTime ahora = LocalDateTime.now(clock);
+		Page<FilaDePedido> filas = pedidoRepository.misPedidos(idUsuario, PageRequest.of(Math.max(pagina, 0), POR_PAGINA));
+		if (filas.isEmpty() && filas.getTotalPages() > 0) {
+			filas = pedidoRepository.misPedidos(idUsuario, PageRequest.of(filas.getTotalPages() - 1, POR_PAGINA));
+		}
+		// RF-2: el que espera el pago (también uno con la hora pasada y el cobro sin consultar, HU-13 RF-7)
+		PedidoResumenResponse pendiente = idDelPendiente(idUsuario)
+				.flatMap(id -> pedidoRepository.findByIdPedidoAndUsuario_IdUsuario(id, idUsuario))
+				.map(pedido -> PedidoResumenResponse.from(pedido, ahora)).orElse(null);
+		return new MisPedidosResponse(pendiente,
+				PaginaResponse.from(filas, fila -> PedidoResumenResponse.de(fila.idPedido(), fila.estado(),
+						fila.confirmado(), fila.cantidadProductos(), fila.total(), fila.vence(), ahora)));
 	}
 
 	// Uno que ya pasó la hora no cuenta, aunque todavía no se haya vencido (las escrituras del carrito no vencen), salvo

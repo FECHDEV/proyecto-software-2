@@ -11,6 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
@@ -157,5 +158,25 @@ class PedidoRepositoryTest {
 			assertThat(movimiento.getPedido()).isSameAs(pedido);
 			assertThat(movimiento.getUsuario()).isSameAs(ana);
 		});
+	}
+
+	// HU-14 RF-1: la lista cuenta las líneas en la misma consulta, del más nuevo al más viejo
+	@Test
+	void misPedidosCuentaLasLineasSinCargarlas() {
+		Pedido viejo = pedido(ana, AHORA.minusHours(2));
+		Pedido nuevo = Pedido.confirmar(ana, "Ana Paz", "70000000", null, AHORA, VENCE);
+		nuevo.agregarLinea(martillo, new BigDecimal("1"));
+		nuevo.agregarLinea(cable, new BigDecimal("2.5"));
+		em.persist(nuevo);
+		pedido(beto, AHORA);
+		em.flush();
+		em.clear();
+
+		var filas = pedidoRepository.misPedidos(ana.getIdUsuario(), PageRequest.of(0, 10));
+
+		assertThat(filas.getTotalElements()).isEqualTo(2);
+		assertThat(filas.getContent()).extracting(PedidoRepository.FilaDePedido::idPedido,
+				PedidoRepository.FilaDePedido::cantidadProductos)
+				.containsExactly(tuple(nuevo.getIdPedido(), 2), tuple(viejo.getIdPedido(), 1));
 	}
 }
