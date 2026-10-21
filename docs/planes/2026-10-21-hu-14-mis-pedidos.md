@@ -132,3 +132,69 @@ Las de `docs/flujo-sdd.md` → «Revisión antes del PR»: interfaz (pantalla nu
 con datos), `/code-review`. `/security-review` no corresponde: no hay
 superficie nueva (la API ya es solo del Cliente y la lista sale del token), ni
 pagos ni cuentas.
+
+## Resultado
+
+*21/10/2026, `/sdd:cerrar HU-14`.* Las dos tareas, las revisiones y la prueba
+manual del usuario («todo pasó»).
+
+### Cobertura RF → pruebas
+
+| RF | Backend | Frontend |
+|---|---|---|
+| RF-1 | `listaTodosElMasNuevoPrimeroConSuResumen`, `paginasDeA10…`, `misPedidosCuentaLasLineasSinCargarlas` | `lista los pedidos con su estado, total y enlace`, `cambia de página por la dirección`, `misPedidos pide la página` |
+| RF-2 | `elPendienteVaAparteConSuTiempo`, `unPendienteConCobroSigueArribaHastaLaConsulta` | `el pendiente va arriba con el tiempo y Pagar`, `comoReloj` (tiempo.spec) |
+| RF-3 | `listaTodosElMasNuevoPrimeroConSuResumen` (con «Pago a devolver») | `lista los pedidos con su estado…` |
+| RF-4 | `abrirLaListaVenceElPendienteQuePasoLaHora`, `unPendienteConCobroSigueArriba…` | `al llegar a cero el pendiente se pide de nuevo cada 5 segundos`, `un pendiente que llega sin tiempo avisa…` |
+| RF-5 | `sinPedidosLaListaVieneVacia` | `sin pedidos lleva al catálogo` |
+| RF-6 | — | `Mis pedidos solo para el Cliente` (encabezado), `la tarjeta Mis pedidos solo para el Cliente` (panel), `enlaza a la lista de pedidos` (pedido) |
+| RF-7 | `elPersonalRecibe403YSoloSeVenLosPropios` | `mis pedidos es solo del cliente` (rutas) |
+| RF-8 | `paginasDeA10YUnaPaginaFueraDeRangoMuestraLaUltima` (negativa, basura, enorme y fuera de un int) | `cambia de página por la dirección`, `si la página pedida no existe, la dirección muestra la que se ve` |
+
+### Suites
+
+- Backend: **549 pruebas, 0 fallas, 1 omitida** (antes 541).
+- Frontend: **695 pruebas** (antes 679); `npx ng build` sin avisos.
+
+### Revisiones
+
+**Interfaz (subagente):** 1 real y 5 menores, corregidos. Real: el chip con
+tono «aviso» tomaba la clase `.aviso` del error de carga (borde rojo, más
+alto). Menores: el ícono del encabezado a 44 px, «N.º» pegado al número, en
+celular el plazo debajo del reloj y la paginación en una línea, y «No
+encontramos ese pedido» lleva a Mis pedidos.
+
+**`/code-review` ronda 1 (10, 9 corregidos):** una página enorme daba 500
+(se acota en el servicio, un solo lugar); dos lecturas del reloj podían
+dejar una fila pendiente sin recuadro (y una consulta repetida del
+pendiente); recarga inútil si el pendiente llegaba en cero; 00:00 sin
+explicación; el reloj corría sin pendiente; parpadeo al cambiar de página;
+la dirección no mostraba la página corregida. Descartado: dos consultas
+cuando la página está después de la última (camino raro).
+
+**`/code-review` ronda 2 (8, todos corregidos):** el servidor truncaba los
+segundos y un pedido con medio segundo por delante parecía «sin tiempo»: se
+redondean hacia arriba y, mientras el pendiente sigue en 0, la página pide la
+lista cada 5 segundos (sin las dos variables de estado). El vencimiento lee su
+propio reloj y el pendiente de arriba es el que la lista muestra pendiente.
+La dirección se limpia de basura, un número fuera de un `int` lleva a la
+última y la paginación espera mientras carga.
+
+`/security-review`: no corresponde (sin superficie nueva: la API ya es solo
+del Cliente y la lista sale del token).
+
+### Prueba manual
+
+*21/10/2026.* El usuario probó con Docker (primer arranque con MySQL 8.4,
+que migró sola la base local): accesos, la lista con sus estados, el
+pendiente arriba, el vacío y las páginas. **Todo pasó.**
+
+### Distinto de lo planeado
+
+- `PedidoResumenResponse.de(...)` recibe los campos sueltos: el DTO no
+  importa la fila del repositorio.
+- El pendiente de arriba sale de los pedidos en estado pendiente (no de
+  `idDelPendiente`), para que coincida siempre con la lista.
+- `segundosParaPagar` de la lista se redondea hacia arriba (el de la página
+  del pedido sigue truncando; allí la recarga es cada segundo).
+- La página se acota en el servicio (el controlador solo lee dígitos).
