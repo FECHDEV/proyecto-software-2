@@ -710,6 +710,12 @@ retira en la tienda.
   bloquea el hueco del índice y traba a dos clientes que confirman a la vez.
   El pago (HU-13) y el despacho (HU-17) siguen la misma regla.
 
+- *21/10/2026 (HU-14).* **Mis pedidos:** la lista de todos los pedidos del
+  Cliente, el más nuevo primero y de a 10 por página, con el pedido que espera
+  el pago arriba (el tiempo que le queda y «Pagar») y cada estado con el color
+  de su chip. Se llega desde el encabezado (junto al carrito, solo el
+  Cliente), desde el panel y desde la página de cada pedido.
+
 **Motivo:** el pago por QR es inmediato, así que 30 minutos alcanzan y un
 pedido abandonado no bloquea el stock; retirar en la tienda evita calcular
 envíos en una tienda de un solo local; todo o nada evita cobrar un pedido
