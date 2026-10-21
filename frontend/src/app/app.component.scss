@@ -179,6 +179,7 @@ nav ul {
 
 // El módulo actual se distingue por la raya de abajo, no solo por el color
 nav a,
+.pedidos,
 .carrito,
 .perfil {
 	display: inline-flex;
@@ -198,12 +199,14 @@ nav a,
 }
 
 nav a:hover,
+.pedidos:hover,
 .carrito:hover,
 .perfil:hover {
 	color: var(--app-texto);
 }
 
 nav a.actual,
+.pedidos.actual,
 .carrito.actual,
 .perfil.actual {
 	border-bottom-color: var(--app-acento-texto);

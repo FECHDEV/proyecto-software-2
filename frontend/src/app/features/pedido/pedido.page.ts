@@ -26,6 +26,7 @@ import { EstadoDePedido, LineaDePedido, NOMBRES_DE_ESTADO, Pedido } from '../../
 import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
 import { fechaCorta, horaCorta } from '../../shared/formato/fechas';
 import { cantidad, precio } from '../../shared/formato/precios';
+import { comoReloj } from '../../shared/formato/tiempo';
 import { idDeLaUrl } from '../../shared/navegacion/id-de-la-url';
 import { PagoDelPedido } from './pago/pago-del-pedido';
 
@@ -77,10 +78,7 @@ export class PedidoPage {
 		const limite = this.limite();
 		return limite === null ? null : Math.max(0, Math.ceil((limite - this.ahora()) / 1000));
 	});
-	protected readonly reloj = computed(() => {
-		const segundos = this.segundos() ?? 0;
-		return `${dosCifras(Math.floor(segundos / 60))}:${dosCifras(segundos % 60)}`;
-	});
+	protected readonly reloj = computed(() => comoReloj(this.segundos() ?? 0));
 	// Cuándo se pidió de nuevo por última vez al llegar a cero
 	private ultimoPedido = Number.NEGATIVE_INFINITY;
 	// El pedido que se mostraba, para ver si dejó de esperar el pago
@@ -209,8 +207,4 @@ export class PedidoPage {
 			injector: this.injector,
 		});
 	}
-}
-
-function dosCifras(numero: number): string {
-	return `${numero}`.padStart(2, '0');
 }

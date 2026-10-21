@@ -1,0 +1,226 @@
+// «Mis pedidos» en el mundo «Letrero de ruta» (DESIGN.md), como la página del
+// pedido: el que espera el pago en la ventana del letrero, con el tiempo en
+// amarillo grande; abajo, la lista en la placa de lona, cada fila un enlace
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-6);
+}
+
+.cabecera {
+	padding-bottom: var(--app-espacio-3);
+	border-bottom: 3px solid var(--app-ambar);
+}
+
+h1 {
+	margin: 0;
+	color: var(--app-titulo);
+	font-size: clamp(34px, 5vw, 56px);
+	font-weight: 800;
+	line-height: 1;
+	text-transform: uppercase;
+}
+
+// --- El pendiente, en la ventana del letrero ---
+
+.ventana {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	gap: var(--app-espacio-3) var(--app-espacio-6);
+	padding: var(--app-espacio-6) var(--app-espacio-8);
+	background: var(--app-ventana);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-ambar) 30%, transparent);
+	clip-path: polygon(28px 0, 100% 0, 100% 100%, 0 100%, 0 28px);
+}
+
+h2 {
+	grid-column: 1 / -1;
+	margin: 0;
+	color: var(--app-lona);
+	font-family: var(--app-familia-titulos);
+	font-size: 22px;
+	font-weight: 800;
+	text-transform: uppercase;
+}
+
+.reloj {
+	margin: 0;
+	color: var(--app-ambar);
+	font-family: var(--app-familia-titulos);
+	font-size: clamp(48px, 10vw, 88px);
+	font-weight: 800;
+	line-height: 0.9;
+	font-variant-numeric: tabular-nums;
+}
+
+.plazo {
+	margin: 0;
+	color: var(--app-lona);
+	max-width: 46ch;
+}
+
+.principal {
+	grid-column: 1 / -1;
+	justify-self: start;
+	display: inline-flex;
+	align-items: center;
+	min-height: 52px;
+	margin-inline: var(--app-espacio-2);
+	padding: 0 var(--app-espacio-8);
+	background: var(--app-ambar);
+	color: var(--app-sobre-ambar);
+	font-family: var(--app-familia-titulos);
+	font-size: 22px;
+	font-weight: 800;
+	text-decoration: none;
+	text-transform: uppercase;
+	transform: skewX(var(--app-sesgo));
+	transition: background-color var(--app-transicion);
+}
+
+.principal span {
+	transform: skewX(calc(var(--app-sesgo) * -1));
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.principal:hover {
+		background: var(--app-ambar-fuerte);
+	}
+
+	.fila:hover .numero {
+		text-decoration: underline;
+	}
+}
+
+// --- La lista, en la placa de lona ---
+
+.lista {
+	margin: 0;
+	padding: var(--app-espacio-2) var(--app-espacio-6);
+	list-style: none;
+	border-radius: var(--app-radio);
+	background: var(--app-lona) var(--app-textura-cruda);
+	background-blend-mode: soft-light;
+	color: var(--app-sobre-lona);
+	--app-acento-texto: var(--app-sobre-lona);
+}
+
+.lista li + li {
+	border-top: 1px dashed color-mix(in srgb, var(--app-sobre-lona) 25%, transparent);
+}
+
+.fila {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) max-content;
+	align-items: center;
+	gap: var(--app-espacio-1) var(--app-espacio-4);
+	min-height: var(--app-area-tocable);
+	padding-block: var(--app-espacio-4);
+	color: inherit;
+	text-decoration: none;
+}
+
+.numero,
+.total {
+	font-family: var(--app-familia-titulos);
+	font-size: 20px;
+	font-weight: 700;
+}
+
+.total {
+	grid-row: 1 / span 2;
+	grid-column: 2;
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+.detalle {
+	color: var(--app-sobre-lona-suave);
+	font-size: 14px;
+}
+
+// El estado cosido, con el color de su chip en la página del pedido (RF-3)
+.estado {
+	justify-self: start;
+	padding: 2px var(--app-espacio-3);
+	outline: 1px dashed currentColor;
+	outline-offset: -3px;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.estado.aviso {
+	background: var(--app-aviso-fondo);
+	color: var(--app-aviso);
+}
+
+.estado.exito {
+	background: var(--app-exito-fondo);
+	color: var(--app-exito);
+}
+
+.estado.neutro {
+	background: var(--app-superficie-alta);
+	color: var(--app-texto-suave);
+}
+
+// --- Paginación, vacío, error y carga ---
+
+.paginas {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--app-espacio-4);
+	color: var(--app-texto-suave);
+}
+
+.secundario {
+	min-height: var(--app-area-tocable);
+	padding: 0 var(--app-espacio-6);
+	border: 2px solid currentColor;
+	background: transparent;
+	color: var(--app-texto);
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.secundario[disabled] {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.vacio,
+.tarjeta-error {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--app-espacio-3);
+}
+
+.vacio p,
+.nada {
+	margin: 0;
+	color: var(--app-texto-suave);
+	font-size: 18px;
+}
+
+.enlace {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--app-area-tocable);
+	color: var(--app-acento-texto);
+	font-weight: 600;
+	text-underline-offset: 3px;
+}
+
+.aviso {
+	margin: 0;
+	padding: var(--app-espacio-3);
+	border: 1px solid var(--app-error);
+	background: var(--app-error-fondo);
+	color: var(--app-error);
+}

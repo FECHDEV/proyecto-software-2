@@ -75,6 +75,7 @@ describe('PedidoPage', () => {
       providers: [
         provideRouter([
           { path: 'mis-pedidos/:id', component: PedidoPage },
+          { path: 'mis-pedidos', children: [] },
           { path: 'carrito', children: [] },
         ]),
         { provide: PedidosService, useValue: pedidos },
@@ -517,5 +518,12 @@ describe('PedidoPage', () => {
     await harness.fixture.whenStable();
 
     expect(carrito.carrito.reload).toHaveBeenCalledTimes(1);
+  });
+
+  // HU-14 RF-6
+  it('enlaza a la lista de pedidos', async () => {
+    await abrir();
+
+    expect(pantalla().querySelector('a[href="/mis-pedidos"]')?.textContent?.trim()).toBe('Mis pedidos');
   });
 });

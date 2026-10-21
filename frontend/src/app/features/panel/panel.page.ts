@@ -16,6 +16,7 @@ export class PanelPage {
 	private readonly sesion = inject(SesionService);
 
 	protected readonly nombre = computed(() => this.sesion.usuario()?.nombre ?? '');
+	protected readonly esCliente = computed(() => this.sesion.rol() === 'CLIENTE');
 	protected readonly esAdministrador = computed(() => this.sesion.rol() === 'ADMINISTRADOR');
 	// HU-08: el Contador lo ve sin poder registrar
 	protected readonly veInventario = computed(() => {

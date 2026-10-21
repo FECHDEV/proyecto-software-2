@@ -142,6 +142,14 @@ describe('rutas', () => {
     expect(await navegarComo('EMPLEADO', '/confirmar-pedido')).toBe('/panel');
   });
 
+  // HU-14 RF-7
+  it('mis pedidos es solo del cliente', async () => {
+    expect(await navegarComo('CLIENTE', '/mis-pedidos')).toBe('/mis-pedidos');
+    expect(await navegarComo(null, '/mis-pedidos')).toBe('/inicio-sesion?destino=%2Fmis-pedidos');
+    expect(await navegarComo('EMPLEADO', '/mis-pedidos')).toBe('/panel');
+    expect(await navegarComo('ADMINISTRADOR', '/mis-pedidos')).toBe('/panel');
+  });
+
   // HU-12 RF-13
   it('el pedido es solo del cliente', async () => {
     expect(await navegarComo('CLIENTE', '/mis-pedidos/12')).toBe('/mis-pedidos/12');

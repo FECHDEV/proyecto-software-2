@@ -138,6 +138,21 @@ describe('PedidosService', () => {
     http.expectNone('/api/carrito');
   });
 
+  // HU-14 RF-1
+  it('misPedidos pide la página', async () => {
+    const pedidos = await servicio();
+    const pagina = signal(0);
+    const lista = runInInjectionContext(TestBed.inject(Injector), () => pedidos.misPedidos(pagina));
+    TestBed.tick();
+    http.expectOne({ method: 'GET', url: '/api/pedidos?pagina=0' }).flush({ pendiente: null, pagina: { contenido: [], pagina: 0, tamano: 10, totalElementos: 0, totalPaginas: 0 } });
+    await estable();
+    expect(lista.value()?.pendiente).toBeNull();
+
+    pagina.set(2);
+    TestBed.tick();
+    http.expectOne('/api/pedidos?pagina=2');
+  });
+
   // HU-12 RF-8, RF-17
   it('lee el pedido solo con un id, y dónde retirar', async () => {
     const pedidos = await servicio();

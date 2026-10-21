@@ -1,0 +1,63 @@
+<div class="cabecera">
+  <h1>Mis pedidos</h1>
+</div>
+
+@if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+  </div>
+} @else if (datos(); as datos) {
+  @if (datos.pendiente; as pendiente) {
+    <section class="ventana" aria-labelledby="titulo-pendiente">
+      <h2 id="titulo-pendiente">Pedido N.º {{ pendiente.idPedido }} · esperando el pago</h2>
+      <p class="reloj" role="timer" aria-live="off">{{ reloj() }}</p>
+      <p class="plazo">para pagar {{ precio(pendiente.total) }}. Si no se paga, los productos vuelven a su carrito.</p>
+      <a class="principal" [routerLink]="['/mis-pedidos', pendiente.idPedido]"><span>Pagar</span></a>
+    </section>
+  }
+
+  @if (datos.pagina.totalElementos === 0) {
+    <div class="vacio">
+      <p>Todavía no tiene pedidos.</p>
+      <a class="enlace" routerLink="/catalogo">Ver el catálogo</a>
+    </div>
+  } @else {
+    <ol class="lista" aria-label="Sus pedidos, del más nuevo al más viejo">
+      @for (pedido of datos.pagina.contenido; track pedido.idPedido) {
+        <li>
+          <a class="fila" [routerLink]="['/mis-pedidos', pedido.idPedido]">
+            <span class="numero">Pedido N.º {{ pedido.idPedido }}</span>
+            <span [class]="'estado ' + tono[pedido.estado]">{{ nombresDeEstado[pedido.estado] }}</span>
+            <span class="detalle">{{ fecha(pedido.confirmado) }} · {{ productos(pedido.cantidadProductos) }}</span>
+            <span class="total">{{ precio(pedido.total) }}</span>
+          </a>
+        </li>
+      }
+    </ol>
+
+    @if (datos.pagina.totalPaginas > 1) {
+      <nav class="paginas" aria-label="Páginas de pedidos">
+        <button
+          type="button"
+          class="secundario"
+          [disabled]="datos.pagina.pagina === 0"
+          (click)="irAPagina(datos.pagina.pagina - 1)"
+        >
+          Anterior
+        </button>
+        <span>Página {{ datos.pagina.pagina + 1 }} de {{ datos.pagina.totalPaginas }}</span>
+        <button
+          type="button"
+          class="secundario"
+          [disabled]="datos.pagina.pagina + 1 >= datos.pagina.totalPaginas"
+          (click)="irAPagina(datos.pagina.pagina + 1)"
+        >
+          Siguiente
+        </button>
+      </nav>
+    }
+  }
+} @else {
+  <p class="nada" role="status">Cargando sus pedidos…</p>
+}
