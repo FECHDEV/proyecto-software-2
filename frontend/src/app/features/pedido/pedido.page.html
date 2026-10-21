@@ -1,7 +1,7 @@
 @if (noEncontrado()) {
   <h1>Pedido</h1>
   <p class="nada">No encontramos ese pedido.</p>
-  <a class="salida" routerLink="/carrito">Ir al carrito</a>
+  <a class="salida" routerLink="/mis-pedidos">Ver mis pedidos</a>
 } @else if (errorDeCarga()) {
   <h1>Pedido</h1>
   <div class="tarjeta-error">
@@ -9,6 +9,7 @@
     <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
   </div>
 } @else if (pedido(); as pedido) {
+  <a class="salida" routerLink="/mis-pedidos">Mis pedidos</a>
   <div class="cabecera">
     <h1>Pedido N.º {{ pedido.idPedido }}</h1>
     <p

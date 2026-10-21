@@ -69,6 +69,16 @@
 
       @if (esCliente()) {
         <a
+          class="pedidos"
+          routerLink="/mis-pedidos"
+          routerLinkActive="actual"
+          ariaCurrentWhenActive="page"
+          aria-label="Mis pedidos"
+          title="Mis pedidos"
+        >
+          <svg lucidePackage class="icono" aria-hidden="true"></svg>
+        </a>
+        <a
           class="carrito"
           routerLink="/carrito"
           routerLinkActive="actual"

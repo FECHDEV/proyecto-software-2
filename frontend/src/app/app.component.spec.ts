@@ -49,6 +49,7 @@ describe('AppComponent', () => {
           { path: 'catalogo', component: PantallaVacia },
           { path: 'panel', component: PantallaVacia },
           { path: 'carrito', component: PantallaVacia },
+          { path: 'mis-pedidos', component: PantallaVacia },
         ]),
         { provide: CarritoService, useValue: { cantidadLineas: lineasEnElCarrito } },
       ],
@@ -275,6 +276,16 @@ describe('AppComponent', () => {
 
       expect(fijo.nativeElement.querySelector('a.perfil').getAttribute('aria-current')).toBe('page');
     });
+  });
+
+  // HU-14 RF-6: «Mis pedidos» en el encabezado, solo para el Cliente
+  it('Mis pedidos solo para el Cliente', () => {
+    TestBed.inject(SesionService).iniciar(sesionVigente('CLIENTE'));
+    const enlace = crear().nativeElement.querySelector('header a[href="/mis-pedidos"]');
+    expect(enlace?.getAttribute('aria-label')).toBe('Mis pedidos');
+
+    TestBed.inject(SesionService).iniciar(sesionVigente('EMPLEADO'));
+    expect(crear().nativeElement.querySelector('header a[href="/mis-pedidos"]')).toBeNull();
   });
 
   // --- HU-11: el ícono del carrito ---

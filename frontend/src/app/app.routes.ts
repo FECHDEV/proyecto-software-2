@@ -70,7 +70,15 @@ export const routes: Routes = [
     data: { rol: 'CLIENTE' },
     loadComponent: () => import('./features/confirmacion/confirmacion.page').then((m) => m.ConfirmacionPage),
   },
-  // La página del pedido (HU-12 RF-8): del Cliente; la lista de HU-14 irá en mis-pedidos
+  // La lista de pedidos del Cliente (HU-14)
+  {
+    path: 'mis-pedidos',
+    title: `Mis pedidos · ${MARCA.nombre}`,
+    canActivate: [rolGuard],
+    data: { rol: 'CLIENTE' },
+    loadComponent: () => import('./features/mis-pedidos/mis-pedidos.page').then((m) => m.MisPedidosPage),
+  },
+  // La página del pedido (HU-12 RF-8): del Cliente
   {
     path: 'mis-pedidos/:id',
     title: `Pedido · ${MARCA.nombre}`,

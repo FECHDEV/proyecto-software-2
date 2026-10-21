@@ -1,5 +1,7 @@
 package bo.edu.uagrm.tienda.controller;
 
+import java.math.BigInteger;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -7,11 +9,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import bo.edu.uagrm.tienda.dto.CancelacionResponse;
 import bo.edu.uagrm.tienda.dto.ConfirmacionRequest;
+import bo.edu.uagrm.tienda.dto.MisPedidosResponse;
 import bo.edu.uagrm.tienda.dto.PedidoResponse;
 import bo.edu.uagrm.tienda.dto.RetiroResponse;
 import bo.edu.uagrm.tienda.service.PedidoService;
@@ -28,6 +32,14 @@ public class PedidoController {
 	private static final String ID = "/{idPedido:\\d{1,18}}";
 
 	private final PedidoService pedidoService;
+
+	// «Mis pedidos» (HU-14). Una página que no es un número entero es la primera, sin error; el servicio acota el
+	// resto (RF-8)
+	@GetMapping
+	public MisPedidosResponse misPedidos(@AuthenticationPrincipal Long idUsuario,
+			@RequestParam(required = false) String pagina) {
+		return pedidoService.misPedidos(idUsuario, numeroDePagina(pagina));
+	}
 
 	@GetMapping("/retiro")
 	public RetiroResponse retiro() {
@@ -49,5 +61,15 @@ public class PedidoController {
 	@PostMapping(ID + "/cancelacion")
 	public CancelacionResponse cancelar(@AuthenticationPrincipal Long idUsuario, @PathVariable Long idPedido) {
 		return pedidoService.cancelar(idUsuario, idPedido);
+	}
+
+	// Solo dígitos, con signo opcional: lo demás es la primera página. Un número que no entra en un int es «después de
+	// la última», como cualquier otro número grande
+	private static int numeroDePagina(String pagina) {
+		if (pagina == null || !pagina.strip().matches("-?\\d{1,40}")) {
+			return 0;
+		}
+		BigInteger numero = new BigInteger(pagina.strip());
+		return numero.signum() < 0 ? 0 : numero.min(BigInteger.valueOf(Integer.MAX_VALUE)).intValue();
 	}
 }

@@ -1,7 +1,7 @@
 import { HttpClient, httpResource, HttpResourceRef } from '@angular/common/http';
 import { inject, Injectable, Signal } from '@angular/core';
 
-import { Cancelacion, DatosDeConfirmacion, Pedido, ResultadoSimulado, Retiro } from '../modelos/pedido';
+import { Cancelacion, DatosDeConfirmacion, MisPedidos, Pedido, ResultadoSimulado, Retiro } from '../modelos/pedido';
 import { CarritoService } from './carrito.service';
 import { escribir } from './escribir';
 
@@ -18,6 +18,11 @@ export class PedidosService {
 	// httpResource necesita un contexto de inyección: se llama al construir la pantalla
 	retiro(): HttpResourceRef<Retiro | undefined> {
 		return httpResource<Retiro>(() => `${PEDIDOS}/retiro`);
+	}
+
+	// «Mis pedidos» (HU-14): la página pedida; el backend acomoda una fuera de rango
+	misPedidos(pagina: Signal<number>): HttpResourceRef<MisPedidos | undefined> {
+		return httpResource<MisPedidos>(() => ({ url: PEDIDOS, params: { pagina: pagina() } }));
 	}
 
 	// Sin id válido no pide nada

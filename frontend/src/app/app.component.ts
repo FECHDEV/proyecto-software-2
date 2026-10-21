@@ -11,7 +11,15 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
-import { LucideHouse, LucideMoon, LucideSearch, LucideShoppingCart, LucideSun, LucideUser } from '@lucide/angular';
+import {
+	LucideHouse,
+	LucideMoon,
+	LucidePackage,
+	LucideSearch,
+	LucideShoppingCart,
+	LucideSun,
+	LucideUser,
+} from '@lucide/angular';
 
 import { CarritoService } from './core/api/carrito.service';
 import { MARCA } from './core/marca';
@@ -38,6 +46,7 @@ const MODULOS: readonly { ruta: string; nombre: string; roles: readonly Rol[] }[
     LucideHouse,
     LucideMoon,
     LucideSearch,
+    LucidePackage,
     LucideShoppingCart,
     LucideSun,
     LucideUser,

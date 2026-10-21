@@ -1,4 +1,5 @@
 import { AVISOS_DE_LINEA } from './carrito';
+import { Pagina } from './pagina';
 import { UnidadVenta } from './producto';
 
 // Espejo de PedidoResponse, LineaPedidoResponse, RetiroResponse, CobroResponse y CancelacionResponse del
@@ -55,6 +56,23 @@ export interface Cobro {
 	codigoQr: string;
 	urlPasarela: string | null;
 	simulador: boolean;
+}
+
+// Un pedido en «Mis pedidos» (HU-14 RF-1): lo que muestra la lista.
+// cantidadProductos son las líneas del pedido
+export interface PedidoResumen {
+	idPedido: number;
+	estado: EstadoDePedido;
+	confirmado: string;
+	cantidadProductos: number;
+	total: number;
+	segundosParaPagar: number;
+}
+
+// El que espera el pago aparte, para mostrarlo arriba (RF-2), y la página
+export interface MisPedidos {
+	pendiente: PedidoResumen | null;
+	pagina: Pagina<PedidoResumen>;
 }
 
 // Lo que se fuerza en el simulador

@@ -130,4 +130,13 @@ describe('PanelPage', () => {
     expect(crear().querySelector('a[href="/productos"]')).toBeNull();
     expect(crear().querySelector('a[href="/inventario"]')).toBeNull();
   });
+
+  // HU-14 RF-6
+  it('la tarjeta Mis pedidos solo para el Cliente', () => {
+    sesion.iniciar(sesionCon('CLIENTE'));
+    expect(crear().querySelector('a[href="/mis-pedidos"]')).not.toBeNull();
+
+    sesion.iniciar(sesionCon('ADMINISTRADOR'));
+    expect(crear().querySelector('a[href="/mis-pedidos"]')).toBeNull();
+  });
 });

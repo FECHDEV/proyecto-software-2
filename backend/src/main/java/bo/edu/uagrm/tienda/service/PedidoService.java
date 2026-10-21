@@ -15,6 +15,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -25,7 +27,10 @@ import bo.edu.uagrm.tienda.dto.CancelacionResponse;
 import bo.edu.uagrm.tienda.dto.CobroResponse;
 import bo.edu.uagrm.tienda.dto.ConfirmacionRequest;
 import bo.edu.uagrm.tienda.dto.EstadoLineaCarrito;
+import bo.edu.uagrm.tienda.dto.MisPedidosResponse;
+import bo.edu.uagrm.tienda.dto.PaginaResponse;
 import bo.edu.uagrm.tienda.dto.PedidoResponse;
+import bo.edu.uagrm.tienda.dto.PedidoResumenResponse;
 import bo.edu.uagrm.tienda.dto.RetiroResponse;
 import bo.edu.uagrm.tienda.entity.Cobro;
 import bo.edu.uagrm.tienda.entity.EstadoCobro;
@@ -48,6 +53,7 @@ import bo.edu.uagrm.tienda.repository.CobroRepository;
 import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
 import bo.edu.uagrm.tienda.repository.PedidoRepository;
+import bo.edu.uagrm.tienda.repository.PedidoRepository.FilaDePedido;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +71,9 @@ import lombok.RequiredArgsConstructor;
 public class PedidoService {
 
 	public static final Duration VIGENCIA = Duration.ofMinutes(30);
+	static final int POR_PAGINA = 10;
+	// Más allá, el desplazamiento de la página no entra en un int y la consulta falla (RF-8)
+	private static final int PAGINA_MAXIMA = Integer.MAX_VALUE / POR_PAGINA - 1;
 
 	private final PedidoRepository pedidoRepository;
 	private final LineaCarritoRepository lineaCarritoRepository;
@@ -179,13 +188,38 @@ public class PedidoService {
 		}
 	}
 
+	// «Mis pedidos» (HU-14). Primero vence el del Cliente si ya pasó la hora (RF-4), con READ_COMMITTED como todo lo
+	// que puede vencer un pedido; el reloj se lee después, ya con el cliente bloqueado si hizo falta. La página se acota
+	// acá (RF-8): negativa, la primera; después de la última, la última. El pendiente de arriba es el que la lista
+	// muestra pendiente, sin volver a decidir por la hora: la fila y el recuadro siempre coinciden
+	@Transactional(isolation = Isolation.READ_COMMITTED)
+	public MisPedidosResponse misPedidos(Long idUsuario, int pagina) {
+		vencerSiCorresponde(idUsuario);
+		LocalDateTime ahora = LocalDateTime.now(clock);
+		Page<FilaDePedido> filas = pedidoRepository.misPedidos(idUsuario,
+				PageRequest.of(Math.clamp(pagina, 0, PAGINA_MAXIMA), POR_PAGINA));
+		if (filas.isEmpty() && filas.getTotalPages() > 0) {
+			filas = pedidoRepository.misPedidos(idUsuario, PageRequest.of(filas.getTotalPages() - 1, POR_PAGINA));
+		}
+		// RF-2: el que espera el pago (también uno con la hora pasada y el cobro sin consultar, HU-13 RF-7)
+		PedidoResumenResponse pendiente = pedidoRepository
+				.findByUsuario_IdUsuarioAndEstadoOrderByIdPedido(idUsuario, EstadoPedido.PENDIENTE_PAGO).stream()
+				.findFirst().map(pedido -> PedidoResumenResponse.from(pedido, ahora)).orElse(null);
+		return new MisPedidosResponse(pendiente,
+				PaginaResponse.from(filas, fila -> PedidoResumenResponse.de(fila.idPedido(), fila.estado(),
+						fila.confirmado(), fila.cantidadProductos(), fila.total(), fila.vence(), ahora)));
+	}
+
 	// Uno que ya pasó la hora no cuenta, aunque todavía no se haya vencido (las escrituras del carrito no vencen), salvo
 	// que espere la consulta de su cobro: ese todavía no deja confirmar otro (HU-13 RF-7)
 	@Transactional(readOnly = true)
 	public Optional<Long> idDelPendiente(Long idUsuario) {
-		LocalDateTime ahora = LocalDateTime.now(clock);
+		return pendienteSinVencer(idUsuario, LocalDateTime.now(clock)).map(Pedido::getIdPedido);
+	}
+
+	private Optional<Pedido> pendienteSinVencer(Long idUsuario, LocalDateTime ahora) {
 		return pedidoRepository.findByUsuario_IdUsuarioAndEstadoOrderByIdPedido(idUsuario, EstadoPedido.PENDIENTE_PAGO)
-				.stream().filter(pedido -> !puedeVencer(pedido, ahora)).map(Pedido::getIdPedido).findFirst();
+				.stream().filter(pedido -> !puedeVencer(pedido, ahora)).findFirst();
 	}
 
 	// Para PagoService: cliente y después pedido, como todo lo que cambia un pedido. 404 si es de otro; 409 si ya no

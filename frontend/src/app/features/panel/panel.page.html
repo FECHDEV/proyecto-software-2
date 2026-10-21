@@ -7,6 +7,14 @@
       <span class="detalle">Su nombre, su teléfono y su contraseña.</span>
     </a>
   </li>
+  @if (esCliente()) {
+    <li>
+      <a class="acceso" routerLink="/mis-pedidos">
+        <span class="titulo">Mis pedidos</span>
+        <span class="detalle">El estado de cada pedido y lo que falta pagar.</span>
+      </a>
+    </li>
+  }
   @if (esAdministrador()) {
     <li>
       <a class="acceso" routerLink="/usuarios">
