@@ -87,19 +87,19 @@ describe('MisPedidosPage', () => {
 
     const filas = Array.from(pantalla().querySelectorAll<HTMLAnchorElement>('a.fila'));
     expect(filas.map((fila) => fila.getAttribute('href'))).toEqual(['/mis-pedidos/14', '/mis-pedidos/13', '/mis-pedidos/12']);
-    expect(filas[0].textContent).toContain('Pedido N.º 14');
+    expect(filas[0].textContent?.replace(/\s+/g, ' ')).toContain('Pedido N.º 14');
     expect(filas[0].textContent?.replace(/\s+/g, ' ')).toContain('Bs 85,50');
     expect(filas[0].textContent).toContain('1 producto');
     expect(filas[1].textContent).toContain('2 productos');
     expect(texto()).toContain('19/10/2026');
     const estados = Array.from(pantalla().querySelectorAll('.estado')).map((chip) => [
       chip.textContent?.trim(),
-      ['aviso', 'exito', 'neutro'].find((tono) => chip.classList.contains(tono)),
+      ['tono-aviso', 'tono-exito', 'tono-neutro'].find((tono) => chip.classList.contains(tono)),
     ]);
     expect(estados).toEqual([
-      ['Pago a devolver', 'aviso'],
-      ['Pagado', 'exito'],
-      ['Cancelado', 'neutro'],
+      ['Pago a devolver', 'tono-aviso'],
+      ['Pagado', 'tono-exito'],
+      ['Cancelado', 'tono-neutro'],
     ]);
   });
 
@@ -110,7 +110,7 @@ describe('MisPedidosPage', () => {
     await abrir(lista([pendiente, resumen({ idPedido: 14 })], pendiente));
 
     const ventana = pantalla().querySelector('.ventana')!;
-    expect(ventana.textContent).toContain('Pedido N.º 15');
+    expect(ventana.textContent?.replace(/\s+/g, ' ')).toContain('Pedido N.º 15');
     expect(ventana.querySelector('[role="timer"]')?.textContent).toBe('20:00');
     expect(ventana.querySelector('a.principal')?.getAttribute('href')).toBe('/mis-pedidos/15');
 

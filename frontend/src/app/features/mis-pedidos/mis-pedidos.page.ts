@@ -21,12 +21,12 @@ import { comoReloj } from '../../shared/formato/tiempo';
 import { paginaDeLaUrl } from '../../shared/navegacion/pagina-de-la-url';
 
 // El color del chip de cada estado, como en la página del pedido (HU-14 RF-3)
-const TONO: Record<EstadoDePedido, 'aviso' | 'exito' | 'neutro'> = {
-	PENDIENTE_PAGO: 'aviso',
-	PAGADO: 'exito',
-	PAGO_A_DEVOLVER: 'aviso',
-	CANCELADO: 'neutro',
-	VENCIDO: 'neutro',
+const TONO: Record<EstadoDePedido, string> = {
+	PENDIENTE_PAGO: 'tono-aviso',
+	PAGADO: 'tono-exito',
+	PAGO_A_DEVOLVER: 'tono-aviso',
+	CANCELADO: 'tono-neutro',
+	VENCIDO: 'tono-neutro',
 };
 
 // «Mis pedidos» (HU-14): todos los pedidos del Cliente, el más nuevo primero y

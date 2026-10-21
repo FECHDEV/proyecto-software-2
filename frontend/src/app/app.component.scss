@@ -229,6 +229,12 @@ nav a.actual,
 	gap: var(--app-espacio-1);
 }
 
+// Solo el ícono: el área tocable completa (44 px)
+.pedidos {
+	min-width: 44px;
+	justify-content: center;
+}
+
 // Cuántos productos hay: ámbar, como la acción principal; el número completo va
 // en el nombre accesible del enlace
 .cuenta {

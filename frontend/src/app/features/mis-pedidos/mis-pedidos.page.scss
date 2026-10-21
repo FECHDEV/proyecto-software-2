@@ -152,26 +152,38 @@ h2 {
 	text-transform: uppercase;
 }
 
-.estado.aviso {
+.estado.tono-aviso {
 	background: var(--app-aviso-fondo);
 	color: var(--app-aviso);
 }
 
-.estado.exito {
+.estado.tono-exito {
 	background: var(--app-exito-fondo);
 	color: var(--app-exito);
 }
 
-.estado.neutro {
+.estado.tono-neutro {
 	background: var(--app-superficie-alta);
 	color: var(--app-texto-suave);
 }
 
 // --- Paginación, vacío, error y carga ---
 
+// En celular, el plazo pasa debajo del reloj
+@media (max-width: 480px) {
+	.ventana {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.paginas span {
+	flex: 1 1 auto;
+	min-width: 0;
+	text-align: center;
+}
+
 .paginas {
 	display: flex;
-	flex-wrap: wrap;
 	align-items: center;
 	gap: var(--app-espacio-4);
 	color: var(--app-texto-suave);

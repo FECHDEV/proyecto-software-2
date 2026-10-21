@@ -156,7 +156,7 @@ describe('PedidoPage', () => {
     expect(pedidos.cancelar).toHaveBeenCalledWith(12);
     expect(texto()).toContain('Cancelado');
     expect(texto()).toContain('Los productos volvieron a su carrito.');
-    expect(pantalla().querySelector('a[href="/carrito"]')).not.toBeNull();
+    expect(pantalla().querySelector('a[href="/mis-pedidos"]')).not.toBeNull();
     expect(botonCancelar()).toBeUndefined();
     // Revisión de HU-12 (interfaz): el botón ya no está; el foco va al resultado
     expect(document.activeElement).toBe(pantalla().querySelector('.cerrado'));
@@ -272,7 +272,7 @@ describe('PedidoPage', () => {
 
     expect(texto()).toContain('No encontramos ese pedido.');
     // Revisión de HU-12 (interfaz): con un camino para seguir
-    expect(pantalla().querySelector('a[href="/carrito"]')).not.toBeNull();
+    expect(pantalla().querySelector('a[href="/mis-pedidos"]')).not.toBeNull();
   });
 
   // HU-12 RF-13 (caso límite: datos basura)
