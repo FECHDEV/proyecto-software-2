@@ -12,7 +12,11 @@
     <section class="ventana" aria-labelledby="titulo-pendiente">
       <h2 id="titulo-pendiente">Pedido N.º&nbsp;{{ pendiente.idPedido }}&nbsp;· esperando el pago</h2>
       <p class="reloj" role="timer" aria-live="off">{{ reloj() }}</p>
-      <p class="plazo">para pagar {{ precio(pendiente.total) }}. Si no se paga, los productos vuelven a su carrito.</p>
+      @if (sinTiempo()) {
+        <p class="plazo">El tiempo terminó. Estamos revisando si llegó su pago de {{ precio(pendiente.total) }}.</p>
+      } @else {
+        <p class="plazo">para pagar {{ precio(pendiente.total) }}. Si no se paga, los productos vuelven a su carrito.</p>
+      }
       <a class="principal" [routerLink]="['/mis-pedidos', pendiente.idPedido]"><span>Pagar</span></a>
     </section>
   }
@@ -41,7 +45,7 @@
         <button
           type="button"
           class="secundario"
-          [disabled]="datos.pagina.pagina === 0"
+          [disabled]="datos.pagina.pagina === 0 || recurso.isLoading()"
           (click)="irAPagina(datos.pagina.pagina - 1)"
         >
           Anterior
@@ -50,7 +54,7 @@
         <button
           type="button"
           class="secundario"
-          [disabled]="datos.pagina.pagina + 1 >= datos.pagina.totalPaginas"
+          [disabled]="datos.pagina.pagina + 1 >= datos.pagina.totalPaginas || recurso.isLoading()"
           (click)="irAPagina(datos.pagina.pagina + 1)"
         >
           Siguiente

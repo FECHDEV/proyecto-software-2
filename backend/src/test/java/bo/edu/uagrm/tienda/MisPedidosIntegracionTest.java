@@ -233,6 +233,9 @@ class MisPedidosIntegracionTest {
 		assertThat(resultado).bodyJson().extractingPath("$.pendiente.idPedido").isEqualTo(pendiente);
 		assertThat(resultado).bodyJson().extractingPath("$.pendiente.estado").isEqualTo("PENDIENTE_PAGO");
 		assertThat(resultado).bodyJson().extractingPath("$.pendiente.segundosParaPagar").isEqualTo(1200);
+		// Con medio segundo por delante dice 1, no 0: un 0 solo significa que la hora pasó
+		reloj.avanzar(Duration.ofMinutes(20).minusMillis(500));
+		assertThat(lista(ana)).bodyJson().extractingPath("$.pendiente.segundosParaPagar").isEqualTo(1);
 		// También en su lugar de la lista
 		assertThat(resultado).bodyJson().extractingPath("$.pagina.contenido[0].idPedido").isEqualTo(pendiente);
 	}
@@ -301,13 +304,19 @@ class MisPedidosIntegracionTest {
 		MvcTestResult primera = lista(ana);
 		MvcTestResult segunda = get(PEDIDOS + "?pagina=1", ana);
 		MvcTestResult lejos = get(PEDIDOS + "?pagina=5", ana);
+		// Revisión de HU-14 (/code-review): sin acotar, el desplazamiento no entra en un int y daba 500
+		MvcTestResult enorme = get(PEDIDOS + "?pagina=300000000", ana);
+		MvcTestResult fueraDeUnInt = get(PEDIDOS + "?pagina=99999999999999999999", ana);
 
 		assertThat(primera).bodyJson().extractingPath("$.pagina.contenido").asArray().hasSize(10);
 		assertThat(primera).bodyJson().extractingPath("$.pagina.totalPaginas").isEqualTo(2);
 		assertThat(segunda).bodyJson().extractingPath("$.pagina.contenido").asArray().hasSize(2);
 		assertThat(lejos).bodyJson().extractingPath("$.pagina.pagina").isEqualTo(1);
 		assertThat(lejos).bodyJson().extractingPath("$.pagina.contenido").asArray().hasSize(2);
-		for (String basura : List.of("-3", "abc", "1.5", "99999999999999999999")) {
+		assertThat(enorme).hasStatus(HttpStatus.OK);
+		assertThat(enorme).bodyJson().extractingPath("$.pagina.pagina").isEqualTo(1);
+		assertThat(fueraDeUnInt).bodyJson().extractingPath("$.pagina.pagina").isEqualTo(1);
+		for (String basura : List.of("-3", "abc", "1.5", "1e3")) {
 			MvcTestResult resultado = get(PEDIDOS + "?pagina={p}", ana, basura);
 			assertThat(resultado).hasStatus(HttpStatus.OK);
 			assertThat(resultado).bodyJson().extractingPath("$.pagina.pagina").isEqualTo(0);

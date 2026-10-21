@@ -26,8 +26,13 @@ public record PedidoResumenResponse(Long idPedido, EstadoPedido estado, LocalDat
 				segundosParaPagar(pedido.getEstado(), pedido.getVence(), ahora));
 	}
 
-	// Como en PedidoResponse: 0 si ya no espera el pago o se le acabó el tiempo
+	// 0 si ya no espera el pago o si ya pasó la hora. Redondeado hacia arriba: con medio segundo por delante dice 1, así
+	// un 0 en un pedido pendiente siempre significa que la hora pasó y espera la consulta de su cobro (HU-13 RF-7)
 	private static long segundosParaPagar(EstadoPedido estado, LocalDateTime vence, LocalDateTime ahora) {
-		return estado == EstadoPedido.PENDIENTE_PAGO ? Math.max(0, Duration.between(ahora, vence).toSeconds()) : 0;
+		if (estado != EstadoPedido.PENDIENTE_PAGO) {
+			return 0;
+		}
+		long milisegundos = Duration.between(ahora, vence).toMillis();
+		return milisegundos <= 0 ? 0 : Math.ceilDiv(milisegundos, 1000);
 	}
 }

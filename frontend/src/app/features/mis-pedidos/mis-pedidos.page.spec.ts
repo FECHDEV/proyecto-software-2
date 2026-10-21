@@ -1,6 +1,6 @@
 import { Signal, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { vi } from 'vitest';
 
@@ -33,6 +33,7 @@ class PedidosFalso {
   readonly recurso = {
     value: signal<MisPedidos | undefined>(undefined),
     error: signal<unknown>(undefined),
+    isLoading: signal(false),
     reload: vi.fn(() => true),
     hasValue(): boolean {
       return this.value() !== undefined;
@@ -119,18 +120,24 @@ describe('MisPedidosPage', () => {
     expect(ventana.querySelector('[role="timer"]')?.textContent).toBe('19:59');
   });
 
-  // HU-14 RF-4: al llegar a cero pide la lista una vez
-  it('al llegar a cero el pendiente se pide de nuevo una vez', async () => {
+  // HU-14 RF-4: al llegar a cero, la lista se pide cada 5 segundos hasta que el pedido deja de estar arriba
+  it('al llegar a cero el pendiente se pide de nuevo cada 5 segundos', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
     const pendiente = resumen({ idPedido: 15, estado: 'PENDIENTE_PAGO', segundosParaPagar: 1 });
     await abrir(lista([pendiente], pendiente));
 
     vi.advanceTimersByTime(1000);
     await harness.fixture.whenStable();
-    vi.advanceTimersByTime(3000);
-    await harness.fixture.whenStable();
-
+    expect(pedidos.recurso.reload).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(5000);
     expect(pedidos.recurso.reload).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(5000);
+    expect(pedidos.recurso.reload).toHaveBeenCalledTimes(2);
+
+    pedidos.recurso.value.set(lista([{ ...pendiente, estado: 'VENCIDO' }]));
+    await harness.fixture.whenStable();
+    vi.advanceTimersByTime(10000);
+    expect(pedidos.recurso.reload).toHaveBeenCalledTimes(2);
   });
 
   // HU-14 RF-5
@@ -151,12 +158,21 @@ describe('MisPedidosPage', () => {
     const [anterior, siguiente] = Array.from(pantalla().querySelectorAll<HTMLButtonElement>('.paginas button'));
     expect(siguiente.disabled).toBe(true);
 
+    // Mientras llega la página nueva, el recurso está cargando
+    pedidos.recurso.isLoading.set(true);
     anterior.click();
+    await harness.fixture.whenStable();
+    expect(pedidos.pagina!()).toBe(0);
+    pedidos.recurso.value.set(lista([resumen({ idPedido: 12 })], null, 0, 2));
+    pedidos.recurso.isLoading.set(false);
     await harness.fixture.whenStable();
     expect(pedidos.pagina!()).toBe(0);
 
     await harness.navigateByUrl('/mis-pedidos?pagina=abc');
+    await harness.fixture.whenStable();
     expect(pedidos.pagina!()).toBe(0);
+    // La basura se limpia de la dirección
+    expect(TestBed.inject(Router).url).toBe('/mis-pedidos');
   });
 
   // Caso borde: un error de carga deja reintentar
@@ -168,5 +184,33 @@ describe('MisPedidosPage', () => {
     expect(texto()).toContain('No pudimos conectar con el servidor.');
     (Array.from(pantalla().querySelectorAll('button')).find((boton) => boton.textContent?.trim() === 'Reintentar') as HTMLButtonElement).click();
     expect(pedidos.recurso.reload).toHaveBeenCalled();
+  });
+
+  // Revisión de HU-14 (/code-review): llega en cero (la hora pasó y espera la consulta del cobro): lo dice
+  it('un pendiente que llega sin tiempo avisa que se revisa el pago', async () => {
+    const pendiente = resumen({ idPedido: 15, estado: 'PENDIENTE_PAGO', segundosParaPagar: 0 });
+    await abrir(lista([pendiente], pendiente));
+
+    expect(texto()).toContain('Estamos revisando si llegó su pago');
+  });
+
+  // Revisión de HU-14 (/code-review): mientras carga otra página queda la anterior, sin parpadeo
+  it('mientras carga otra página sigue mostrando la anterior', async () => {
+    await abrir(lista([resumen({ idPedido: 14 })]));
+
+    pedidos.recurso.isLoading.set(true);
+    pedidos.recurso.value.set(undefined);
+    await harness.fixture.whenStable();
+
+    expect(pantalla().querySelector('a.fila')).not.toBeNull();
+    expect(texto()).not.toContain('Cargando sus pedidos');
+  });
+
+  // Revisión de HU-14 (/code-review): la dirección muestra la página que el servidor acomodó
+  it('si la página pedida no existe, la dirección muestra la que se ve', async () => {
+    await abrir(lista([resumen({ idPedido: 2 })], null, 1, 2), '/mis-pedidos?pagina=50');
+    await harness.fixture.whenStable();
+
+    expect(TestBed.inject(Router).url).toBe('/mis-pedidos?pagina=1');
   });
 });
