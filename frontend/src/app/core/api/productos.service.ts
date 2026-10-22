@@ -24,6 +24,7 @@ interface SolicitudDeProducto {
 	idCategoria: number;
 	unidad: UnidadVenta;
 	precio: number | null;
+	costo: number | null;
 	ficha: Caracteristica[];
 	destacado: boolean;
 }
@@ -84,7 +85,7 @@ export class ProductosService {
 }
 
 // El backend vuelve a recortar y validar; acá se manda limpio: sin textos
-// opcionales vacíos, el precio como número y sin pares vacíos en la ficha
+// opcionales vacíos, el precio y el costo como números y sin pares vacíos en la ficha
 function solicitud(datos: DatosDeProducto): SolicitudDeProducto {
 	return {
 		nombre: datos.nombre.trim(),
@@ -93,6 +94,7 @@ function solicitud(datos: DatosDeProducto): SolicitudDeProducto {
 		idCategoria: Number(datos.idCategoria),
 		unidad: datos.unidad,
 		precio: leerPrecio(datos.precio),
+		costo: datos.costo.trim() === '' ? null : leerPrecio(datos.costo),
 		ficha: datos.ficha
 			.map((par) => ({ nombre: par.nombre.trim(), valor: par.valor.trim() }))
 			.filter((par) => par.nombre !== '' || par.valor !== ''),

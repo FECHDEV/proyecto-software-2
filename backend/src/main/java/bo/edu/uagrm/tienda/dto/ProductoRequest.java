@@ -42,6 +42,12 @@ public record ProductoRequest(
 		@Digits(integer = 5, fraction = 2, message = "admite hasta dos decimales")
 		BigDecimal precio,
 
+		// Opcional: sin costo, el producto no entra en el margen (HU-18 RF-19)
+		@DecimalMin(value = "0", inclusive = false, message = "tiene que ser mayor que 0")
+		@DecimalMax(value = "99999.99", message = "admite hasta 99 999,99")
+		@Digits(integer = 5, fraction = 2, message = "admite hasta dos decimales")
+		BigDecimal costo,
+
 		@Size(max = 15, message = "admite hasta 15 características")
 		List<@Valid CaracteristicaRequest> ficha,
 

@@ -57,6 +57,11 @@ public class LineaPedido {
 	@Column(nullable = false, precision = 11, scale = 2)
 	private BigDecimal subtotal;
 
+	// El costo del producto al confirmar, como el precio: un cambio después no toca el margen de lo vendido. Nulo si el
+	// producto no tenía costo, y en las líneas de antes de HU-18 (RF-20)
+	@Column(precision = 7, scale = 2)
+	private BigDecimal costo;
+
 	// Lo que volvió al carrito al cancelar o vencer, con sus topes; nulo si no volvió nada. Un pago tardío resta del
 	// carrito solo esto (HU-13 RF-9)
 	@Column(name = "cantidad_devuelta", precision = 7, scale = 2)
@@ -68,6 +73,7 @@ public class LineaPedido {
 		this.nombre = producto.getNombre();
 		this.unidad = producto.getUnidad();
 		this.precio = producto.getPrecio();
+		this.costo = producto.getCosto();
 		this.cantidad = cantidad.setScale(2, RoundingMode.UNNECESSARY);
 		this.subtotal = precio.multiply(this.cantidad).setScale(2, RoundingMode.HALF_UP);
 	}

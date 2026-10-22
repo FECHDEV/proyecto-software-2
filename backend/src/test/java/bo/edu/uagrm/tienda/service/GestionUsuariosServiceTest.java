@@ -65,7 +65,7 @@ class GestionUsuariosServiceTest {
 	}
 
 	private void listadoVacio() {
-		given(usuarioRepository.buscar(any(), any(), any(), any())).willReturn(new PageImpl<>(List.of()));
+		given(usuarioRepository.buscar(any(), any(), any(), any(), any())).willReturn(new PageImpl<>(List.of()));
 	}
 
 	// HU-05 RF-2
@@ -73,22 +73,22 @@ class GestionUsuariosServiceTest {
 	void listarPideLaPaginaIndicadaDelRegistroMasRecienteAlMasAntiguo() {
 		Page<Usuario> pagina = new PageImpl<>(List.of(conId(Usuario.registrarCliente("Ana", "Rojas", "ana@mail.com",
 				"$2a$10$hash", null, REGISTRO), 7L)));
-		given(usuarioRepository.buscar(any(), any(), any(), any())).willReturn(pagina);
+		given(usuarioRepository.buscar(any(), any(), any(), any(), any())).willReturn(pagina);
 
-		assertThat(servicio.listar(Rol.CLIENTE, EstadoCuenta.ACTIVA, null, 2, 30)).isSameAs(pagina);
+		assertThat(servicio.listar(Rol.CLIENTE, EstadoCuenta.ACTIVA, null, null, 2, 30)).isSameAs(pagina);
 
-		then(usuarioRepository).should().buscar(Rol.CLIENTE, EstadoCuenta.ACTIVA, null, PageRequest.of(2, 30, ORDEN));
+		then(usuarioRepository).should().buscar(Rol.CLIENTE, EstadoCuenta.ACTIVA, null, null, PageRequest.of(2, 30, ORDEN));
 	}
 
 	@Test
 	void tamanoMayorA100UsaCienYPaginaOTamanoInvalidosUsanLosPorDefecto() {
 		listadoVacio();
 
-		servicio.listar(null, null, null, -1, 500);
-		servicio.listar(null, null, null, 0, 0);
+		servicio.listar(null, null, null, null, -1, 500);
+		servicio.listar(null, null, null, null, 0, 0);
 
-		then(usuarioRepository).should().buscar(null, null, null, PageRequest.of(0, 100, ORDEN));
-		then(usuarioRepository).should().buscar(null, null, null, PageRequest.of(0, 20, ORDEN));
+		then(usuarioRepository).should().buscar(null, null, null, null, PageRequest.of(0, 100, ORDEN));
+		then(usuarioRepository).should().buscar(null, null, null, null, PageRequest.of(0, 20, ORDEN));
 	}
 
 	// HU-05 RF-3
@@ -96,9 +96,9 @@ class GestionUsuariosServiceTest {
 	void textoSeBuscaRecortadoEnMinusculasYConLosComodinesEscapados() {
 		listadoVacio();
 
-		servicio.listar(null, null, "  Ana_50%! ", 0, 20);
+		servicio.listar(null, null, null, "  Ana_50%! ", 0, 20);
 
-		then(usuarioRepository).should().buscar(null, null, "%ana!_50!%!!%", PageRequest.of(0, 20, ORDEN));
+		then(usuarioRepository).should().buscar(null, null, null, "%ana!_50!%!!%", PageRequest.of(0, 20, ORDEN));
 	}
 
 	// HU-05 RF-3
@@ -106,10 +106,10 @@ class GestionUsuariosServiceTest {
 	void textoVacioOEnBlancoNoFiltra() {
 		listadoVacio();
 
-		servicio.listar(null, null, "", 0, 20);
-		servicio.listar(null, null, "   ", 0, 20);
+		servicio.listar(null, null, null, "", 0, 20);
+		servicio.listar(null, null, null, "   ", 0, 20);
 
-		then(usuarioRepository).should(times(2)).buscar(null, null, null, PageRequest.of(0, 20, ORDEN));
+		then(usuarioRepository).should(times(2)).buscar(null, null, null, null, PageRequest.of(0, 20, ORDEN));
 	}
 
 	private static final long ID_ADMIN = 1L;

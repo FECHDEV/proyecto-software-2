@@ -1,0 +1,76 @@
+<div class="conmutador" role="group" aria-label="Qué productos">
+  @for (orden of ordenes; track orden.valor) {
+    <button
+      type="button"
+      class="secundario"
+      [attr.aria-pressed]="filtros().orden === orden.valor"
+      (click)="cambiar.emit({ orden: orden.valor })"
+    >
+      {{ orden.nombre }}
+    </button>
+  }
+</div>
+
+@if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+  </div>
+} @else if (pagina(); as pagina) {
+  @if (pagina.contenido.length === 0) {
+    <p class="vacio" role="status">
+      {{ filtros().orden === 'MAS' ? 'No hubo ventas en este período.' : 'No hay productos a la venta.' }}
+    </p>
+  } @else {
+    <div class="contenedor-tabla">
+      <table>
+        <caption class="solo-lectores">
+          {{ filtros().orden === 'MAS' ? 'Productos más vendidos' : 'Productos menos vendidos' }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Producto</th>
+            <th scope="col" class="numero">Cantidad</th>
+            <th scope="col">Importe</th>
+            <th scope="col" class="numero">Margen</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of pagina.contenido; track fila.idProducto) {
+            <tr>
+              <th scope="row" data-etiqueta="Producto">
+                <span>
+                  {{ fila.nombre }}
+                  @if (!fila.activo) {
+                    <span class="rotulo">Inactivo</span>
+                  }
+                  @if (fila.codigo) {
+                    <span class="codigo">{{ fila.codigo }}</span>
+                  }
+                </span>
+              </th>
+              <td class="numero" data-etiqueta="Cantidad">{{ cantidad(fila.cantidad, fila.unidad) }}</td>
+              <td data-etiqueta="Importe">
+                <span class="con-barra">
+                  <span class="numero">{{ precio(fila.importe) }}</span>
+                  <span class="barra" aria-hidden="true" [style.width.%]="ancho(fila.importe)"></span>
+                </span>
+              </td>
+              <td class="numero" data-etiqueta="Margen" [class.negativo]="fila.margen !== null && fila.margen < 0">
+                {{ fila.margen === null ? (fila.importe > 0 ? 'Sin costo' : '—') : precio(fila.margen) }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <app-paginador
+    [pagina]="pagina"
+    [cargando]="recurso.isLoading()"
+    nombre="productos"
+    (irA)="cambiar.emit({ pagina: $event })"
+  />
+} @else {
+  <p class="cargando" role="status">Cargando los productos…</p>
+}

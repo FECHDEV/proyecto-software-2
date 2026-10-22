@@ -210,6 +210,7 @@ describe('AppComponent', () => {
         'Productos',
         'Inventario',
         'Pedidos',
+        'Reportes',
       ]);
       expect(enlacesDelMenu(fijo)[3].getAttribute('href')).toBe('/usuarios');
       expect(enlacesDelMenu(fijo)[4].getAttribute('href')).toBe('/categorias');
@@ -223,6 +224,14 @@ describe('AppComponent', () => {
       expect(nombres(enlacesDelMenu(fijo))).toEqual(['Inicio', 'Catálogo', 'Panel', 'Inventario', 'Pedidos']);
       expect(enlacesDelMenu(fijo)[3].getAttribute('href')).toBe('/inventario');
       expect(enlacesDelMenu(fijo)[4].getAttribute('href')).toBe('/pedidos');
+    });
+
+    // HU-18 RF-1: los reportes, el Contador y el Administrador; el Empleado no (arriba)
+    it('el contador ve «Reportes»', async () => {
+      const fijo = await en('/', 'CONTADOR');
+
+      expect(nombres(enlacesDelMenu(fijo))).toEqual(['Inicio', 'Catálogo', 'Panel', 'Inventario', 'Pedidos', 'Reportes']);
+      expect(enlacesDelMenu(fijo)[5].getAttribute('href')).toBe('/reportes');
     });
 
     // HU-09 RF-16

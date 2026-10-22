@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import com.jayway.jsonpath.JsonPath;
 
 import bo.edu.uagrm.tienda.entity.Rol;
+import bo.edu.uagrm.tienda.entity.TipoCliente;
 import bo.edu.uagrm.tienda.exception.UltimoAdministradorActivoException;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import bo.edu.uagrm.tienda.service.AdministradorInicial;
@@ -154,6 +155,70 @@ class GestionUsuariosIntegracionTest {
 		MvcTestResult invalido = listar(tokenAdmin, "?rol=SUPERADMIN");
 		assertThat(invalido).hasStatus(HttpStatus.BAD_REQUEST);
 		assertThat(invalido).bodyJson().extractingPath("$.codigo").isEqualTo("DATOS_INVALIDOS");
+	}
+
+	private MvcTestResult cambiarTipo(String token, Long idUsuario, String tipo) {
+		return mvc.put().uri("/api/usuarios/{idUsuario}/tipo", idUsuario)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + token).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"tipo\":\"%s\"}".formatted(tipo)).exchange();
+	}
+
+	// HU-18 RF-21
+	@Test
+	void unaCuentaNuevaEsPublicoGeneral() throws Exception {
+		MvcTestResult lista = listar(token(ADMIN, CLAVE_ADMIN), "?texto=ana@mail");
+
+		assertThat(lista).bodyJson().extractingPath("$.contenido[0].tipoCliente").isEqualTo("PUBLICO_GENERAL");
+	}
+
+	// HU-18 RF-21: y de vuelta
+	@Test
+	void elAdministradorCambiaElTipo() throws Exception {
+		String tokenAdmin = token(ADMIN, CLAVE_ADMIN);
+
+		MvcTestResult cambiado = cambiarTipo(tokenAdmin, idAna, "CONTRATISTA");
+
+		assertThat(cambiado).hasStatus(HttpStatus.OK);
+		assertThat(cambiado).bodyJson().extractingPath("$.tipoCliente").isEqualTo("CONTRATISTA");
+		assertThat(usuarioRepository.findById(idAna).orElseThrow().getTipoCliente()).isEqualTo(TipoCliente.CONTRATISTA);
+		assertThat(cambiarTipo(tokenAdmin, idAna, "PUBLICO_GENERAL")).bodyJson().extractingPath("$.tipoCliente")
+				.isEqualTo("PUBLICO_GENERAL");
+	}
+
+	// HU-18 RF-21: el personal no tiene tipo; un tipo que no existe o una cuenta que no existe, tampoco
+	@Test
+	void tipoEnCuentaNoClienteEs409() throws Exception {
+		String tokenAdmin = token(ADMIN, CLAVE_ADMIN);
+
+		MvcTestResult personal = cambiarTipo(tokenAdmin, idAdmin, "EMPRESA");
+
+		assertThat(personal).hasStatus(HttpStatus.CONFLICT);
+		assertThat(personal).bodyJson().extractingPath("$.codigo").isEqualTo("TIPO_SOLO_CLIENTE");
+		assertThat(cambiarTipo(tokenAdmin, idAna, "MAYORISTA")).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(cambiarTipo(tokenAdmin, 999999L, "EMPRESA")).hasStatus(HttpStatus.NOT_FOUND);
+	}
+
+	// HU-18 RF-21
+	@Test
+	void filtraPorTipo() throws Exception {
+		String tokenAdmin = token(ADMIN, CLAVE_ADMIN);
+		cambiarTipo(tokenAdmin, idAna, "TALLER");
+
+		assertThat(listar(tokenAdmin, "?tipo=TALLER")).bodyJson().extractingPath("$.contenido[*].correo").asArray()
+				.containsExactly("ana@mail.com");
+		assertThat(listar(tokenAdmin, "?tipo=EMPRESA&texto=ana@mail")).bodyJson().extractingPath("$.totalElementos")
+				.isEqualTo(0);
+		// /code-review: el personal también se guarda como Público general, pero no tiene tipo
+		assertThat(listar(tokenAdmin, "?tipo=PUBLICO_GENERAL&rol=ADMINISTRADOR")).bodyJson()
+				.extractingPath("$.totalElementos").isEqualTo(0);
+	}
+
+	// HU-18 RF-21: el cliente no se pone el tipo
+	@Test
+	void otroRolNoCambiaElTipo() throws Exception {
+		assertThat(cambiarTipo(token("ana@mail.com", "secreta12"), idAna, "EMPRESA")).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(usuarioRepository.findById(idAna).orElseThrow().getTipoCliente())
+				.isEqualTo(TipoCliente.PUBLICO_GENERAL);
 	}
 
 	// HU-05 RF-4

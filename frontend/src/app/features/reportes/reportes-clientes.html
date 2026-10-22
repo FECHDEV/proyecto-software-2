@@ -1,0 +1,70 @@
+<div class="conmutador" role="group" aria-label="Días sin comprar">
+  @for (cada of dias; track cada) {
+    <button
+      type="button"
+      class="secundario"
+      [attr.aria-pressed]="filtros().dias === cada"
+      (click)="cambiar.emit({ dias: cada })"
+    >
+      Más de {{ cada }} días
+    </button>
+  }
+</div>
+<p class="suave">Clientes con la cuenta activa que compraron alguna vez y no volvieron a comprar, del que más compró al que menos.</p>
+
+@if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+  </div>
+} @else if (pagina(); as pagina) {
+  @if (pagina.contenido.length === 0) {
+    <p class="vacio" role="status">Ningún cliente dejó de comprar hace más de {{ filtros().dias }} días.</p>
+  } @else {
+    <div class="contenedor-tabla">
+      <table>
+        <caption class="solo-lectores">Clientes que no compran hace más de {{ filtros().dias }} días</caption>
+        <thead>
+          <tr>
+            <th scope="col">Cliente</th>
+            <th scope="col">Contacto</th>
+            <th scope="col">Última compra</th>
+            <th scope="col" class="numero">Pedidos</th>
+            <th scope="col" class="numero">Total comprado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of pagina.contenido; track fila.idUsuario) {
+            <tr>
+              <th scope="row" data-etiqueta="Cliente">
+                <span>
+                  {{ fila.nombre }} {{ fila.apellido }}
+                  <span class="codigo">{{ nombresDeTipo[fila.tipo] }}</span>
+                </span>
+              </th>
+              <td data-etiqueta="Contacto">
+                <span class="contacto">
+                  <a [href]="'mailto:' + fila.correo">{{ fila.correo }}</a>
+                  @if (fila.telefono) {
+                    <a [href]="'tel:' + fila.telefono">{{ fila.telefono }}</a>
+                  }
+                </span>
+              </td>
+              <td data-etiqueta="Última compra">{{ fecha(fila.ultimaCompra) }}</td>
+              <td class="numero" data-etiqueta="Pedidos">{{ fila.pedidos }}</td>
+              <td class="numero" data-etiqueta="Total comprado">{{ precio(fila.total) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <app-paginador
+    [pagina]="pagina"
+    [cargando]="recurso.isLoading()"
+    nombre="clientes"
+    (irA)="cambiar.emit({ pagina: $event })"
+  />
+} @else {
+  <p class="cargando" role="status">Cargando los clientes…</p>
+}

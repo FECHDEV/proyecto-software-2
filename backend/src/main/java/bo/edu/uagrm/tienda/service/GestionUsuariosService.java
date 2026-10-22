@@ -10,10 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 import bo.edu.uagrm.tienda.entity.EstadoCuenta;
 import bo.edu.uagrm.tienda.entity.RecuperacionContrasena;
 import bo.edu.uagrm.tienda.entity.Rol;
+import bo.edu.uagrm.tienda.entity.TipoCliente;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.exception.CuentaPropiaNoDesactivableException;
 import bo.edu.uagrm.tienda.exception.RolDeCuentaDesactivadaException;
 import bo.edu.uagrm.tienda.exception.RolPropioNoModificableException;
+import bo.edu.uagrm.tienda.exception.TipoSoloClienteException;
 import bo.edu.uagrm.tienda.exception.UltimoAdministradorActivoException;
 import bo.edu.uagrm.tienda.exception.UsuarioNoEncontradoException;
 import bo.edu.uagrm.tienda.repository.RecuperacionContrasenaRepository;
@@ -32,9 +34,21 @@ public class GestionUsuariosService {
 	private final VerificacionCorreoService verificacionCorreo;
 
 	@Transactional(readOnly = true)
-	public Page<Usuario> listar(Rol rol, EstadoCuenta estado, String texto, int pagina, int tamano) {
+	public Page<Usuario> listar(Rol rol, EstadoCuenta estado, TipoCliente tipo, String texto, int pagina,
+			int tamano) {
 		PageRequest paginacion = Busquedas.pagina(pagina, tamano, ORDEN);
-		return usuarioRepository.buscar(rol, estado, Busquedas.patron(texto), paginacion);
+		return usuarioRepository.buscar(rol, estado, tipo, Busquedas.patron(texto), paginacion);
+	}
+
+	// Bloquea la cuenta: un cambio de rol a la vez no deja un tipo en una cuenta que ya no es de Cliente (HU-18 RF-21)
+	@Transactional
+	public Usuario cambiarTipo(Long idUsuario, TipoCliente tipo) {
+		Usuario usuario = bloquearCuenta(idUsuario);
+		if (usuario.getRol() != Rol.CLIENTE) {
+			throw new TipoSoloClienteException();
+		}
+		usuario.cambiarTipo(tipo);
+		return usuario;
 	}
 
 	@Transactional

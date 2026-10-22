@@ -136,7 +136,7 @@ class UsuariosControllerTest {
 	// HU-05 RF-2, RF-3
 	@Test
 	void listadoPasaLosFiltrosYDevuelveLaPaginaSinDatosSensibles() throws Exception {
-		given(gestionUsuariosService.listar(Rol.CLIENTE, EstadoCuenta.ACTIVA, "ana", 1, 5))
+		given(gestionUsuariosService.listar(Rol.CLIENTE, EstadoCuenta.ACTIVA, null, "ana", 1, 5))
 				.willReturn(new PageImpl<>(List.of(ana), PageRequest.of(1, 5), 6));
 
 		MvcTestResult resultado = listar("?rol=CLIENTE&estado=ACTIVA&texto=ana&pagina=1&tamano=5", admin);
@@ -160,12 +160,12 @@ class UsuariosControllerTest {
 
 	@Test
 	void listadoSinParametrosPideLaPrimeraPaginaDe20SinFiltros() {
-		given(gestionUsuariosService.listar(null, null, null, 0, 20))
+		given(gestionUsuariosService.listar(null, null, null, null, 0, 20))
 				.willReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
 
 		assertThat(listar("", admin)).hasStatus(HttpStatus.OK);
 
-		then(gestionUsuariosService).should().listar(null, null, null, 0, 20);
+		then(gestionUsuariosService).should().listar(null, null, null, null, 0, 20);
 	}
 
 	@Test

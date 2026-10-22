@@ -1,0 +1,19 @@
+// La tabla y los estados de _lista.scss, el conmutador de _reporte.scss
+@use '../../../styles/lista';
+@use 'reporte';
+
+.suave {
+	margin: 0;
+	max-width: 70ch;
+}
+
+.contacto {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-1);
+}
+
+.contacto a {
+	color: var(--app-acento-texto);
+	overflow-wrap: anywhere;
+}

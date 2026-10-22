@@ -1,0 +1,49 @@
+@if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+  </div>
+} @else if (ventas(); as ventas) {
+  <section class="bloque" aria-label="Cifras del período">
+    <dl class="cifras">
+      @for (cifra of cifras(); track cifra.nombre) {
+        <div class="cifra">
+          <dt>{{ cifra.nombre }}</dt>
+          <dd class="valor" [class.negativo]="cifra.negativo">{{ cifra.valor }}</dd>
+          @if (cifra.detalle) {
+            <dd class="suave">{{ cifra.detalle }}</dd>
+          }
+          @if (cifra.comparacion) {
+            <dd class="suave">{{ cifra.comparacion }}</dd>
+          }
+        </div>
+      }
+    </dl>
+    <p class="suave">Comparado con el {{ anterior() }}, los mismos días justo antes.</p>
+  </section>
+
+  @if (ventas.actual.pedidos === 0) {
+    <p class="vacio" role="status">{{ sinVentas() }}</p>
+    @if (hayVentasDeAlgunTipo()) {
+      <app-tabla-de-ventas
+        titulo="Por tipo de cliente"
+        columna="Tipo"
+        [filas]="porTipo()"
+        columnaExtra="Promedio por pedido"
+      />
+    }
+  } @else {
+    <app-tabla-de-ventas [titulo]="titulo(ventas)" columna="Fecha" [filas]="porFecha()" />
+    <app-tabla-de-ventas titulo="Por día de la semana" columna="Día" [filas]="porDiaSemana()" />
+    <app-tabla-de-ventas titulo="Por hora del pago" columna="Hora" [filas]="porHora()" />
+    <app-tabla-de-ventas titulo="Por categoría" columna="Categoría" [filas]="porCategoria()" columnaExtra="Margen" />
+    <app-tabla-de-ventas
+      titulo="Por tipo de cliente"
+      columna="Tipo"
+      [filas]="porTipo()"
+      columnaExtra="Promedio por pedido"
+    />
+  }
+} @else {
+  <p class="cargando" role="status">Cargando el resumen…</p>
+}

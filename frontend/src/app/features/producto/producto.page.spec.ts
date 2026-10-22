@@ -20,6 +20,7 @@ const TALADRO: Producto = {
   marca: 'Bosch',
   descripcion: null,
   precio: 420,
+  costo: 300.5,
   unidad: 'UNIDAD',
   idCategoria: 3,
   categoria: 'Herramientas eléctricas',
@@ -241,6 +242,7 @@ describe('ProductoPage', () => {
         idCategoria: '3',
         unidad: 'UNIDAD',
         precio: '420,5',
+        costo: '',
         ficha: [],
         destacado: false,
       },
@@ -316,6 +318,33 @@ describe('ProductoPage', () => {
     expect(productos.editados[0].id).toBe(7);
     expect(productos.editados[0].datos.idCategoria).toBe('4');
     expect(texto()).toContain('Cambios guardados.');
+  });
+
+  // HU-18 RF-19: el costo es opcional, se carga con coma y viaja con el producto
+  it('envía el costo opcional', async () => {
+    await abrir('/productos/7', (falso) => falso.recurso.value.set(TALADRO));
+    expect(campo('costo').value).toBe('300,5');
+    expect(texto()).toContain('Solo lo ven el Administrador y el Contador.');
+
+    await escribir('costo', '310');
+    await pulsar('Guardar cambios');
+    expect(productos.editados[0].datos.costo).toBe('310');
+
+    await abrir('/productos/7', (falso) => falso.recurso.value.set({ ...TALADRO, costo: null }));
+    expect(campo('costo').value).toBe('');
+  });
+
+  // HU-18 RF-19: las reglas del precio, con el nombre del costo
+  it('muestra el error de costo', async () => {
+    await abrir('/productos/nuevo');
+    await llenarLoObligatorio();
+
+    await escribir('costo', '0');
+    await pulsar('Crear producto');
+
+    expect(texto()).toContain('El costo tiene que ser mayor que 0.');
+    expect(productos.creados).toEqual([]);
+    expect(document.activeElement?.id).toBe('costo');
   });
 
   // HU-09 RF-4: la casilla «Destacado» viaja con el producto

@@ -1,0 +1,77 @@
+<div class="conmutador" role="group" aria-label="Días sin venderse">
+  @for (cada of dias; track cada) {
+    <button
+      type="button"
+      class="secundario"
+      [attr.aria-pressed]="filtros().dias === cada"
+      (click)="cambiar.emit({ dias: cada })"
+    >
+      Más de {{ cada }} días
+    </button>
+  }
+</div>
+<p class="suave">
+  Productos a la venta con stock, desde su última venta o, si nunca se vendieron, desde su alta. El inmovilizado es el
+  stock por el costo, o por el precio si no tiene costo cargado.
+</p>
+
+@if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+  </div>
+} @else if (pagina(); as pagina) {
+  @if (pagina.contenido.length === 0) {
+    <p class="vacio" role="status">Ningún producto lleva más de {{ filtros().dias }} días sin venderse.</p>
+  } @else {
+    <div class="contenedor-tabla">
+      <table>
+        <caption class="solo-lectores">Productos sin venderse</caption>
+        <thead>
+          <tr>
+            <th scope="col">Producto</th>
+            <th scope="col" class="numero">Días</th>
+            <th scope="col">Última venta</th>
+            <th scope="col" class="numero">Stock</th>
+            <th scope="col" class="numero">Precio</th>
+            <th scope="col" class="numero">Costo</th>
+            <th scope="col" class="numero">Inmovilizado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of pagina.contenido; track fila.idProducto) {
+            <tr>
+              <th scope="row" data-etiqueta="Producto">
+                <span>
+                  {{ fila.nombre }}
+                  @if (fila.codigo) {
+                    <span class="codigo">{{ fila.codigo }}</span>
+                  }
+                </span>
+              </th>
+              <td class="numero" data-etiqueta="Días">{{ fila.diasSinVenta }}</td>
+              <td data-etiqueta="Última venta">{{ fila.ultimaVenta === null ? 'Nunca' : fecha(fila.ultimaVenta) }}</td>
+              <td class="numero" data-etiqueta="Stock">{{ cantidad(fila.stock, fila.unidad) }}</td>
+              <td class="numero" data-etiqueta="Precio">{{ precio(fila.precio) }}</td>
+              <td class="numero" data-etiqueta="Costo">{{ fila.costo === null ? '—' : precio(fila.costo) }}</td>
+              <td class="numero" data-etiqueta="Inmovilizado">
+                {{ precio(fila.inmovilizado) }}
+                @if (fila.inmovilizadoAPrecio) {
+                  <span class="rotulo">a precio</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <app-paginador
+    [pagina]="pagina"
+    [cargando]="recurso.isLoading()"
+    nombre="productos"
+    (irA)="cambiar.emit({ pagina: $event })"
+  />
+} @else {
+  <p class="cargando" role="status">Cargando los productos…</p>
+}

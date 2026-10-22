@@ -248,14 +248,14 @@ class UsuarioRepositoryTest {
 		registrarUsuariosDeBusqueda();
 		Sort orden = Sort.by(Sort.Direction.DESC, "fechaRegistro", "idUsuario");
 
-		Page<Usuario> primera = usuarioRepository.buscar(null, null, null, PageRequest.of(0, 2, orden));
-		Page<Usuario> tercera = usuarioRepository.buscar(null, null, null, PageRequest.of(2, 2, orden));
+		Page<Usuario> primera = usuarioRepository.buscar(null, null, null, null, PageRequest.of(0, 2, orden));
+		Page<Usuario> tercera = usuarioRepository.buscar(null, null, null, null, PageRequest.of(2, 2, orden));
 
 		assertThat(correos(primera)).containsExactly("dan_i@mail.com", "carla@mail.com");
 		assertThat(correos(tercera)).containsExactly("admin@tienda.com");
 		assertThat(primera.getTotalElements()).isEqualTo(5);
 		assertThat(primera.getTotalPages()).isEqualTo(3);
-		assertThat(correos(usuarioRepository.buscar(null, null, null, PageRequest.of(7, 2, orden)))).isEmpty();
+		assertThat(correos(usuarioRepository.buscar(null, null, null, null, PageRequest.of(7, 2, orden)))).isEmpty();
 	}
 
 	// HU-05 RF-3
@@ -264,15 +264,15 @@ class UsuarioRepositoryTest {
 		vaciarUsuarios();
 		registrarUsuariosDeBusqueda();
 
-		assertThat(correos(usuarioRepository.buscar(Rol.CLIENTE, null, null, TODOS)))
+		assertThat(correos(usuarioRepository.buscar(Rol.CLIENTE, null, null, null, TODOS)))
 				.containsExactly("dan_i@mail.com", "carla@mail.com", "ana@mail.com");
-		assertThat(correos(usuarioRepository.buscar(Rol.CLIENTE, EstadoCuenta.ACTIVA, null, TODOS)))
+		assertThat(correos(usuarioRepository.buscar(Rol.CLIENTE, EstadoCuenta.ACTIVA, null, null, TODOS)))
 				.containsExactly("dan_i@mail.com", "ana@mail.com");
 		// "Ana" por nombre y correo, "Anaya" por apellido: la columna se compara en minúsculas
-		assertThat(correos(usuarioRepository.buscar(null, null, "%ana%", TODOS)))
+		assertThat(correos(usuarioRepository.buscar(null, null, null, "%ana%", TODOS)))
 				.containsExactly("beto@mail.com", "ana@mail.com");
-		assertThat(correos(usuarioRepository.buscar(Rol.EMPLEADO, null, "%ana%", TODOS))).containsExactly("beto@mail.com");
-		assertThat(correos(usuarioRepository.buscar(null, EstadoCuenta.DESACTIVADA, "%ana%", TODOS))).isEmpty();
+		assertThat(correos(usuarioRepository.buscar(Rol.EMPLEADO, null, null, "%ana%", TODOS))).containsExactly("beto@mail.com");
+		assertThat(correos(usuarioRepository.buscar(null, EstadoCuenta.DESACTIVADA, null, "%ana%", TODOS))).isEmpty();
 	}
 
 	// HU-05 RF-9
@@ -297,7 +297,7 @@ class UsuarioRepositoryTest {
 		registrarUsuariosDeBusqueda();
 
 		// Sin el escape, "n_" también encontraría "ana" y "anaya"
-		assertThat(correos(usuarioRepository.buscar(null, null, "%n!_%", TODOS))).containsExactly("dan_i@mail.com");
-		assertThat(correos(usuarioRepository.buscar(null, null, "%!%%", TODOS))).isEmpty();
+		assertThat(correos(usuarioRepository.buscar(null, null, null, "%n!_%", TODOS))).containsExactly("dan_i@mail.com");
+		assertThat(correos(usuarioRepository.buscar(null, null, null, "%!%%", TODOS))).isEmpty();
 	}
 }

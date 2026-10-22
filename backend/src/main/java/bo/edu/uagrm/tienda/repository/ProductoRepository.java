@@ -18,6 +18,9 @@ import bo.edu.uagrm.tienda.entity.Producto;
 
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
+	// Los que se pueden vender, para los reportes (HU-18 RF-12)
+	List<Producto> findByActivoTrue();
+
 	// texto llega ya en minúsculas, con los comodines escapados con '!' y entre '%'. La categoría viene en la misma
 	// consulta: la lista muestra su nombre
 	@EntityGraph(attributePaths = "categoria")

@@ -1,0 +1,120 @@
+// Lo que comparten las secciones de /reportes (HU-18), además de _lista.scss:
+// el título de cada bloque, las cifras, el conmutador de opciones, la barra
+// proporcional y los rótulos. Todo sale de _tokens.scss.
+
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-6);
+}
+
+h2 {
+	margin: 0;
+	font-family: var(--app-familia-titulos);
+	font-size: 22px;
+	font-weight: 700;
+}
+
+.bloque {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-3);
+}
+
+// Las cifras del período: tarjetas del panel en una grilla que se acomoda sola
+.cifras {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: var(--app-espacio-3);
+	margin: 0;
+}
+
+.cifra {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-1);
+	padding: var(--app-espacio-4);
+	border: 1px solid var(--app-borde);
+	border-radius: var(--app-radio);
+	background: var(--app-superficie);
+}
+
+.cifra dt {
+	color: var(--app-texto-suave);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.cifra dd {
+	margin: 0;
+}
+
+.valor {
+	font-family: var(--app-familia-titulos);
+	// Un monto no se parte en dos líneas: con siete cifras, la letra se achica
+	font-size: clamp(20px, 2.2vw, 26px);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.suave {
+	color: var(--app-texto-suave);
+	font-size: 13px;
+}
+
+// Un margen negativo: el tono de error y el signo, nunca solo el color
+.negativo {
+	color: var(--app-error);
+}
+
+// Opciones excluyentes (Más / Menos vendidos, 30 / 60 / 90 días)
+.conmutador {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-2);
+}
+
+.conmutador .secundario[aria-pressed='true'] {
+	border-color: var(--app-acento-texto);
+	box-shadow: inset 0 -2px 0 var(--app-acento-texto);
+}
+
+// La barra proporcional de una celda: un solo tono, que se lee en los dos
+// modos; el número de al lado es el dato, la barra solo ayuda a comparar
+.con-barra {
+	display: grid;
+	gap: var(--app-espacio-1);
+	min-width: 96px;
+}
+
+.barra {
+	display: block;
+	height: 6px;
+	border-radius: 0 2px 2px 0;
+	background: var(--app-acento-texto);
+}
+
+.rotulo {
+	display: inline-block;
+	margin-left: var(--app-espacio-2);
+	padding: 0 var(--app-espacio-2);
+	border: 1px solid var(--app-borde-control);
+	color: var(--app-texto-suave);
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.codigo {
+	display: block;
+	color: var(--app-texto-suave);
+	font-size: 12.5px;
+}
+
+// thead th de _lista.scss los alinea a la izquierda: hace falta ganarle
+thead th.numero,
+td.numero {
+	text-align: right;
+}

@@ -166,5 +166,13 @@ export const routes: Routes = [
     data: { roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
     loadComponent: () => import('./features/despacho-pedido/despacho-pedido.page').then((m) => m.DespachoPedidoPage),
   },
+  // Los reportes: el Contador y el Administrador; el Empleado no (HU-18 RF-1)
+  {
+    path: 'reportes',
+    title: `Reportes · ${MARCA.nombre}`,
+    canActivate: [rolGuard],
+    data: { roles: ['ADMINISTRADOR', 'CONTADOR'] },
+    loadComponent: () => import('./features/reportes/reportes.page').then((m) => m.ReportesPage),
+  },
   { path: '**', redirectTo: '' },
 ];

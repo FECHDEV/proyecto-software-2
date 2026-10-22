@@ -3,6 +3,7 @@ package bo.edu.uagrm.tienda;
 import static bo.edu.uagrm.tienda.IpsDePrueba.ipNueva;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -11,6 +12,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +32,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
@@ -103,6 +106,9 @@ class PedidoIntegracionTest {
 
 	@Autowired
 	private UsuarioRepository usuarioRepository;
+
+	@Autowired
+	private JdbcTemplate jdbc;
 
 	private String admin;
 	private String ana;
@@ -319,6 +325,47 @@ class PedidoIntegracionTest {
 		assertThat(pedido).bodyJson().extractingPath("$.lineas[0].cantidad").isEqualTo(2.0);
 		assertThat(pedido).bodyJson().extractingPath("$.lineas[0].subtotal").isEqualTo(171.0);
 		assertThat(pedido).bodyJson().extractingPath("$.total").isEqualTo(171.0);
+	}
+
+	private void ponerCosto(Integer idProducto, String nombre, String unidad, String precio, String costo) {
+		assertThat(put("/api/gestion/productos/{id}", admin, """
+				{"nombre":"%s","idCategoria":%d,"unidad":"%s","precio":%s,"costo":%s}"""
+				.formatted(nombre, herramientas, unidad, precio, costo), idProducto)).hasStatus(HttpStatus.OK);
+	}
+
+	// HU-18 RF-20: la línea copia el costo al confirmar, como el precio; sin costo, queda nulo
+	@Test
+	void laLineaGuardaElCostoAlConfirmar() throws Exception {
+		ponerCosto(martillo, "Martillo", "UNIDAD", "85.50", "60");
+		agregar(ana, martillo, "2");
+		agregar(ana, cable, "1");
+		Integer idPedido = confirmado(ana, "183");
+		ponerCosto(martillo, "Martillo", "UNIDAD", "85.50", "70");
+
+		List<Map<String, Object>> lineas = jdbc.queryForList(
+				"select id_producto, costo from linea_pedido where id_pedido = ? order by id_producto", idPedido);
+
+		assertThat(lineas).extracting(linea -> linea.get("costo") == null ? null
+				: ((BigDecimal) linea.get("costo")).doubleValue()).containsExactly(60.0, null);
+	}
+
+	// HU-18 RF-19: el costo nunca le llega al cliente: ni el catálogo, ni el detalle, ni el carrito, ni el pedido
+	@Test
+	void elCostoNoSaleAlCliente() throws Exception {
+		ponerCosto(martillo, "Martillo", "UNIDAD", "85.50", "60");
+		agregar(ana, martillo, "1");
+
+		List<MvcTestResult> respuestas = new ArrayList<>(List.of(mvc.get().uri("/api/productos").exchange(),
+				mvc.get().uri("/api/productos/{id}", martillo).exchange(),
+				mvc.get().uri("/api/productos/portada").exchange(), get(CARRITO, ana)));
+		Integer idPedido = confirmado(ana, "85.50");
+		respuestas.add(get(PEDIDOS + "/{id}", ana, idPedido));
+		respuestas.add(get(PEDIDOS, ana));
+
+		for (MvcTestResult respuesta : respuestas) {
+			assertThat(respuesta).hasStatus(HttpStatus.OK);
+			assertThat(respuesta.getResponse().getContentAsString()).doesNotContain("costo");
+		}
 	}
 
 	// HU-12 RF-3

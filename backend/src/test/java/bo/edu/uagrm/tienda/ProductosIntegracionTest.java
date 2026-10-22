@@ -203,6 +203,48 @@ class ProductosIntegracionTest {
 		assertThat(enviar(tokenAdmin, cuerpo("Pala", "", jardin, "99999.99", "[]"))).hasStatus(HttpStatus.CREATED);
 	}
 
+	private static String conCosto(String cuerpo, String costo) {
+		return cuerpo.substring(0, cuerpo.lastIndexOf('}')) + ",\"costo\":" + costo + "}";
+	}
+
+	// HU-18 RF-19: el costo se guarda, se lee en la gestión y se cambia al editar
+	@Test
+	void crearConCostoLoGuarda() throws Exception {
+		MvcTestResult creado = enviar(tokenAdmin, conCosto(cuerpo("Pala", "", jardin, "85.50", "[]"), "60.00"));
+
+		assertThat(creado).hasStatus(HttpStatus.CREATED);
+		assertThat(creado).bodyJson().extractingPath("$.costo").isEqualTo(60.0);
+		Integer id = idDe(creado, "$.idProducto");
+		assertThat(put(GESTION + "/{id}", conCosto(cuerpo("Pala", "", jardin, "85.50", "[]"), "70.25"), id))
+				.bodyJson().extractingPath("$.costo").isEqualTo(70.25);
+		assertThat(mvc.get().uri(GESTION + "/{id}", id).header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
+				.exchange()).bodyJson().extractingPath("$.costo").isEqualTo(70.25);
+	}
+
+	// HU-18 RF-19: como el precio, mayor que 0, hasta 99 999,99 y con dos decimales como máximo
+	@Test
+	void costoInvalidoEs400() {
+		for (String costo : List.of("0", "-5", "12.345", "100000")) {
+			MvcTestResult rechazado = enviar(tokenAdmin, conCosto(cuerpo("Pala", "", jardin, "10", "[]"), costo));
+			assertThat(rechazado).as(costo).hasStatus(HttpStatus.BAD_REQUEST);
+			assertThat(rechazado).bodyJson().extractingPath("$.errores[0].campo").isEqualTo("costo");
+		}
+		assertThat(enviar(tokenAdmin, conCosto(cuerpo("Pala", "", jardin, "10", "[]"), "99999.99")))
+				.hasStatus(HttpStatus.CREATED);
+	}
+
+	// HU-18 RF-19: es opcional; editar sin costo lo quita
+	@Test
+	void sinCostoQuedaNulo() throws Exception {
+		MvcTestResult creado = enviar(tokenAdmin, cuerpo("Pala", "", jardin, "10", "[]"));
+		assertThat(creado).bodyJson().extractingPath("$.costo").isNull();
+
+		Integer id = idDe(creado, "$.idProducto");
+		put(GESTION + "/{id}", conCosto(cuerpo("Pala", "", jardin, "10", "[]"), "6"), id);
+		assertThat(put(GESTION + "/{id}", cuerpo("Pala", "", jardin, "10", "[]"), id)).bodyJson()
+				.extractingPath("$.costo").isNull();
+	}
+
 	// HU-07 RF-3: nombre vacío o largo, unidad que no está en la lista
 	@Test
 	void nombreYUnidadInvalidosSeRechazan() {

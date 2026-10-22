@@ -1,0 +1,8 @@
+// La tabla y los estados de _lista.scss, el conmutador y los rótulos de _reporte.scss
+@use '../../../styles/lista';
+@use 'reporte';
+
+.suave {
+	margin: 0;
+	max-width: 70ch;
+}

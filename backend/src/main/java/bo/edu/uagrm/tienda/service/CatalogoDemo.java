@@ -363,7 +363,7 @@ public class CatalogoDemo implements ApplicationRunner {
 		}
 
 		ProductoRequest producto(Long idCategoria, BigDecimal precio) {
-			return new ProductoRequest(nombre, null, descripcion, idCategoria, unidad, precio, null, destacado);
+			return new ProductoRequest(nombre, null, descripcion, idCategoria, unidad, precio, null, null, destacado);
 		}
 	}
 }
