@@ -69,6 +69,16 @@ El esquema lo genera Hibernate (`ddl-auto=update`), sin Flyway ni Liquibase.
 IDs `Long` autoincrementales, no UUID. Las pruebas del backend corren sobre H2
 en modo MySQL (perfil `test`), sin Testcontainers.
 
+*21/10/2026 (HU-17).* **El estado del pedido es `varchar`, no `enum`.**
+Hibernate creaba `pedido.estado` como `enum(...)` de MySQL, y `ddl-auto=update`
+no cambia una columna que ya existe: un estado nuevo («Entregado») fallaba en
+MySQL y pasaba en H2. Se mapea con `@JdbcTypeCode(SqlTypes.VARCHAR)` y, al
+arrancar, `EstadoPedidoAlArrancar` pasa la columna a `varchar(15)` solo si en
+MySQL sigue siendo `enum`. Es un cambio de tipo puntual, no una migración: si
+hiciera falta otro, se vuelve a decidir acá. En una base nueva Hibernate crea
+además un `check` con los estados de ahora, que `ddl-auto=update` tampoco
+cambia: un estado nuevo vuelve a pedir esta decisión.
+
 ### Pago: interfaz propia con dos implementaciones
 
 `IPago` (`service/pago/`) tiene un **simulador local**, que se usa por defecto
@@ -751,6 +761,18 @@ retira en la tienda.
   el pago arriba (el tiempo que le queda y «Pagar») y cada estado con el color
   de su chip. Se llega desde el encabezado (junto al carrito, solo el
   Cliente), desde el panel y desde la página de cada pedido.
+- *21/10/2026 (HU-17).* **La entrega:** un solo paso, de «Pagado» a
+  «Entregado», sin «Listo para retirar» ni correos de aviso. Quien retira da
+  el número del pedido; el Empleado compara el nombre y el teléfono guardados
+  con su documento, sin código de retiro, y confirma la entrega, que no se
+  deshace y guarda quién la registró y cuándo. El personal ve **todos** los
+  pedidos en `/pedidos`, filtrados de entrada en «Pagado» (el pagado hace más
+  tiempo primero), con filtro por estado y búsqueda por número o por nombre
+  de quien retira. Registran la entrega el Empleado y el Administrador; el
+  Contador solo ve, como en el inventario. Sin exportar (HU-19).
+  **Motivo:** en una tienda de un solo local, el pedido pagado ya se puede
+  armar en el momento; un paso intermedio y su correo no agregan nada, y
+  comparar el nombre con el documento alcanza sin sumar un código.
 
 **Motivo:** el pago por QR es inmediato, así que 30 minutos alcanzan y un
 pedido abandonado no bloquea el stock; retirar en la tienda evita calcular
