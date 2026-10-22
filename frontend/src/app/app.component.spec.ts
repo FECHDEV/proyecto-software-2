@@ -209,18 +209,20 @@ describe('AppComponent', () => {
         'Categorías',
         'Productos',
         'Inventario',
+        'Pedidos',
       ]);
       expect(enlacesDelMenu(fijo)[3].getAttribute('href')).toBe('/usuarios');
       expect(enlacesDelMenu(fijo)[4].getAttribute('href')).toBe('/categorias');
       expect(enlacesDelMenu(fijo)[5].getAttribute('href')).toBe('/productos');
     });
 
-    // HU-08 RF-1
-    it('un empleado ve «Inicio» e «Inventario»', async () => {
+    // HU-08 RF-1, HU-17 RF-11
+    it('un empleado ve «Inicio», «Inventario» y «Pedidos»', async () => {
       const fijo = await en('/', 'EMPLEADO');
 
-      expect(nombres(enlacesDelMenu(fijo))).toEqual(['Inicio', 'Catálogo', 'Panel', 'Inventario']);
+      expect(nombres(enlacesDelMenu(fijo))).toEqual(['Inicio', 'Catálogo', 'Panel', 'Inventario', 'Pedidos']);
       expect(enlacesDelMenu(fijo)[3].getAttribute('href')).toBe('/inventario');
+      expect(enlacesDelMenu(fijo)[4].getAttribute('href')).toBe('/pedidos');
     });
 
     // HU-09 RF-16

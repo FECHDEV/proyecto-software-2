@@ -54,6 +54,8 @@ describe('rutas', () => {
     await import('./features/producto/producto.page');
     await import('./features/inventario/inventario.page');
     await import('./features/stock/stock.page');
+    await import('./features/despacho/despacho.page');
+    await import('./features/despacho-pedido/despacho-pedido.page');
   }, 60_000);
 
   afterEach(() => localStorage.clear());
@@ -105,6 +107,15 @@ describe('rutas', () => {
     expect(await navegarComo('CONTADOR', '/inventario/7')).toBe('/inventario/7');
     expect(await navegarComo('ADMINISTRADOR', '/inventario')).toBe('/inventario');
     expect(await navegarComo('CLIENTE', '/inventario')).toBe('/');
+  });
+
+  // HU-17 RF-9: los pedidos de todos son del personal; el Cliente tiene los suyos en Mis pedidos
+  it('pedidos es del personal', async () => {
+    expect(await navegarComo('EMPLEADO', '/pedidos')).toBe('/pedidos');
+    expect(await navegarComo('CONTADOR', '/pedidos/7')).toBe('/pedidos/7');
+    expect(await navegarComo('ADMINISTRADOR', '/pedidos?estado=TODOS')).toBe('/pedidos?estado=TODOS');
+    expect(await navegarComo('CLIENTE', '/pedidos')).toBe('/');
+    expect(await navegarComo(null, '/pedidos')).toBe('/inicio-sesion?destino=%2Fpedidos');
   });
 
   // HU-05 RF-1

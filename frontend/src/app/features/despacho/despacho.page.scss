@@ -1,0 +1,122 @@
+// Los pedidos del personal: los filtros, la paginación y los avisos salen de
+// _lista.scss, como el inventario; cada pedido es una fila de la placa de
+// lona con el chip de su estado, como «Mis pedidos»
+@use '../../../styles/lista';
+
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-6);
+}
+
+h1 {
+	margin: 0;
+}
+
+.filtros {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+	gap: var(--app-espacio-4);
+	align-items: end;
+}
+
+.lista {
+	margin: 0;
+	padding: var(--app-espacio-2) var(--app-espacio-6);
+	list-style: none;
+	border-radius: var(--app-radio);
+	background: var(--app-lona) var(--app-textura-cruda);
+	background-blend-mode: soft-light;
+	color: var(--app-sobre-lona);
+	// El foco sobre la lona: el amarillo no se ve sobre el fondo claro
+	--app-acento-texto: var(--app-sobre-lona);
+}
+
+.lista li + li {
+	border-top: 1px dashed color-mix(in srgb, var(--app-sobre-lona) 25%, transparent);
+}
+
+.fila {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) max-content;
+	align-items: center;
+	gap: var(--app-espacio-1) var(--app-espacio-4);
+	min-height: var(--app-area-tocable);
+	padding-block: var(--app-espacio-4);
+	color: inherit;
+	text-decoration: none;
+}
+
+.numero,
+.total {
+	font-family: var(--app-familia-titulos);
+	font-size: 20px;
+	font-weight: 700;
+}
+
+.total {
+	grid-row: 1 / span 3;
+	grid-column: 2;
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+.retira {
+	min-width: 0;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.detalle {
+	color: var(--app-sobre-lona-suave);
+	font-size: 14px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.fila:hover .numero {
+		text-decoration: underline;
+	}
+}
+
+// El estado cosido, con los colores de «Mis pedidos» (HU-14 RF-3)
+.estado {
+	justify-self: start;
+	padding: 2px var(--app-espacio-3);
+	outline: 1px dashed currentColor;
+	outline-offset: -3px;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.estado.tono-aviso {
+	background: var(--app-aviso-fondo);
+	color: var(--app-aviso);
+}
+
+.estado.tono-exito {
+	background: var(--app-exito-fondo);
+	color: var(--app-exito);
+}
+
+.estado.tono-neutro {
+	background: var(--app-superficie-alta);
+	color: var(--app-texto-suave);
+}
+
+.vacio {
+	margin: 0;
+	color: var(--app-texto-suave);
+	font-size: 18px;
+}
+
+@media (max-width: 640px) {
+	.filtros {
+		grid-template-columns: 1fr;
+	}
+
+	.lista {
+		padding-inline: var(--app-espacio-4);
+	}
+}

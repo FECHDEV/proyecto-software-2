@@ -25,6 +25,10 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	Optional<Pedido> findConBloqueoByIdPedidoAndUsuario_IdUsuario(Long idPedido, Long idUsuario);
 
+	// El cliente de un pedido sin cargarlo, para bloquear antes al cliente (HU-17, DespachoService.entregar)
+	@Query("select p.usuario.idUsuario from Pedido p where p.idPedido = :idPedido")
+	Optional<Long> idClienteDelPedido(@Param("idPedido") Long idPedido);
+
 	// Los pendientes del cliente al confirmar, con el cliente ya bloqueado (RF-5)
 	List<Pedido> findByUsuario_IdUsuarioAndEstadoOrderByIdPedido(Long idUsuario, EstadoPedido estado);
 
@@ -52,6 +56,28 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 			order by p.confirmado desc, p.idPedido desc""",
 			countQuery = "select count(p) from Pedido p where p.usuario.idUsuario = :idUsuario")
 	Page<FilaDePedido> misPedidos(@Param("idUsuario") Long idUsuario, Pageable pagina);
+
+	// La lista del personal (HU-17 RF-1 a RF-3): todos los clientes, con un estado o todos (null) y, si hay texto, por
+	// el nombre de quien retira (patrón LIKE ya normalizado) o por el número. El orden lo pone quien llama
+	@Query(value = """
+			select new bo.edu.uagrm.tienda.repository.PedidoRepository$FilaDeDespacho(
+				p.idPedido, p.estado, p.confirmado, p.pagado, p.nombreRetira, size(p.lineas), p.total)
+			from Pedido p
+			where (:estado is null or p.estado = :estado)
+			and (:patron is null or p.busquedaRetira like :patron escape '!' or p.idPedido = :numero)""",
+			countQuery = """
+					select count(p) from Pedido p
+					where (:estado is null or p.estado = :estado)
+					and (:patron is null or p.busquedaRetira like :patron escape '!' or p.idPedido = :numero)""")
+	Page<FilaDeDespacho> despacho(@Param("estado") EstadoPedido estado, @Param("patron") String patron,
+			@Param("numero") Long numero, Pageable pagina);
+
+	// Los pedidos de antes de HU-17, para BusquedaAlArrancar
+	List<Pedido> findByBusquedaRetiraIsNull();
+
+	record FilaDeDespacho(Long idPedido, EstadoPedido estado, LocalDateTime confirmado, LocalDateTime pagado,
+			String nombreRetira, int cantidadProductos, BigDecimal total) {
+	}
 
 	record FilaDePedido(Long idPedido, EstadoPedido estado, LocalDateTime confirmado, int cantidadProductos,
 			BigDecimal total, LocalDateTime vence) {

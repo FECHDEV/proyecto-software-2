@@ -56,13 +56,17 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/inventario/**")
 						.hasAnyRole("EMPLEADO", "ADMINISTRADOR", "CONTADOR")
 						.requestMatchers("/api/inventario/**").hasAnyRole("EMPLEADO", "ADMINISTRADOR")
+						// Los pedidos de todos los clientes, para el personal: el Contador solo los ve (HU-17 RF-9)
+						.requestMatchers(HttpMethod.GET, "/api/despacho/**")
+						.hasAnyRole("EMPLEADO", "ADMINISTRADOR", "CONTADOR")
+						.requestMatchers("/api/despacho/**").hasAnyRole("EMPLEADO", "ADMINISTRADOR")
 						// El carrito es solo del Cliente: el personal no compra (HU-11 RF-7)
 						.requestMatchers("/api/carrito/**").hasRole("CLIENTE")
 						// El aviso del sistema de pago llega sin sesión. No confirma nada: solo adelanta la consulta
 						// (HU-13 RF-10)
 						.requestMatchers(HttpMethod.GET, "/api/pagos/aviso").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/pagos/aviso").permitAll()
-						// Los pedidos de la API del Cliente: el personal los verá por otra (HU-12 RF-13)
+						// Los pedidos de la API del Cliente: el personal los ve en /api/despacho (HU-12 RF-13, HU-17)
 						.requestMatchers("/api/pedidos/**").hasRole("CLIENTE")
 						.anyRequest().authenticated())
 				// El 401 y el 403 pasan por ManejadorErrores para salir con el mismo formato que el resto de la

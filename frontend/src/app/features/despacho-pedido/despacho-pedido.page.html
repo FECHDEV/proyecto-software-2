@@ -1,0 +1,105 @@
+@if (noEncontrado()) {
+  <h1>Pedido</h1>
+  <p class="nada">No encontramos ese pedido.</p>
+  <a class="salida" routerLink="/pedidos">Ver los pedidos</a>
+} @else if (errorDeCarga()) {
+  <h1>Pedido</h1>
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+  </div>
+} @else if (ficha(); as ficha) {
+  <a class="salida" routerLink="/pedidos">Pedidos</a>
+  <div class="cabecera">
+    <h1>Pedido N.º {{ ficha.idPedido }}</h1>
+    <p [class]="'estado ' + tono[ficha.estado]">{{ nombresDeEstado[ficha.estado] }}</p>
+  </div>
+
+  <div role="alert">
+    @if (aviso()) {
+      <p class="aviso" tabindex="-1">{{ aviso() }}</p>
+    }
+  </div>
+
+  @if (ficha.estado === 'ENTREGADO') {
+    <p class="entregado" role="status" tabindex="-1">{{ entrega(ficha) }}</p>
+  }
+
+  <div class="columnas">
+    <section class="resumen" aria-labelledby="titulo-resumen">
+      <h2 id="titulo-resumen">Lo que pidió</h2>
+      <ul class="lineas">
+        @for (linea of ficha.lineas; track linea.idProducto) {
+          <li class="linea">
+            <span class="nombre">{{ linea.nombre }}</span>
+            <span class="detalle">{{ cantidad(linea.cantidad) }} × {{ precio(linea.precio) }}{{ unidad(linea) }}</span>
+            <span class="subtotal">{{ precio(linea.subtotal) }}</span>
+          </li>
+        }
+      </ul>
+      <p class="total">Total <strong>{{ precio(ficha.total) }}</strong></p>
+    </section>
+
+    <div class="lateral">
+      <section class="datos" aria-labelledby="titulo-retira">
+        <h2 id="titulo-retira">Quién lo retira</h2>
+        <dl>
+          <div>
+            <dt>Nombre</dt>
+            <dd>{{ ficha.nombreRetira }}</dd>
+          </div>
+          <div>
+            <dt>Teléfono</dt>
+            <dd>{{ ficha.telefonoRetira }}</dd>
+          </div>
+          @if (ficha.nota) {
+            <div>
+              <dt>Nota</dt>
+              <dd>{{ ficha.nota }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+      @if (puedeEntregar()) {
+        <button
+          type="button"
+          class="principal"
+          [attr.aria-disabled]="entregando() ? 'true' : null"
+          (click)="entregar()"
+        >
+          Registrar entrega
+        </button>
+      }
+
+      <section class="datos" aria-labelledby="titulo-cuenta">
+        <h2 id="titulo-cuenta">La cuenta</h2>
+        <dl>
+          <div>
+            <dt>Cliente</dt>
+            <dd>{{ ficha.clienteNombre }}</dd>
+          </div>
+          <div>
+            <dt>Correo</dt>
+            <dd>{{ ficha.clienteCorreo }}</dd>
+          </div>
+          <div>
+            <dt>Pedido</dt>
+            <dd>{{ fecha(ficha.confirmado) }} a las {{ hora(ficha.confirmado) }}</dd>
+          </div>
+          @if (ficha.pagado) {
+            <div>
+              <dt>Pagado</dt>
+              <dd>{{ fecha(ficha.pagado) }} a las {{ hora(ficha.pagado) }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+    </div>
+  </div>
+} @else {
+  <p class="nada" role="status">Cargando el pedido…</p>
+}
+
+<app-dialogo-confirmacion />

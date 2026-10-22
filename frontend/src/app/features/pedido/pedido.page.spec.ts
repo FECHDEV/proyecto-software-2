@@ -28,6 +28,7 @@ const PENDIENTE: Pedido = {
   pagado: null,
   cobro: null,
   retiro: { direccion: 'Av. Principal 123, Montero', horario: null },
+  entregado: null,
 };
 
 // Con el QR generado (HU-13), como lo devuelve el simulador
@@ -436,6 +437,26 @@ describe('PedidoPage', () => {
     await harness.fixture.whenStable();
     expect(boton('Simular pago')).toBeUndefined();
     expect(texto()).not.toContain('Herramienta de pruebas');
+  });
+
+  // HU-17 RF-10
+  it('muestra Entregado con su fecha', async () => {
+    await abrir('/mis-pedidos/12', (falso) =>
+      falso.recurso.value.set({
+        ...PENDIENTE,
+        estado: 'ENTREGADO',
+        segundosParaPagar: 0,
+        pagado: '2026-10-19T10:12:30',
+        entregado: '2026-10-19T16:40:00',
+      }),
+    );
+
+    expect(pantalla().querySelector('.estado')?.textContent?.trim()).toBe('Entregado');
+    expect(texto()).toContain('Lo retiraron el 19/10/2026 a las 16:40.');
+    expect(texto()).not.toContain('Ya puede retirar su pedido');
+    expect(texto()).not.toContain('volvieron a su carrito');
+    expect(pantalla().querySelector('[role="timer"]')).toBeNull();
+    expect(botonCancelar()).toBeUndefined();
   });
 
   // HU-13 RF-15

@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { mensajeDeError } from '../../core/api/mensajes-error';
 import { PedidosService } from '../../core/api/pedidos.service';
 import { comoErrorApi } from '../../core/modelos/error-api';
-import { EstadoDePedido, MisPedidos, NOMBRES_DE_ESTADO } from '../../core/modelos/pedido';
+import { MisPedidos, NOMBRES_DE_ESTADO, TONO_DE_ESTADO } from '../../core/modelos/pedido';
 import { fechaCorta } from '../../shared/formato/fechas';
 import { precio } from '../../shared/formato/precios';
 import { comoReloj } from '../../shared/formato/tiempo';
@@ -14,15 +14,6 @@ import { paginaDeLaUrl } from '../../shared/navegacion/pagina-de-la-url';
 // Cada cuánto se pide la lista mientras el pendiente espera la consulta de su
 // cobro, como la consulta de la página del pedido
 const ESPERA_SIN_TIEMPO = 5000;
-
-// El color del chip de cada estado, como en la página del pedido (HU-14 RF-3)
-const TONO: Record<EstadoDePedido, string> = {
-	PENDIENTE_PAGO: 'tono-aviso',
-	PAGADO: 'tono-exito',
-	PAGO_A_DEVOLVER: 'tono-aviso',
-	CANCELADO: 'tono-neutro',
-	VENCIDO: 'tono-neutro',
-};
 
 // «Mis pedidos» (HU-14): todos los pedidos del Cliente, el más nuevo primero y
 // de a 10; el que espera el pago va arriba, con el tiempo que le queda. La
@@ -72,7 +63,7 @@ export class MisPedidosPage {
 	protected readonly sinTiempo = computed(() => this.hayPendiente() && this.reloj() === '00:00');
 
 	protected readonly nombresDeEstado = NOMBRES_DE_ESTADO;
-	protected readonly tono = TONO;
+	protected readonly tono = TONO_DE_ESTADO;
 	protected readonly fecha = fechaCorta;
 	protected readonly precio = precio;
 

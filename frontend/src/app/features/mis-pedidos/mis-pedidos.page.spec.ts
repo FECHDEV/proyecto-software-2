@@ -76,6 +76,15 @@ describe('MisPedidosPage', () => {
   // El formato de precios separa «Bs» con un espacio duro
   const texto = () => (pantalla().textContent ?? '').replace(/\s+/g, ' ');
 
+  // HU-17 RF-10: el chip neutro, como en la lista del personal
+  it('muestra Entregado con su chip', async () => {
+    await abrir(lista([resumen({ idPedido: 15, estado: 'ENTREGADO' })]));
+
+    const chip = pantalla().querySelector('.estado');
+    expect(chip?.textContent?.trim()).toBe('Entregado');
+    expect(chip?.classList.contains('tono-neutro')).toBe(true);
+  });
+
   // HU-14 RF-1, RF-3
   it('lista los pedidos con su estado, total y enlace', async () => {
     await abrir(

@@ -1,0 +1,78 @@
+<h1>Pedidos</h1>
+
+<form class="filtros" role="search" aria-label="Filtrar los pedidos" (submit)="$event.preventDefault()">
+  <div class="campo">
+    <label for="filtro-estado">Estado</label>
+    <select id="filtro-estado" name="estado" (change)="alElegirEstado($any($event.target).value)">
+      @for (estado of estados; track estado) {
+        <option [value]="estado" [selected]="filtros().estado === estado">{{ nombreDelEstado(estado) }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="filtro-texto">Buscar</label>
+    <input
+      id="filtro-texto"
+      name="texto"
+      type="search"
+      autocomplete="off"
+      spellcheck="false"
+      maxlength="100"
+      placeholder="Número o nombre de quien retira…"
+      [value]="textoEscrito()"
+      (input)="alEscribir($any($event.target).value)"
+    />
+  </div>
+</form>
+
+@if (pagina(); as pagina) {
+  @if (pagina.contenido.length === 0) {
+    <p class="vacio" role="status">No hay pedidos con ese filtro.</p>
+  } @else {
+    <ol class="lista" aria-label="Pedidos">
+      @for (pedido of pagina.contenido; track pedido.idPedido) {
+        <li>
+          <a class="fila" [routerLink]="['/pedidos', pedido.idPedido]">
+            <span class="numero">Pedido N.º&nbsp;{{ pedido.idPedido }}</span>
+            <span [class]="'estado ' + tono[pedido.estado]">{{ nombresDeEstado[pedido.estado] }}</span>
+            <span class="retira">{{ pedido.nombreRetira }}</span>
+            <span class="detalle">{{ fecha(pedido.confirmado) }} · {{ productos(pedido.cantidadProductos) }}</span>
+            <span class="total">{{ precio(pedido.total) }}</span>
+          </a>
+        </li>
+      }
+    </ol>
+  }
+
+  @if (pagina.totalPaginas > 1) {
+    <nav class="paginacion" aria-label="Páginas de la lista">
+      <button
+        type="button"
+        class="secundario"
+        [disabled]="pagina.pagina === 0 || recurso.isLoading()"
+        (click)="irAPagina(pagina.pagina - 1)"
+      >
+        Anterior
+      </button>
+      <p class="numero">
+        Página {{ pagina.pagina + 1 }} de {{ pagina.totalPaginas }} · {{ pagina.totalElementos }} pedidos
+      </p>
+      <button
+        type="button"
+        class="secundario"
+        [disabled]="pagina.pagina + 1 >= pagina.totalPaginas || recurso.isLoading()"
+        (click)="irAPagina(pagina.pagina + 1)"
+      >
+        Siguiente
+      </button>
+    </nav>
+  }
+} @else if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+  </div>
+} @else {
+  <p class="cargando" role="status">Cargando los pedidos…</p>
+}

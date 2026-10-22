@@ -45,6 +45,7 @@ const MENSAJES: Record<string, string> = {
 	STOCK_INSUFICIENTE: 'Algunos productos ya no se pueden pedir así. Corríjalos en el carrito.',
 	TOTAL_CAMBIADO: 'El total del pedido cambió. Revíselo y confirme otra vez.',
 	PEDIDO_NO_PENDIENTE: 'Este pedido ya no espera el pago.',
+	PEDIDO_NO_ENTREGABLE: 'Este pedido ya no se puede entregar: otra persona lo entregó o cambió de estado.',
 	PEDIDO_NO_ENCONTRADO: 'No encontramos ese pedido.',
 	COBRO_NO_DISPONIBLE: 'No pudimos generar el cobro. Intente de nuevo en un momento.',
 	COBRO_NO_ENCONTRADO: 'Este pedido no tiene un cobro pendiente.',

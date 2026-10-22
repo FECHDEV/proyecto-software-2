@@ -35,11 +35,17 @@
       </a>
     </li>
   }
-  @if (veInventario()) {
+  @if (esPersonal()) {
     <li>
       <a class="acceso" routerLink="/inventario">
         <span class="titulo">Inventario</span>
         <span class="detalle">Stock de cada producto, entradas, ajustes y su historial.</span>
+      </a>
+    </li>
+    <li>
+      <a class="acceso" routerLink="/pedidos">
+        <span class="titulo">Pedidos</span>
+        <span class="detalle">Los pedidos pagados que esperan retiro y su entrega.</span>
       </a>
     </li>
   }

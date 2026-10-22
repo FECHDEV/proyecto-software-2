@@ -3,9 +3,9 @@ import { Pagina } from './pagina';
 import { UnidadVenta } from './producto';
 
 // Espejo de PedidoResponse, LineaPedidoResponse, RetiroResponse, CobroResponse y CancelacionResponse del
-// backend (HU-12, HU-13)
+// backend (HU-12, HU-13). ENTREGADO: el personal lo entregó (HU-17)
 
-export type EstadoDePedido = 'PENDIENTE_PAGO' | 'PAGADO' | 'CANCELADO' | 'VENCIDO' | 'PAGO_A_DEVOLVER';
+export type EstadoDePedido = 'PENDIENTE_PAGO' | 'PAGADO' | 'CANCELADO' | 'VENCIDO' | 'PAGO_A_DEVOLVER' | 'ENTREGADO';
 
 export const NOMBRES_DE_ESTADO: Record<EstadoDePedido, string> = {
 	PENDIENTE_PAGO: 'Pendiente de pago',
@@ -13,6 +13,18 @@ export const NOMBRES_DE_ESTADO: Record<EstadoDePedido, string> = {
 	CANCELADO: 'Cancelado',
 	VENCIDO: 'Vencido',
 	PAGO_A_DEVOLVER: 'Pago a devolver',
+	ENTREGADO: 'Entregado',
+};
+
+// El color del chip de cada estado (HU-14 RF-3). «Entregado» neutro: el verde
+// queda para «Pagado», que es lo que el personal busca (HU-17)
+export const TONO_DE_ESTADO: Record<EstadoDePedido, string> = {
+	PENDIENTE_PAGO: 'tono-aviso',
+	PAGADO: 'tono-exito',
+	PAGO_A_DEVOLVER: 'tono-aviso',
+	CANCELADO: 'tono-neutro',
+	VENCIDO: 'tono-neutro',
+	ENTREGADO: 'tono-neutro',
 };
 
 // Dónde y cuándo retirar (RF-17); null si no está configurado
@@ -48,6 +60,8 @@ export interface Pedido {
 	pagado: string | null;
 	// El QR pendiente mientras espera el pago; null si no hay (HU-13 RF-1)
 	cobro: Cobro | null;
+	// Cuándo lo retiraron; null si no (HU-17 RF-10)
+	entregado: string | null;
 }
 
 // El QR que el Cliente paga y, si el sistema de pago la da, su página de pago.
