@@ -49,6 +49,7 @@ import bo.edu.uagrm.tienda.entity.TipoCliente;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.exception.CamposInvalidosException;
 import bo.edu.uagrm.tienda.exception.CamposInvalidosException.CampoInvalido;
+import bo.edu.uagrm.tienda.exception.UsuarioNoEncontradoException;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 import bo.edu.uagrm.tienda.repository.ReportesRepository;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
@@ -76,7 +77,10 @@ public class ReportesService {
 
 	@Transactional(readOnly = true)
 	public VentasResponse ventas(String desde, String hasta, TipoCliente tipo) {
-		Periodo periodo = Periodo.de(desde, hasta, LocalDate.now(clock));
+		return ventas(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo);
+	}
+
+	private VentasResponse ventas(Periodo periodo, TipoCliente tipo) {
 		Periodo anterior = periodo.anterior();
 		List<VentaFila> ventas = pagados(periodo, tipo);
 		List<VentaFila> todosLosTipos = tipo == null ? ventas : pagados(periodo, null);
@@ -93,77 +97,104 @@ public class ReportesService {
 	@Transactional(readOnly = true)
 	public PaginaResponse<ProductoVendido> productos(String desde, String hasta, TipoCliente tipo, boolean menos,
 			int pagina) {
-		Periodo periodo = Periodo.de(desde, hasta, LocalDate.now(clock));
+		return paginar(productos(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo, menos), pagina);
+	}
+
+	private List<ProductoVendido> productos(Periodo periodo, TipoCliente tipo, boolean menos) {
 		Map<Long, LineasFila> vendidos = reportesRepository
 				.lineasPorProducto(VENDIDOS, periodo.inicio(), periodo.fin(), tipo).stream()
 				.collect(Collectors.toMap(LineasFila::idProducto, Function.identity()));
 		List<Producto> productos = menos ? productoRepository.findByActivoTrue()
 				: productoRepository.findAllById(vendidos.keySet());
 		Comparator<ProductoVendido> porImporte = Comparator.comparing(ProductoVendido::importe);
-		List<ProductoVendido> filas = productos.stream()
-				.map(producto -> vendido(producto, vendidos.get(producto.getIdProducto())))
+		return productos.stream().map(producto -> vendido(producto, vendidos.get(producto.getIdProducto())))
 				.sorted((menos ? porImporte : porImporte.reversed()).thenComparing(ProductoVendido::nombre)
 						.thenComparing(ProductoVendido::idProducto))
 				.toList();
-		return paginar(filas, pagina);
 	}
 
 	// RF-13: activos con stock, por días desde la última venta, o desde el alta si nunca se vendió. No depende del
 	// período ni del tipo
 	@Transactional(readOnly = true)
 	public PaginaResponse<ProductoSinVenta> sinVenta(String dias, int pagina) {
-		LocalDateTime ahora = LocalDateTime.now(clock);
-		int minimo = dias(dias);
+		return paginar(sinVenta(dias(dias), LocalDateTime.now(clock)), pagina);
+	}
+
+	private List<ProductoSinVenta> sinVenta(int minimo, LocalDateTime ahora) {
 		Map<Long, LocalDateTime> ultimas = reportesRepository.ultimasVentas(VENDIDOS).stream()
 				.collect(Collectors.toMap(UltimaVentaFila::idProducto, UltimaVentaFila::ultima));
 		Function<Producto, LocalDateTime> desde = producto -> ultimas.getOrDefault(producto.getIdProducto(),
 				producto.getFechaAlta());
-		List<ProductoSinVenta> filas = productoRepository.findByActivoTrue().stream()
+		return productoRepository.findByActivoTrue().stream()
 				// En días enteros, los mismos que se muestran: 30 días y 5 horas no son «más de 30 días»
 				.filter(producto -> producto.getStock().signum() > 0
 						&& ChronoUnit.DAYS.between(desde.apply(producto), ahora) > minimo)
 				.sorted(Comparator.comparing(desde).thenComparing(Producto::getIdProducto))
 				.map(producto -> sinVenta(producto, ultimas.get(producto.getIdProducto()), ahora)).toList();
-		return paginar(filas, pagina);
 	}
 
 	// RF-16: clientes activos que compraron alguna vez y no desde hace más de los días pedidos, del mayor total al
 	// menor
 	@Transactional(readOnly = true)
 	public PaginaResponse<ClienteInactivo> clientesInactivos(String dias, TipoCliente tipo, int pagina) {
+		PaginaResponse<CompraFila> deLaPagina = paginar(comprasHasta(dias(dias), tipo, LocalDateTime.now(clock)),
+				pagina);
+		return new PaginaResponse<>(clientes(deLaPagina.contenido()), deLaPagina.pagina(), deLaPagina.tamano(),
+				deLaPagina.totalElementos(), deLaPagina.totalPaginas());
+	}
+
+	private List<CompraFila> comprasHasta(int dias, TipoCliente tipo, LocalDateTime ahora) {
 		// En días enteros, como «Sin venderse»: más de 30 días enteros es 31 o más
-		LocalDateTime limite = LocalDateTime.now(clock).minusDays(dias(dias) + 1L);
-		List<CompraFila> compras = reportesRepository
-				.comprasHasta(VENDIDOS, Rol.CLIENTE, EstadoCuenta.ACTIVA, tipo, limite).stream()
+		LocalDateTime limite = ahora.minusDays(dias + 1L);
+		return reportesRepository.comprasHasta(VENDIDOS, Rol.CLIENTE, EstadoCuenta.ACTIVA, tipo, limite).stream()
 				.sorted(Comparator.comparing(CompraFila::total).reversed().thenComparing(CompraFila::idUsuario))
 				.toList();
-		PaginaResponse<CompraFila> deLaPagina = paginar(compras, pagina);
+	}
+
+	// Los usuarios de una vez, sin una consulta por fila
+	private List<ClienteInactivo> clientes(List<CompraFila> compras) {
 		Map<Long, Usuario> usuarios = usuarioRepository
-				.findAllById(deLaPagina.contenido().stream().map(CompraFila::idUsuario).toList()).stream()
+				.findAllById(compras.stream().map(CompraFila::idUsuario).toList()).stream()
 				.collect(Collectors.toMap(Usuario::getIdUsuario, Function.identity()));
-		return new PaginaResponse<>(deLaPagina.contenido().stream().map(compra -> {
+		return compras.stream().map(compra -> {
 			Usuario usuario = usuarios.get(compra.idUsuario());
 			return new ClienteInactivo(usuario.getIdUsuario(), usuario.getNombre(), usuario.getApellido(),
 					usuario.getCorreo(), usuario.getTelefono(), usuario.getTipoCliente(), compra.ultima(),
 					compra.pedidos(), compra.total().setScale(2));
-		}).toList(), deLaPagina.pagina(), deLaPagina.tamano(), deLaPagina.totalElementos(),
-				deLaPagina.totalPaginas());
+		}).toList();
 	}
 
 	// RF-18: por importe perdido, de mayor a menor
 	@Transactional(readOnly = true)
 	public PaginaResponse<ProductoPerdido> perdidos(String desde, String hasta, TipoCliente tipo, int pagina) {
-		Periodo periodo = Periodo.de(desde, hasta, LocalDate.now(clock));
+		return paginar(productosPerdidos(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo), pagina);
+	}
+
+	private List<ProductoPerdido> productosPerdidos(Periodo periodo, TipoCliente tipo) {
 		Map<Long, PerdidoFila> perdidos = reportesRepository
 				.perdidosPorProducto(PERDIDOS, periodo.inicio(), periodo.fin(), tipo).stream()
 				.collect(Collectors.toMap(PerdidoFila::idProducto, Function.identity()));
-		List<ProductoPerdido> filas = productoRepository.findAllById(perdidos.keySet()).stream().map(producto -> {
+		return productoRepository.findAllById(perdidos.keySet()).stream().map(producto -> {
 			PerdidoFila fila = perdidos.get(producto.getIdProducto());
 			return new ProductoPerdido(producto.getIdProducto(), producto.getCodigo(), producto.getNombre(),
 					producto.getUnidad(), fila.cantidad(), fila.importe().setScale(2));
 		}).sorted(Comparator.comparing(ProductoPerdido::importe).reversed().thenComparing(ProductoPerdido::nombre)
 				.thenComparing(ProductoPerdido::idProducto)).toList();
-		return paginar(filas, pagina);
+	}
+
+	// HU-19: todo lo que se exporta, con las listas enteras y en una sola lectura, para que el archivo diga lo mismo
+	// que la pantalla (RF-6, RF-7). El autor es quien lo pide (RF-5). El reloj se lee una vez: cerca de la medianoche,
+	// todo el archivo es del mismo día (/code-review)
+	@Transactional(readOnly = true)
+	public ReporteCompleto completo(String desde, String hasta, TipoCliente tipo, String dias, Long idUsuario) {
+		int minimo = dias(dias);
+		LocalDateTime ahora = LocalDateTime.now(clock);
+		Periodo periodo = Periodo.de(desde, hasta, ahora.toLocalDate());
+		Usuario autor = usuarioRepository.findById(idUsuario).orElseThrow(UsuarioNoEncontradoException::new);
+		return new ReporteCompleto(ventas(periodo, tipo), perdidos(periodo, tipo), productos(periodo, tipo, false),
+				productos(periodo, tipo, true), sinVenta(minimo, ahora), productosPerdidos(periodo, tipo),
+				clientes(comprasHasta(minimo, tipo, ahora)), tipo, minimo, ahora,
+				autor.getNombre() + " " + autor.getApellido());
 	}
 
 	private static ProductoVendido vendido(Producto producto, LineasFila fila) {

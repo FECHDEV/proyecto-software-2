@@ -17,7 +17,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
-- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Catálogo de demostración](#catálogo-de-demostración)
+- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Exportar reportes](#exportar-reportes) · [Catálogo de demostración](#catálogo-de-demostración)
 
 ---
 
@@ -877,13 +877,38 @@ después de los 30 minutos del pedido.
   sin costo). **Clientes inactivos:** clientes activos que compraron alguna
   vez y no compran hace más de 30, 60 o 90 días, con nombre, correo y
   teléfono para llamarlos; la tienda no les manda correos.
-- **Fuera:** crédito, descuentos y cupones, campañas por correo y exportar
-  (HU-19).
+- **Fuera:** crédito, descuentos y cupones y campañas por correo. Exportar
+  es de HU-19 (ver «Exportar reportes»).
 
 **Motivo:** el Contador necesita controlar el dinero y además saber qué
 rebajar y a quién llamar; contar la venta al pagar coincide con el dinero que
 entró, y el tipo y la categoría actuales evitan guardar copias que nadie
 corrige.
+
+### Exportar reportes
+
+*22/10/2026 (HU-19).* Desde `/reportes`, el Contador o el Administrador
+descargan **un archivo con todo el reporte** del período y los filtros que
+tienen en pantalla, en **Excel (.xlsx) o PDF**.
+
+- **Se arma en el backend** (`GET /api/reportes/exportar`), con las mismas
+  consultas de HU-18 y el mismo control de rol. Librerías: **Apache POI**
+  para el Excel y **OpenPDF** para el PDF.
+- **Contenido:** todas las secciones de HU-18; las listas van **completas,
+  sin paginar**, con los días elegidos en pantalla (30, 60 o 90). El Excel,
+  una hoja por sección con números de verdad (no texto) y formato de
+  bolivianos; el PDF, las mismas secciones una tras otra, con páginas
+  numeradas.
+- **Encabezado:** la marca, el período y el anterior, el tipo de cliente,
+  los días de las listas, la fecha y hora de generación (Bolivia) y el
+  nombre de quien lo exportó.
+- **Clientes inactivos con nombre, correo y teléfono,** porque el archivo
+  sirve para llamarlos, con el aviso «Contiene datos personales de
+  clientes: uso interno».
+
+**Motivo:** el Contador entrega los números (Excel para seguir trabajando,
+PDF para entregar o imprimir); armarlo en el backend evita repetir los
+cálculos en el navegador y deja el control de acceso donde ya está.
 
 ### Catálogo de demostración
 

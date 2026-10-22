@@ -33,6 +33,11 @@ export class ReportesFalso {
   readonly resumenDePerdidosRecurso = new RecursoFalso<ResumenDePerdidos>();
   filtros: Signal<FiltrosDeReportes> | null = null;
   pedidas: string[] = [];
+  // HU-19: de entrada, un archivo que llega enseguida
+  readonly exportar = vi.fn(async (_filtros: FiltrosDeReportes, formato: string) => ({
+    archivo: new Blob(['archivo']),
+    nombre: `reporte-ventas.${formato}`,
+  }));
 
   ventas(filtros: Signal<FiltrosDeReportes>) {
     return this.pedir('ventas', filtros, this.ventasRecurso);

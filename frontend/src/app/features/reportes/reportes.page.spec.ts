@@ -41,7 +41,16 @@ describe('ReportesPage', () => {
     vi.setSystemTime(new Date('2026-10-22T15:00:00Z'));
   });
 
-  afterEach(() => vi.useRealTimers());
+  // espiarDescargas los reemplaza: jsdom no los trae, y vi.restoreAllMocks no los devuelve (/code-review)
+  const { createObjectURL, revokeObjectURL } = URL;
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    // Si jsdom no los traía, se borran en lugar de dejarlos en undefined
+    restaurar('createObjectURL', createObjectURL);
+    restaurar('revokeObjectURL', revokeObjectURL);
+  });
 
   const pantalla = () => harness.routeNativeElement as HTMLElement;
   const texto = () => (pantalla().textContent ?? '').replace(/\s+/g, ' ');
@@ -145,4 +154,85 @@ describe('ReportesPage', () => {
     await harness.fixture.whenStable();
     expect(url()).toBe('/reportes?seccion=productos&tipo=TALLER&orden=MENOS');
   });
+
+  // HU-19 RF-2: el archivo lleva los filtros de la dirección, desde cualquier sección
+  it('exporta con los filtros de la dirección desde cualquier sección', async () => {
+    const descargas = espiarDescargas();
+    await abrir('/reportes?seccion=clientes&desde=2026-09-01&hasta=2026-09-30&tipo=TALLER&dias=90');
+
+    boton('PDF').click();
+    await harness.fixture.whenStable();
+
+    expect(reportes.exportar).toHaveBeenCalledWith(
+      expect.objectContaining({ desde: '2026-09-01', hasta: '2026-09-30', tipo: 'TALLER', dias: 90 }),
+      'pdf',
+    );
+    expect(descargas).toEqual(['reporte-ventas.pdf']);
+  });
+
+  // HU-19 RF-12: mientras se prepara lo dice y no deja pedir otro (doble clic)
+  it('muestra «Preparando…» y no pide dos veces', async () => {
+    espiarDescargas();
+    await abrir();
+    let entregar!: () => void;
+    reportes.exportar.mockImplementationOnce(
+      () =>
+        new Promise((resolver) => {
+          entregar = () => resolver({ archivo: new Blob(['x']), nombre: 'reporte-ventas.xlsx' });
+        }),
+    );
+
+    boton('Excel').click();
+    await harness.fixture.whenStable();
+    const preparando = boton('Preparando…');
+    expect(preparando.getAttribute('aria-busy')).toBe('true');
+    // aria-disabled y no disabled: el foco se queda en el botón (revisión de interfaz)
+    expect(preparando.getAttribute('aria-disabled')).toBe('true');
+    expect(boton('PDF').getAttribute('aria-disabled')).toBe('true');
+    expect(preparando.disabled).toBe(false);
+    preparando.click();
+    boton('PDF').click();
+    expect(reportes.exportar).toHaveBeenCalledTimes(1);
+
+    entregar();
+    await vi.waitFor(() => expect(boton('Excel')?.getAttribute('aria-disabled')).toBeNull());
+  });
+
+  // HU-19 RF-12: el error, y se puede volver a intentar
+  it('muestra el error y deja reintentar', async () => {
+    const descargas = espiarDescargas();
+    await abrir();
+    reportes.exportar.mockRejectedValueOnce({ status: 0, detail: 'sin red', codigo: 'SIN_CONEXION' });
+
+    boton('Excel').click();
+    await harness.fixture.whenStable();
+
+    expect(pantalla().querySelector('[role="alert"]')?.textContent).toContain('No pudimos conectar con el servidor');
+    expect(descargas).toEqual([]);
+
+    boton('Excel').click();
+    await harness.fixture.whenStable();
+
+    expect(pantalla().querySelector('[role="alert"]')).toBeNull();
+    expect(descargas).toEqual(['reporte-ventas.xlsx']);
+  });
+
+  // Los clics del enlace de descarga, sin descargar nada
+  function espiarDescargas(): string[] {
+    const descargas: string[] = [];
+    URL.createObjectURL = vi.fn(() => 'blob:prueba');
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      descargas.push(this.download);
+    });
+    return descargas;
+  }
+
+  function restaurar(nombre: 'createObjectURL' | 'revokeObjectURL', original: unknown) {
+    if (original === undefined) {
+      delete (URL as unknown as Record<string, unknown>)[nombre];
+    } else {
+      (URL as unknown as Record<string, unknown>)[nombre] = original;
+    }
+  }
 });

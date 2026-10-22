@@ -79,4 +79,56 @@ describe('ReportesService', () => {
     [productos, sinVenta, clientes, perdidos].forEach((cada) => cada.flush(PAGINA));
     resumen.flush({});
   });
+
+  // HU-19 RF-2: el período, el tipo y los días de la pantalla, en cualquier sección
+  it('exporta con el formato, el período, el tipo y los días', async () => {
+    const exportado = servicio.exportar({ ...DE_ENTRADA, seccion: 'sin-venta', tipo: 'TALLER', dias: 90, pagina: 3 }, 'pdf');
+
+    const archivo = pedido('/api/reportes/exportar');
+    expect(archivo.request.responseType).toBe('blob');
+    expect(archivo.request.params.keys().sort()).toEqual(['desde', 'dias', 'formato', 'hasta', 'tipo']);
+    expect(archivo.request.params.get('formato')).toBe('pdf');
+    expect(archivo.request.params.get('tipo')).toBe('TALLER');
+    expect(archivo.request.params.get('dias')).toBe('90');
+    archivo.flush(new Blob(['%PDF-']), {
+      headers: { 'Content-Disposition': 'attachment; filename="reporte-ventas-2026-10-01-a-2026-10-22.pdf"' },
+    });
+
+    // HU-19 RF-4: el nombre que puso el backend
+    const { archivo: blob, nombre } = await exportado;
+    expect(nombre).toBe('reporte-ventas-2026-10-01-a-2026-10-22.pdf');
+    expect(await blob.text()).toBe('%PDF-');
+  });
+
+  // HU-19 RF-4: sin el encabezado, un nombre genérico
+  it('nombra el archivo si el backend no lo dice', async () => {
+    const exportado = servicio.exportar(DE_ENTRADA, 'xlsx');
+
+    pedido('/api/reportes/exportar').flush(new Blob(['xlsx']));
+
+    expect((await exportado).nombre).toBe('reporte-ventas.xlsx');
+  });
+
+  // HU-19 RF-12: el error llega como Blob y se lee como cualquier ErrorApi
+  it('convierte el error en Blob en ErrorApi', async () => {
+    const exportado = servicio.exportar(DE_ENTRADA, 'xlsx');
+    const cuerpo = { status: 400, detail: 'mal', codigo: 'PERIODO_INVALIDO' };
+
+    pedido('/api/reportes/exportar').flush(new Blob([JSON.stringify(cuerpo)], { type: 'application/problem+json' }), {
+      status: 400,
+      statusText: 'Bad Request',
+    });
+
+    await expect(exportado).rejects.toMatchObject({ status: 400, codigo: 'PERIODO_INVALIDO' });
+  });
+
+  // HU-19 RF-12: sin respuesta, como cualquier otra falta de conexión
+  it('sin conexión rechaza con el error de conexión', async () => {
+    const exportado = servicio.exportar(DE_ENTRADA, 'pdf');
+
+    pedido('/api/reportes/exportar').error(new ProgressEvent('error'), { status: 0 });
+
+    await expect(exportado).rejects.toMatchObject({ codigo: 'SIN_CONEXION' });
+  });
 });
+

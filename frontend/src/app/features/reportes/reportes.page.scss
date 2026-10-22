@@ -12,6 +12,48 @@ h1 {
 	margin: 0;
 }
 
+// HU-19: el título y, a su lado, exportar; en el celular, debajo
+.cabecera {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--app-espacio-4);
+}
+
+.exportar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--app-espacio-2);
+}
+
+.exportar-titulo {
+	color: var(--app-texto-suave);
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.exportar .secundario {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--app-espacio-2);
+	// El ancho de «Preparando…»: el botón no crece ni corre al otro al exportar
+	min-width: 11em;
+}
+
+// El que prepara el archivo se lee entero; solo el otro se atenúa
+.exportar .secundario[aria-busy='true'] {
+	opacity: 1;
+}
+
+.exportar .icono {
+	width: var(--app-icono);
+	height: var(--app-icono);
+	flex: none;
+}
+
 // Las secciones, como la navegación del encabezado: la actual con raya
 // inferior, no solo con color
 .secciones {

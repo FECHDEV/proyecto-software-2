@@ -1,4 +1,32 @@
-<h1>Reportes</h1>
+<header class="cabecera">
+  <h1>Reportes</h1>
+  <div class="exportar" role="group" aria-labelledby="exportar-titulo">
+    <span id="exportar-titulo" class="exportar-titulo">Exportar</span>
+    <button
+      type="button"
+      class="secundario"
+      [attr.aria-disabled]="exportando() !== null ? 'true' : null"
+      [attr.aria-busy]="exportando() === 'xlsx' ? 'true' : null"
+      (click)="exportar('xlsx')"
+    >
+      <svg lucideFileSpreadsheet class="icono" aria-hidden="true"></svg>
+      {{ exportando() === 'xlsx' ? 'Preparando…' : 'Excel' }}
+    </button>
+    <button
+      type="button"
+      class="secundario"
+      [attr.aria-disabled]="exportando() !== null ? 'true' : null"
+      [attr.aria-busy]="exportando() === 'pdf' ? 'true' : null"
+      (click)="exportar('pdf')"
+    >
+      <svg lucideFileText class="icono" aria-hidden="true"></svg>
+      {{ exportando() === 'pdf' ? 'Preparando…' : 'PDF' }}
+    </button>
+  </div>
+</header>
+@if (errorDeExportacion()) {
+  <p class="aviso" role="alert">{{ errorDeExportacion() }}</p>
+}
 
 <nav class="secciones" aria-label="Reportes">
   @for (seccion of secciones; track seccion.valor) {
