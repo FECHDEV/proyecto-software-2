@@ -126,6 +126,18 @@ describe('PanelPage', () => {
     expect(crear().querySelector('a[href="/pedidos"]')).toBeNull();
   });
 
+  // HU-18 RF-1
+  it('la tarjeta Reportes para el Contador y el Administrador', () => {
+    for (const rol of ['CONTADOR', 'ADMINISTRADOR'] as const) {
+      sesion.iniciar(sesionCon(rol));
+      expect(crear().querySelector('a[href="/reportes"]')?.textContent).toContain('Reportes');
+    }
+    for (const rol of ['EMPLEADO', 'CLIENTE'] as const) {
+      sesion.iniciar(sesionCon(rol));
+      expect(crear().querySelector('a[href="/reportes"]')).toBeNull();
+    }
+  });
+
   // HU-07 RF-1
   it('el administrador tiene el acceso a productos', () => {
     sesion.iniciar(sesionCon('ADMINISTRADOR'));

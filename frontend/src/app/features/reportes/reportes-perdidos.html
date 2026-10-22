@@ -1,0 +1,70 @@
+<!-- Con un error, no quedan a la vista las cifras de otro período -->
+@if (!errorDelResumen() && resumen(); as perdidos) {
+  <dl class="cifras">
+    <div class="cifra">
+      <dt>Pedidos perdidos</dt>
+      <dd class="valor">{{ perdidos.cantidad }}</dd>
+      <dd class="suave">Vencidos o cancelados</dd>
+    </div>
+    <div class="cifra">
+      <dt>Importe perdido</dt>
+      <dd class="valor">{{ precio(perdidos.importe) }}</dd>
+    </div>
+    <div class="cifra">
+      <dt>Se vendió</dt>
+      <dd class="valor">{{ perdidos.proporcion === null ? '—' : porcentaje(perdidos.proporcion) }}</dd>
+      <dd class="suave">
+        {{ perdidos.vendidos }} de {{ perdidos.confirmados }} confirmados, sin los que esperan el pago ni los pagos a
+        devolver
+      </dd>
+    </div>
+  </dl>
+}
+
+@if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="reintentar()">Reintentar</button>
+  </div>
+} @else if (pagina(); as pagina) {
+  @if (pagina.contenido.length === 0) {
+    <p class="vacio" role="status">No hubo pedidos perdidos en este período.</p>
+  } @else {
+    <div class="contenedor-tabla">
+      <table>
+        <caption class="solo-lectores">Productos de los pedidos perdidos</caption>
+        <thead>
+          <tr>
+            <th scope="col">Producto</th>
+            <th scope="col" class="numero">Cantidad</th>
+            <th scope="col" class="numero">Importe perdido</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of pagina.contenido; track fila.idProducto) {
+            <tr>
+              <th scope="row" data-etiqueta="Producto">
+                <span>
+                  {{ fila.nombre }}
+                  @if (fila.codigo) {
+                    <span class="codigo">{{ fila.codigo }}</span>
+                  }
+                </span>
+              </th>
+              <td class="numero" data-etiqueta="Cantidad">{{ cantidad(fila.cantidad, fila.unidad) }}</td>
+              <td class="numero" data-etiqueta="Importe perdido">{{ precio(fila.importe) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <app-paginador
+    [pagina]="pagina"
+    [cargando]="recurso.isLoading()"
+    nombre="productos"
+    (irA)="cambiar.emit({ pagina: $event })"
+  />
+} @else {
+  <p class="cargando" role="status">Cargando los pedidos perdidos…</p>
+}

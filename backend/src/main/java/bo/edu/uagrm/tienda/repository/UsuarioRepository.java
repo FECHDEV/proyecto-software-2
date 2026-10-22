@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 
 import bo.edu.uagrm.tienda.entity.EstadoCuenta;
 import bo.edu.uagrm.tienda.entity.Rol;
+import bo.edu.uagrm.tienda.entity.TipoCliente;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import jakarta.persistence.LockModeType;
 
@@ -41,11 +42,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 			select u from Usuario u
 			where (:rol is null or u.rol = :rol)
 				and (:estado is null or u.estado = :estado)
+				and (:tipo is null or (u.tipoCliente = :tipo and u.rol = bo.edu.uagrm.tienda.entity.Rol.CLIENTE))
 				and (:texto is null or lower(u.correo) like :texto escape '!' or lower(u.nombre) like :texto escape '!'
 					or lower(u.apellido) like :texto escape '!')
 			""")
-	Page<Usuario> buscar(@Param("rol") Rol rol, @Param("estado") EstadoCuenta estado, @Param("texto") String texto,
-			Pageable paginacion);
+	Page<Usuario> buscar(@Param("rol") Rol rol, @Param("estado") EstadoCuenta estado, @Param("tipo") TipoCliente tipo,
+			@Param("texto") String texto, Pageable paginacion);
 
 	boolean existsByRol(Rol rol);
 

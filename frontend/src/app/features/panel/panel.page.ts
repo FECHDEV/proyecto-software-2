@@ -23,4 +23,9 @@ export class PanelPage {
 		const rol = this.sesion.rol();
 		return rol === 'ADMINISTRADOR' || rol === 'EMPLEADO' || rol === 'CONTADOR';
 	});
+	// HU-18 RF-1: los reportes, el Contador y el Administrador
+	protected readonly veReportes = computed(() => {
+		const rol = this.sesion.rol();
+		return rol === 'ADMINISTRADOR' || rol === 'CONTADOR';
+	});
 }

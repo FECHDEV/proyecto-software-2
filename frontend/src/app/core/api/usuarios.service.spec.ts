@@ -15,6 +15,7 @@ const ANA: UsuarioResumen = {
   correo: 'ana@mail.com',
   rol: 'CLIENTE',
   estado: 'ACTIVA',
+  tipoCliente: 'PUBLICO_GENERAL',
   fechaRegistro: '2026-09-12T11:00:00',
 };
 
@@ -26,7 +27,7 @@ const PAGINA: Pagina<UsuarioResumen> = {
   totalPaginas: 2,
 };
 
-const SIN_FILTROS: FiltrosDeUsuarios = { rol: null, estado: null, texto: '', pagina: 0 };
+const SIN_FILTROS: FiltrosDeUsuarios = { rol: null, estado: null, tipo: null, texto: '', pagina: 0 };
 
 describe('UsuariosService', () => {
   let servicio: UsuariosService;
@@ -63,13 +64,15 @@ describe('UsuariosService', () => {
   // HU-05 RF-3: rol, estado, texto y página viajan como parámetros
   it('envía los filtros y la página', async () => {
     TestBed.runInInjectionContext(() =>
-      servicio.listado(signal({ rol: 'CLIENTE', estado: 'ACTIVA', texto: '  ana ', pagina: 1 })),
+      servicio.listado(signal({ rol: 'CLIENTE', estado: 'ACTIVA', tipo: 'TALLER', texto: '  ana ', pagina: 1 })),
     );
     TestBed.tick();
 
     const peticion = http.expectOne((pedido) => pedido.url === '/api/usuarios');
     expect(peticion.request.params.get('rol')).toBe('CLIENTE');
     expect(peticion.request.params.get('estado')).toBe('ACTIVA');
+    // HU-18 RF-21
+    expect(peticion.request.params.get('tipo')).toBe('TALLER');
     expect(peticion.request.params.get('texto')).toBe('ana');
     expect(peticion.request.params.get('pagina')).toBe('1');
     peticion.flush(PAGINA);
@@ -113,6 +116,18 @@ describe('UsuariosService', () => {
     peticion.flush({ ...ANA, rol: 'EMPLEADO' });
 
     await expect(promesa).resolves.toEqual({ ...ANA, rol: 'EMPLEADO' });
+  });
+
+  // HU-18 RF-21
+  it('cambia el tipo de cliente y devuelve el usuario actualizado', async () => {
+    const promesa = servicio.cambiarTipo(7, 'CONTRATISTA');
+
+    const peticion = http.expectOne('/api/usuarios/7/tipo');
+    expect(peticion.request.method).toBe('PUT');
+    expect(peticion.request.body).toEqual({ tipo: 'CONTRATISTA' });
+    peticion.flush({ ...ANA, tipoCliente: 'CONTRATISTA' });
+
+    await expect(promesa).resolves.toEqual({ ...ANA, tipoCliente: 'CONTRATISTA' });
   });
 
   // HU-05 RF-5, RF-6

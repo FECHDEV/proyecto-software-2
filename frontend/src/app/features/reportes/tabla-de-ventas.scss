@@ -1,0 +1,7 @@
+// La tabla de _lista.scss con la barra y el título de _reporte.scss
+@use '../../../styles/lista';
+@use 'reporte';
+
+:host {
+	display: block;
+}

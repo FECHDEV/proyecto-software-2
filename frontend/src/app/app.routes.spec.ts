@@ -109,6 +109,15 @@ describe('rutas', () => {
     expect(await navegarComo('CLIENTE', '/inventario')).toBe('/');
   });
 
+  // HU-18 RF-1
+  it('reportes es del Contador y el Administrador', async () => {
+    expect(await navegarComo('CONTADOR', '/reportes')).toBe('/reportes');
+    expect(await navegarComo('ADMINISTRADOR', '/reportes?seccion=clientes')).toBe('/reportes?seccion=clientes');
+    expect(await navegarComo('EMPLEADO', '/reportes')).toBe('/panel');
+    expect(await navegarComo('CLIENTE', '/reportes')).toBe('/');
+    expect(await navegarComo(null, '/reportes')).toBe('/inicio-sesion?destino=%2Freportes');
+  });
+
   // HU-17 RF-9: los pedidos de todos son del personal; el Cliente tiene los suyos en Mis pedidos
   it('pedidos es del personal', async () => {
     expect(await navegarComo('EMPLEADO', '/pedidos')).toBe('/pedidos');

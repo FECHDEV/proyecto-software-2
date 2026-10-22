@@ -47,10 +47,10 @@ import {
 import { sinEspaciosSolos } from '../../shared/formularios/reglas-de-campo';
 import { idDeLaUrl } from '../../shared/navegacion/id-de-la-url';
 
-type Campo = 'nombre' | 'marca' | 'idCategoria' | 'unidad' | 'precio' | 'descripcion';
+type Campo = 'nombre' | 'marca' | 'idCategoria' | 'unidad' | 'precio' | 'costo' | 'descripcion';
 
 // En el orden de la pantalla, para llevar el foco al primero con error
-const CAMPOS: readonly Campo[] = ['nombre', 'marca', 'idCategoria', 'unidad', 'precio', 'descripcion'];
+const CAMPOS: readonly Campo[] = ['nombre', 'marca', 'idCategoria', 'unidad', 'precio', 'costo', 'descripcion'];
 
 const VACIO: DatosDeProducto = {
 	nombre: '',
@@ -59,6 +59,7 @@ const VACIO: DatosDeProducto = {
 	idCategoria: '',
 	unidad: 'UNIDAD',
 	precio: '',
+	costo: '',
 	ficha: [],
 	destacado: false,
 };
@@ -79,6 +80,11 @@ const esquema = schema<DatosDeProducto>((ruta) => {
 	validate(ruta.precio, ({ value }) => {
 		const problema = problemaDelPrecio(value());
 		return problema === null ? null : { kind: 'precio', message: problema };
+	});
+	// Opcional (HU-18 RF-19): vacío no es un error
+	validate(ruta.costo, ({ value }) => {
+		const problema = problemaDelPrecio(value(), 'costo');
+		return problema === null ? null : { kind: 'costo', message: problema };
 	});
 	maxLength(ruta.descripcion, 1000, { message: 'La descripción admite hasta 1000 caracteres.' });
 
@@ -281,6 +287,7 @@ export class ProductoPage implements ConCambiosSinGuardar {
 				idCategoria: this.formulario.idCategoria().invalid(),
 				unidad: this.formulario.unidad().invalid(),
 				precio: this.formulario.precio().invalid(),
+				costo: this.formulario.costo().invalid(),
 				descripcion: this.formulario.descripcion().invalid(),
 			});
 			enfocarCampo(this.elemento.nativeElement, campo ?? this.primerDatoConError());
@@ -379,6 +386,7 @@ function aFormulario(producto: Producto): DatosDeProducto {
 		unidad: producto.unidad,
 		// Con coma, como se escribe en Bolivia; sin decimales de más
 		precio: String(producto.precio).replace('.', ','),
+		costo: producto.costo === null ? '' : String(producto.costo).replace('.', ','),
 		ficha: producto.ficha.map((par) => ({ ...par })),
 		destacado: producto.destacado,
 	};
@@ -392,6 +400,7 @@ function mismosDatos(a: DatosDeProducto, b: DatosDeProducto): boolean {
 		a.idCategoria === b.idCategoria &&
 		a.unidad === b.unidad &&
 		a.precio === b.precio &&
+		a.costo === b.costo &&
 		a.destacado === b.destacado &&
 		a.ficha.length === b.ficha.length &&
 		a.ficha.every((par, i) => par.nombre === b.ficha[i].nombre && par.valor === b.ficha[i].valor)

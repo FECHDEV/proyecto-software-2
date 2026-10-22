@@ -31,6 +31,8 @@ export interface Producto {
 	marca: string | null;
 	descripcion: string | null;
 	precio: number;
+	// Solo en la gestión, para el margen de los reportes (HU-18 RF-19)
+	costo: number | null;
 	unidad: UnidadVenta;
 	idCategoria: number;
 	categoria: string;
@@ -66,7 +68,7 @@ export interface FiltrosDeProductos {
 }
 
 // Lo que edita el formulario. La categoría es el valor del select y el precio
-// el texto escrito, que acepta coma o punto: se convierten al enviar.
+// y el costo, el texto escrito, que acepta coma o punto: se convierten al enviar.
 export interface DatosDeProducto {
 	nombre: string;
 	marca: string;
@@ -74,6 +76,8 @@ export interface DatosDeProducto {
 	idCategoria: string;
 	unidad: UnidadVenta;
 	precio: string;
+	// Vacío es sin costo
+	costo: string;
 	ficha: Caracteristica[];
 	destacado: boolean;
 }

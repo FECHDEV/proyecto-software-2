@@ -26,6 +26,16 @@
   </div>
 
   <div class="campo">
+    <label for="filtro-tipo">Tipo de cliente</label>
+    <select id="filtro-tipo" name="tipo" (change)="alElegirTipo($any($event.target).value)">
+      <option value="" [selected]="filtros().tipo === null">Todos</option>
+      @for (tipo of tipos; track tipo) {
+        <option [value]="tipo" [selected]="filtros().tipo === tipo">{{ nombresDeTipo[tipo] }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="campo">
     <label for="filtro-estado">Estado</label>
     <select id="filtro-estado" name="estado" (change)="alElegirEstado($any($event.target).value)">
       <option value="" [selected]="filtros().estado === null">Todos</option>
@@ -80,7 +90,14 @@
             <tr>
               <th scope="row" data-etiqueta="Nombre">{{ usuario.nombre }} {{ usuario.apellido }}</th>
               <td data-etiqueta="Correo" class="correo">{{ usuario.correo }}</td>
-              <td data-etiqueta="Tipo de cuenta">{{ nombresDeRol[usuario.rol] }}</td>
+              <td data-etiqueta="Tipo de cuenta">
+                <span>
+                  {{ nombresDeRol[usuario.rol] }}
+                  @if (usuario.rol === 'CLIENTE') {
+                    <span class="tipo-cliente">· {{ nombresDeTipo[usuario.tipoCliente] }}</span>
+                  }
+                </span>
+              </td>
               <td data-etiqueta="Estado">
                 <span class="estado" [class.desactivada]="usuario.estado === 'DESACTIVADA'">
                   {{ nombresDeEstado[usuario.estado] }}
@@ -106,6 +123,21 @@
                         <option [value]="rol" [selected]="usuario.rol === rol">{{ nombresDeRol[rol] }}</option>
                       }
                     </select>
+                    @if (usuario.rol === 'CLIENTE') {
+                      <select
+                        [name]="'tipo-' + usuario.idUsuario"
+                        autocomplete="off"
+                        [attr.aria-label]="'Tipo de cliente de ' + nombreDe(usuario)"
+                        [disabled]="ocupada"
+                        (change)="alElegirTipoDe(usuario, $any($event.target))"
+                      >
+                        @for (tipo of tipos; track tipo) {
+                          <option [value]="tipo" [selected]="usuario.tipoCliente === tipo">
+                            {{ nombresDeTipo[tipo] }}
+                          </option>
+                        }
+                      </select>
+                    }
                     <button
                       type="button"
                       class="secundario"

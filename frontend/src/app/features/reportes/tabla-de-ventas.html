@@ -1,0 +1,34 @@
+<section class="bloque" [attr.aria-label]="titulo()">
+  <h2>{{ titulo() }}</h2>
+  <div class="contenedor-tabla">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">{{ columna() }}</th>
+          <th scope="col" class="numero">Pedidos</th>
+          <th scope="col">Ingresos</th>
+          @if (columnaExtra(); as extra) {
+            <th scope="col" class="numero">{{ extra }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (fila of filas(); track fila.etiqueta) {
+          <tr>
+            <th scope="row" [attr.data-etiqueta]="columna()">{{ fila.etiqueta }}</th>
+            <td class="numero" data-etiqueta="Pedidos">{{ cantidad(fila.pedidos) }}</td>
+            <td data-etiqueta="Ingresos">
+              <span class="con-barra">
+                <span class="numero">{{ precio(fila.ingresos) }}</span>
+                <span class="barra" aria-hidden="true" [style.width.%]="ancho(fila.ingresos)"></span>
+              </span>
+            </td>
+            @if (columnaExtra(); as extra) {
+              <td class="numero" [class.negativo]="fila.negativo" [attr.data-etiqueta]="extra">{{ fila.extra || '—' }}</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

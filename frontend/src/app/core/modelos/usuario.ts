@@ -22,6 +22,18 @@ export const ROLES: readonly Rol[] = ['CLIENTE', 'ADMINISTRADOR', 'EMPLEADO', 'C
 
 export const ESTADOS: readonly EstadoCuenta[] = ['ACTIVA', 'DESACTIVADA'];
 
+// Para los reportes; solo lo tiene, y solo lo cambia el Administrador, una cuenta de Cliente (HU-18 RF-21)
+export type TipoCliente = 'PUBLICO_GENERAL' | 'CONTRATISTA' | 'TALLER' | 'EMPRESA';
+
+export const TIPOS_DE_CLIENTE: readonly TipoCliente[] = ['PUBLICO_GENERAL', 'CONTRATISTA', 'TALLER', 'EMPRESA'];
+
+export const NOMBRES_DE_TIPO: Record<TipoCliente, string> = {
+	PUBLICO_GENERAL: 'Público general',
+	CONTRATISTA: 'Contratista',
+	TALLER: 'Taller',
+	EMPRESA: 'Empresa',
+};
+
 // Cómo se nombran en pantalla; en el código siguen siendo los del backend
 export const NOMBRES_DE_ROL: Record<Rol, string> = {
 	CLIENTE: 'Cliente',

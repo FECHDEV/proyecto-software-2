@@ -7,7 +7,7 @@ import { vi } from 'vitest';
 
 import { UsuariosService } from '../../core/api/usuarios.service';
 import { Pagina } from '../../core/modelos/pagina';
-import { EstadoCuenta, Rol } from '../../core/modelos/usuario';
+import { EstadoCuenta, Rol, TipoCliente } from '../../core/modelos/usuario';
 import { FiltrosDeUsuarios, UsuarioResumen } from '../../core/modelos/usuario-resumen';
 import { Sesion } from '../../core/modelos/sesion';
 import { SesionService } from '../../core/sesion/sesion.service';
@@ -21,6 +21,7 @@ const ANA: UsuarioResumen = {
   correo: 'ana@mail.com',
   rol: 'CLIENTE',
   estado: 'ACTIVA',
+  tipoCliente: 'PUBLICO_GENERAL',
   fechaRegistro: '2026-09-12T11:00:00',
 };
 
@@ -31,6 +32,7 @@ const ADMIN: UsuarioResumen = {
   correo: 'admin@tienda.bo',
   rol: 'ADMINISTRADOR',
   estado: 'ACTIVA',
+  tipoCliente: 'PUBLICO_GENERAL',
   fechaRegistro: '2026-09-10T08:00:00',
 };
 
@@ -62,6 +64,7 @@ class UsuariosFalso {
   respuesta: Promise<UsuarioResumen> = Promise.resolve(ANA);
   cambiosDeRol: Array<{ id: number; rol: Rol }> = [];
   cambiosDeEstado: Array<{ id: number; estado: EstadoCuenta }> = [];
+  cambiosDeTipo: Array<{ id: number; tipo: TipoCliente }> = [];
 
   listado(filtros: Signal<FiltrosDeUsuarios>) {
     this.filtros = filtros;
@@ -75,6 +78,11 @@ class UsuariosFalso {
 
   cambiarEstado(id: number, estado: EstadoCuenta): Promise<UsuarioResumen> {
     this.cambiosDeEstado.push({ id, estado });
+    return this.respuesta;
+  }
+
+  cambiarTipo(id: number, tipo: TipoCliente): Promise<UsuarioResumen> {
+    this.cambiosDeTipo.push({ id, tipo });
     return this.respuesta;
   }
 }
@@ -156,15 +164,15 @@ describe('UsuariosPage', () => {
   it('toma los filtros y la página de la URL', async () => {
     await abrir('/usuarios?rol=CLIENTE&estado=ACTIVA&texto=ana&pagina=1');
 
-    expect(usuarios.filtros?.()).toEqual({ rol: 'CLIENTE', estado: 'ACTIVA', texto: 'ana', pagina: 1 });
+    expect(usuarios.filtros?.()).toEqual({ rol: 'CLIENTE', estado: 'ACTIVA', tipo: null, texto: 'ana', pagina: 1 });
   });
 
   // Un enlace alterado no llega al backend como un 400
   // HU-05 RF-3
   it('descarta valores de la URL que no son válidos', async () => {
-    await abrir('/usuarios?rol=JEFE&estado=BORRADA&pagina=-3');
+    await abrir('/usuarios?rol=JEFE&estado=BORRADA&tipo=MAYORISTA&pagina=-3');
 
-    expect(usuarios.filtros?.()).toEqual({ rol: null, estado: null, texto: '', pagina: 0 });
+    expect(usuarios.filtros?.()).toEqual({ rol: null, estado: null, tipo: null, texto: '', pagina: 0 });
   });
 
   // HU-05 RF-3
@@ -492,6 +500,65 @@ describe('UsuariosPage', () => {
     terminar(ANA);
     await asentar();
     expect(botonDeFila('ana@mail.com').getAttribute('aria-disabled')).toBeNull();
+  });
+
+  // HU-18 RF-21: sin confirmación; la fila muestra el tipo nuevo
+  it('cambia el tipo de un cliente', async () => {
+    await abrir();
+    usuarios.respuesta = Promise.resolve({ ...ANA, tipoCliente: 'CONTRATISTA' });
+    const selector = fila('ana@mail.com').querySelector('select[name="tipo-7"]') as HTMLSelectElement;
+    expect(selector.getAttribute('aria-label')).toBe('Tipo de cliente de Ana Rojas');
+    expect(Array.from(selector.options).map((opcion) => opcion.textContent?.trim())).toEqual([
+      'Público general',
+      'Contratista',
+      'Taller',
+      'Empresa',
+    ]);
+
+    selector.value = 'CONTRATISTA';
+    selector.dispatchEvent(new Event('change'));
+    await asentar();
+
+    expect(usuarios.cambiosDeTipo).toEqual([{ id: 7, tipo: 'CONTRATISTA' }]);
+    expect(fila('ana@mail.com').textContent).toContain('Contratista');
+    expect(texto()).toContain('Ana Rojas ahora es Contratista.');
+  });
+
+  // HU-18 RF-21: si el backend lo rechaza, el selector vuelve al tipo que tiene
+  it('si rechaza el tipo, el selector vuelve', async () => {
+    await abrir('/usuarios', (falso) => {
+      falso.respuesta = Promise.reject({ status: 409, detail: 'x', codigo: 'TIPO_SOLO_CLIENTE' });
+      falso.respuesta.catch(() => undefined);
+    });
+    const selector = fila('ana@mail.com').querySelector('select[name="tipo-7"]') as HTMLSelectElement;
+
+    selector.value = 'EMPRESA';
+    selector.dispatchEvent(new Event('change'));
+    await asentar();
+
+    expect(selector.value).toBe('PUBLICO_GENERAL');
+    expect(texto()).toContain('Solo una cuenta de cliente tiene tipo de cliente.');
+  });
+
+  // HU-18 RF-21: el personal no tiene tipo
+  it('el personal no tiene selector de tipo', async () => {
+    await abrir('/usuarios', (falso) =>
+      falso.recurso.value.set(pagina([{ ...ANA, rol: 'EMPLEADO' }, ADMIN])),
+    );
+
+    expect(fila('ana@mail.com').querySelector('select[name="tipo-7"]')).toBeNull();
+    expect(fila('ana@mail.com').querySelectorAll('select').length).toBe(1);
+  });
+
+  // HU-18 RF-21
+  it('filtra por tipo', async () => {
+    await abrir('/usuarios?tipo=TALLER');
+    expect(usuarios.filtros?.().tipo).toBe('TALLER');
+    expect((pantalla().querySelector('#filtro-tipo') as HTMLSelectElement).value).toBe('TALLER');
+
+    await elegir('filtro-tipo', 'EMPRESA');
+
+    expect(url()).toBe('/usuarios?tipo=EMPRESA');
   });
 
   // --- Hallazgos de la revisión de código ---

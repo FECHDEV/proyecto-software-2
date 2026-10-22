@@ -51,6 +51,13 @@ describe('problemaDelPrecio', () => {
     expect(problemaDelPrecio('1.234,50')).toBe('Escriba el precio sin separador de miles, por ejemplo 1234,50.');
     expect(problemaDelPrecio('abc')).toBe('Escriba el precio con números, por ejemplo 420,50.');
   });
+
+  // HU-18 RF-19: el costo tiene las mismas reglas y sus propios mensajes
+  it('nombra al campo que explica', () => {
+    expect(problemaDelPrecio('0', 'costo')).toBe('El costo tiene que ser mayor que 0.');
+    expect(problemaDelPrecio('12,345', 'costo')).toBe('El costo admite hasta dos decimales.');
+    expect(problemaDelPrecio('abc', 'costo')).toBe('Escriba el costo con números, por ejemplo 420,50.');
+  });
 });
 
 // Las cantidades de entradas separan los miles como se leen en Bolivia

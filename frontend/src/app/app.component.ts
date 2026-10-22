@@ -36,6 +36,7 @@ const MODULOS: readonly { ruta: string; nombre: string; roles: readonly Rol[] }[
   { ruta: '/productos', nombre: 'Productos', roles: ['ADMINISTRADOR'] },
   { ruta: '/inventario', nombre: 'Inventario', roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
   { ruta: '/pedidos', nombre: 'Pedidos', roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
+  { ruta: '/reportes', nombre: 'Reportes', roles: ['ADMINISTRADOR', 'CONTADOR'] },
 ];
 
 @Component({

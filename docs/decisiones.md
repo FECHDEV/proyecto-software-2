@@ -17,7 +17,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
-- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Catálogo de demostración](#catálogo-de-demostración)
+- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Catálogo de demostración](#catálogo-de-demostración)
 
 ---
 
@@ -332,6 +332,12 @@ código:
   **Consecuencia aceptada:** al desplegar este cambio, los tokens que ya
   estaban emitidos no tienen `vs` y dejan de valer: todos inician sesión una
   vez más.
+- *22/10/2026 (HU-18).* **Tipo de cliente:** Público general, Contratista,
+  Taller o Empresa. Toda cuenta nace «Público general»; solo el Administrador
+  lo cambia, en la gestión de usuarios, y solo en cuentas con rol Cliente
+  (409 en otra). El listado lo muestra y filtra por tipo. **Motivo:** los
+  reportes agrupan las ventas por tipo; si lo eligiera el cliente, cualquiera
+  se pondría «Empresa».
 
 ---
 
@@ -607,6 +613,16 @@ técnica libre y hasta cinco imágenes.
 unidades y la ficha libre equilibran orden y flexibilidad; desactivar en vez de
 borrar protege el historial de ventas.
 
+*22/10/2026 (HU-18).* **Costo opcional:** el Administrador puede cargar el
+costo de cada producto (mayor que 0, hasta 99 999,99 Bs, dos decimales). Es
+uno solo, el último cargado, sin costo promedio ni por lote. Nunca sale en el
+catálogo público, el carrito ni los pedidos del cliente. Cada línea del pedido
+guarda el costo al confirmar, como el precio, y el margen de los reportes se
+calcula con ese. Reemplaza «sin costo de compra» de «Inventario» solo en
+esto: el inventario sigue sin proveedores ni costo por movimiento.
+**Motivo:** el margen de utilidad lo pide el Contador, y guardarlo en la línea
+evita que un cambio de costo reescriba lo ya vendido.
+
 
 ### Inventario
 
@@ -834,6 +850,40 @@ mismo equipo.
 solo puede preguntar; consultar antes de vencer y aceptar el pago tardío
 evita cobrar sin entregar, y la deuda que vence por día deja pagar un QR
 después de los 30 minutos del pedido.
+
+### Reportes
+
+*22/10/2026 (HU-18).* `/reportes`, solo para el Contador y el Administrador
+(el Empleado no), de solo lectura.
+
+- **Venta = pedido «Pagado» o «Entregado», en la fecha del pago,** con su
+  total guardado. «Pago a devolver» no suma: se muestra aparte.
+- **Período** en hora de Bolivia: de entrada «Este mes»; atajos Hoy, Últimos
+  7 días, Este mes y Mes anterior, o un rango de hasta 366 días. Se compara
+  con el período anterior de igual largo. Por día hasta 62 días; más, por
+  mes.
+- **Secciones:** resumen (ingresos, pedidos, promedio, margen, pagos a
+  devolver), ventas por día, por día de la semana y por hora, por categoría
+  (la actual del producto), por tipo de cliente (el actual de la cuenta),
+  productos más y menos vendidos, sin venderse, pedidos perdidos y clientes
+  inactivos.
+- **Margen** solo con las líneas que tienen costo guardado; lo vendido sin
+  costo se muestra aparte.
+- **Pedidos perdidos:** los vencidos y cancelados entre los confirmados del
+  período. La proporción de vendidos no cuenta los que esperan el pago ni los
+  «Pago a devolver», que se pagaron pero no fueron venta (revisión de código).
+- **Sin venderse:** productos activos con stock, por días desde la última
+  venta o desde el alta, con el dinero inmovilizado (stock × costo, o × precio
+  sin costo). **Clientes inactivos:** clientes activos que compraron alguna
+  vez y no compran hace más de 30, 60 o 90 días, con nombre, correo y
+  teléfono para llamarlos; la tienda no les manda correos.
+- **Fuera:** crédito, descuentos y cupones, campañas por correo y exportar
+  (HU-19).
+
+**Motivo:** el Contador necesita controlar el dinero y además saber qué
+rebajar y a quién llamar; contar la venta al pagar coincide con el dinero que
+entró, y el tipo y la categoría actuales evitan guardar copias que nadie
+corrige.
 
 ### Catálogo de demostración
 

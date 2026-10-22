@@ -1,0 +1,91 @@
+<h1>Reportes</h1>
+
+<nav class="secciones" aria-label="Reportes">
+  @for (seccion of secciones; track seccion.valor) {
+    <a
+      [routerLink]="[]"
+      [queryParams]="consultaDeSeccion(seccion.valor)"
+      [attr.aria-current]="filtros().seccion === seccion.valor ? 'page' : null"
+    >
+      {{ seccion.nombre }}
+    </a>
+  }
+</nav>
+
+@if (usaPeriodo() || usaTipo()) {
+  <form class="filtros" aria-label="Período y tipo de cliente" (submit)="$event.preventDefault()">
+    @if (usaPeriodo()) {
+      <div class="atajos" role="group" aria-label="Período">
+        @for (atajo of atajos; track atajo.valor) {
+          <button
+            type="button"
+            class="secundario"
+            [attr.aria-pressed]="atajoActivo() === atajo.valor"
+            (click)="alElegirAtajo(atajo.valor)"
+          >
+            {{ atajo.nombre }}
+          </button>
+        }
+      </div>
+      <div class="campo">
+        <label for="filtro-desde">Desde</label>
+        <input
+          id="filtro-desde"
+          name="desde"
+          type="date"
+          required
+          [max]="hoy()"
+          [value]="filtros().desde"
+          (change)="alCambiarFecha('desde', $any($event.target).value)"
+        />
+      </div>
+      <div class="campo">
+        <label for="filtro-hasta">Hasta</label>
+        <input
+          id="filtro-hasta"
+          name="hasta"
+          type="date"
+          required
+          [max]="hoy()"
+          [value]="filtros().hasta"
+          (change)="alCambiarFecha('hasta', $any($event.target).value)"
+        />
+      </div>
+    }
+    @if (usaTipo()) {
+      <div class="campo">
+        <label for="filtro-tipo">Tipo de cliente</label>
+        <select id="filtro-tipo" name="tipo" (change)="alElegirTipo($any($event.target).value)">
+          <option value="" [selected]="filtros().tipo === null">Todos los clientes</option>
+          @for (tipo of tipos; track tipo) {
+            <option [value]="tipo" [selected]="filtros().tipo === tipo">{{ nombresDeTipo[tipo] }}</option>
+          }
+        </select>
+      </div>
+    }
+  </form>
+}
+
+<div role="status" class="avisos">
+  @if (avisoDePeriodo()) {
+    <p class="aviso informativo">{{ avisoDePeriodo() }}</p>
+  }
+</div>
+
+@switch (filtros().seccion) {
+  @case ('productos') {
+    <app-reportes-productos [filtros]="filtros()" (cambiar)="alCambiarSeccion($event)" />
+  }
+  @case ('sin-venta') {
+    <app-reportes-sin-venta [filtros]="filtros()" (cambiar)="alCambiarSeccion($event)" />
+  }
+  @case ('clientes') {
+    <app-reportes-clientes [filtros]="filtros()" (cambiar)="alCambiarSeccion($event)" />
+  }
+  @case ('perdidos') {
+    <app-reportes-perdidos [filtros]="filtros()" (cambiar)="alCambiarSeccion($event)" />
+  }
+  @default {
+    <app-reportes-resumen [filtros]="filtros()" />
+  }
+}

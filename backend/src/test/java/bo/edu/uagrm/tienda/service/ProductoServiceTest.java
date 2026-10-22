@@ -95,7 +95,7 @@ class ProductoServiceTest {
 
 	private static ProductoRequest solicitud(long idCategoria, List<CaracteristicaRequest> ficha, Boolean destacado) {
 		return new ProductoRequest("  Taladro percutor 750 W ", " Bosch ", "  ", idCategoria, UnidadVenta.UNIDAD,
-				new BigDecimal("420.00"), ficha, destacado);
+				new BigDecimal("420.00"), null, ficha, destacado);
 	}
 
 	// HU-07 RF-2, RF-3, RF-4

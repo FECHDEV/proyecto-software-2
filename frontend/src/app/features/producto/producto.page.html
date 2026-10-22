@@ -134,6 +134,27 @@
       </div>
     </div>
 
+    <div class="fila">
+      <div class="campo">
+        @let errorCosto = mensaje(formulario.costo(), 'costo');
+        <label for="costo">Costo (Bs) <span class="opcional">(opcional)</span></label>
+        <input
+          id="costo"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          placeholder="300,00"
+          [formField]="formulario.costo"
+          [attr.aria-invalid]="errorCosto ? 'true' : null"
+          [attr.aria-describedby]="errorCosto ? 'error-costo ayuda-costo' : 'ayuda-costo'"
+        />
+        <p class="ayuda" id="ayuda-costo">Solo lo ven el Administrador y el Contador.</p>
+        @if (errorCosto) {
+          <p class="error" id="error-costo">{{ errorCosto }}</p>
+        }
+      </div>
+    </div>
+
     <label class="casilla" for="destacado">
       <input id="destacado" type="checkbox" [formField]="formulario.destacado" />
       <span>Destacado <span class="opcional">(sale primero en la portada de la tienda)</span></span>

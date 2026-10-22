@@ -1,6 +1,7 @@
-// El margen lateral crece con la pantalla: 16 px en el celular, 48 px en una
-// pantalla ancha. El encabezado y el contenido comparten ancho y margen, así
-// la marca queda alineada con el título de cada pantalla
+// El margen lateral del contenido crece con la pantalla: 16 px en el celular,
+// 48 px en una pantalla ancha. *22/10/2026:* la barra del encabezado ya no lo
+// comparte: ocupa todo el ancho de la ventana, con 16 px a cada lado, y los
+// módulos van centrados (DESIGN.md → Layout)
 $margen-lateral: clamp(var(--app-espacio-4), 5vw, var(--app-espacio-12));
 
 :host {
@@ -21,12 +22,16 @@ header {
 	background-blend-mode: soft-light;
 }
 
-.barra,
 main {
 	width: 100%;
 	max-width: var(--app-ancho-maximo);
 	margin-inline: auto;
 	padding-inline: $margen-lateral;
+}
+
+.barra {
+	width: 100%;
+	padding-inline: var(--app-espacio-4);
 }
 
 .barra {
@@ -169,10 +174,14 @@ nav {
 	height: var(--app-icono);
 }
 
+// Centrados con márgenes automáticos y no con justify-content: si no entran
+// (en el celular), la lista empieza en el borde y se desplaza sin cortar el
+// primer enlace
 nav ul {
 	display: flex;
 	gap: var(--app-espacio-1);
-	margin: 0;
+	width: max-content;
+	margin: 0 auto;
 	padding: 0;
 	list-style: none;
 }

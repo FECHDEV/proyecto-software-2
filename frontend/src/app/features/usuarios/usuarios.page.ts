@@ -18,8 +18,11 @@ import {
 	ESTADOS,
 	NOMBRES_DE_ESTADO,
 	NOMBRES_DE_ROL,
+	NOMBRES_DE_TIPO,
 	Rol,
 	ROLES,
+	TipoCliente,
+	TIPOS_DE_CLIENTE,
 } from '../../core/modelos/usuario';
 import { comoError, comoErrorApi } from '../../core/modelos/error-api';
 import { FiltrosDeUsuarios, UsuarioResumen } from '../../core/modelos/usuario-resumen';
@@ -82,6 +85,8 @@ export class UsuariosPage {
 	protected readonly estados = ESTADOS;
 	protected readonly nombresDeRol = NOMBRES_DE_ROL;
 	protected readonly nombresDeEstado = NOMBRES_DE_ESTADO;
+	protected readonly tipos = TIPOS_DE_CLIENTE;
+	protected readonly nombresDeTipo = NOMBRES_DE_TIPO;
 	protected readonly fecha = fechaCorta;
 
 	constructor() {
@@ -103,6 +108,27 @@ export class UsuariosPage {
 
 	protected alElegirEstado(valor: string): void {
 		this.filtrar({ estado: esEstado(valor) ? valor : null });
+	}
+
+	protected alElegirTipo(valor: string): void {
+		this.filtrar({ tipo: esTipo(valor) ? valor : null });
+	}
+
+	// HU-18 RF-21: sin confirmación, porque solo clasifica la cuenta para los reportes y se deshace igual. Si el
+	// backend lo rechaza, el selector vuelve al tipo que la cuenta sigue teniendo
+	protected async alElegirTipoDe(usuario: UsuarioResumen, selector: HTMLSelectElement): Promise<void> {
+		const tipo = selector.value;
+		if (!esTipo(tipo) || tipo === usuario.tipoCliente || this.procesando().has(usuario.idUsuario)) {
+			return;
+		}
+		const cambiado = await this.aplicar(
+			usuario,
+			() => this.usuarios.cambiarTipo(usuario.idUsuario, tipo),
+			(actualizado) => `${nombreDe(actualizado)} ahora es ${NOMBRES_DE_TIPO[actualizado.tipoCliente]}.`,
+		);
+		if (!cambiado) {
+			selector.value = usuario.tipoCliente;
+		}
 	}
 
 	protected irAPagina(pagina: number): void {
@@ -230,14 +256,20 @@ function esEstado(valor: string | null): valor is EstadoCuenta {
 	return (ESTADOS as readonly string[]).includes(valor ?? '');
 }
 
+function esTipo(valor: string | null): valor is TipoCliente {
+	return (TIPOS_DE_CLIENTE as readonly string[]).includes(valor ?? '');
+}
+
 // La URL la puede escribir cualquiera: lo que no es válido se descarta en vez
 // de llegar al backend y volver como un 400
 function leerFiltros(consulta: ParamMap): FiltrosDeUsuarios {
 	const rol = consulta.get('rol');
 	const estado = consulta.get('estado');
+	const tipo = consulta.get('tipo');
 	return {
 		rol: esRol(rol) ? rol : null,
 		estado: esEstado(estado) ? estado : null,
+		tipo: esTipo(tipo) ? tipo : null,
 		texto: consulta.get('texto') ?? '',
 		pagina: paginaDeLaUrl(consulta.get('pagina')),
 	};
@@ -249,6 +281,7 @@ function aConsulta(filtros: FiltrosDeUsuarios): Record<string, string | number |
 	return {
 		rol: filtros.rol ?? undefined,
 		estado: filtros.estado ?? undefined,
+		tipo: filtros.tipo ?? undefined,
 		texto: texto === '' ? undefined : texto,
 		pagina: filtros.pagina > 0 ? filtros.pagina : undefined,
 	};

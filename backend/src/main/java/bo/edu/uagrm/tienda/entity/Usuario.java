@@ -5,6 +5,8 @@ import java.util.Locale;
 import java.util.Objects;
 
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -71,6 +73,14 @@ public class Usuario {
 	@Column(name = "correo_verificado", nullable = false)
 	private boolean correoVerificado;
 
+	// Para los reportes (HU-18 RF-21). Como texto y no como enum de MySQL, que no admite valores nuevos sin migración;
+	// el valor por defecto es para las cuentas que ya existían cuando se agregó la columna
+	@JdbcTypeCode(SqlTypes.VARCHAR)
+	@Enumerated(EnumType.STRING)
+	@ColumnDefault("'PUBLICO_GENERAL'")
+	@Column(name = "tipo_cliente", nullable = false, length = 20)
+	private TipoCliente tipoCliente = TipoCliente.PUBLICO_GENERAL;
+
 	public static Usuario registrarCliente(String nombre, String apellido, String correo, String contrasenaHash,
 			String telefono, LocalDateTime fechaRegistro) {
 		Usuario usuario = new Usuario();
@@ -124,6 +134,14 @@ public class Usuario {
 
 	public void asignarRol(Rol rol) {
 		this.rol = Objects.requireNonNull(rol);
+	}
+
+	// Solo en una cuenta de Cliente: GestionUsuariosService lo revisa antes, con la cuenta bloqueada
+	public void cambiarTipo(TipoCliente tipo) {
+		if (rol != Rol.CLIENTE) {
+			throw new IllegalStateException("La cuenta " + idUsuario + " no es de un cliente");
+		}
+		this.tipoCliente = Objects.requireNonNull(tipo);
 	}
 
 	public void desactivar() {

@@ -15,6 +15,7 @@ const TALADRO: Producto = {
   marca: 'Bosch',
   descripcion: null,
   precio: 420,
+  costo: 300,
   unidad: 'UNIDAD',
   idCategoria: 3,
   categoria: 'Herramientas eléctricas',
@@ -42,6 +43,7 @@ const DATOS: DatosDeProducto = {
   idCategoria: '3',
   unidad: 'UNIDAD',
   precio: '420,5',
+  costo: ' 300,25 ',
   ficha: [
     { nombre: ' Potencia ', valor: ' 750 W ' },
     { nombre: ' ', valor: '' },
@@ -112,6 +114,8 @@ describe('ProductosService', () => {
       idCategoria: 3,
       unidad: 'UNIDAD',
       precio: 420.5,
+      // HU-18 RF-19
+      costo: 300.25,
       ficha: [{ nombre: 'Potencia', valor: '750 W' }],
       // HU-09 RF-4
       destacado: true,
@@ -119,6 +123,16 @@ describe('ProductosService', () => {
     peticion.flush(TALADRO, { status: 201, statusText: 'Created' });
 
     await expect(promesa).resolves.toEqual(TALADRO);
+  });
+
+  // HU-18 RF-19: el costo es opcional
+  it('sin costo lo manda nulo', async () => {
+    const promesa = servicio.crear({ ...DATOS, costo: '  ' });
+
+    const peticion = http.expectOne('/api/gestion/productos');
+    expect(peticion.request.body.costo).toBeNull();
+    peticion.flush(TALADRO, { status: 201, statusText: 'Created' });
+    await promesa;
   });
 
   // HU-07 RF-5

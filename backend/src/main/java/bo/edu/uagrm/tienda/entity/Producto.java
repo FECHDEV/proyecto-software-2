@@ -60,6 +60,11 @@ public class Producto {
 	@Column(nullable = false, precision = 7, scale = 2)
 	private BigDecimal precio;
 
+	// Opcional, lo carga el Administrador: con él se calcula el margen de los reportes (HU-18 RF-19). Nunca sale al
+	// cliente
+	@Column(precision = 7, scale = 2)
+	private BigDecimal costo;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 10)
 	private UnidadVenta unidad;
@@ -127,6 +132,10 @@ public class Producto {
 		this.ficha.clear();
 		this.ficha.addAll(ficha);
 		actualizarBusqueda();
+	}
+
+	public void cambiarCosto(BigDecimal costo) {
+		this.costo = costo;
 	}
 
 	public void asignarCodigo(String codigo) {
