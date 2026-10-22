@@ -152,5 +152,19 @@ export const routes: Routes = [
     data: { roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
     loadComponent: () => import('./features/stock/stock.page').then((m) => m.StockPage),
   },
+  {
+    path: 'pedidos',
+    title: `Pedidos · ${MARCA.nombre}`,
+    canActivate: [rolGuard],
+    data: { roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
+    loadComponent: () => import('./features/despacho/despacho.page').then((m) => m.DespachoPage),
+  },
+  {
+    path: 'pedidos/:id',
+    title: `Pedido · ${MARCA.nombre}`,
+    canActivate: [rolGuard],
+    data: { roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
+    loadComponent: () => import('./features/despacho-pedido/despacho-pedido.page').then((m) => m.DespachoPedidoPage),
+  },
   { path: '**', redirectTo: '' },
 ];

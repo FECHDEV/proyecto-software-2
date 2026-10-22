@@ -48,6 +48,17 @@
         Ya puede retirar su pedido en la tienda.
       </p>
     </section>
+  } @else if (pedido.estado === 'ENTREGADO') {
+    <section class="cerrado" role="status" tabindex="-1">
+      <p>
+        <svg lucideCircleCheck aria-hidden="true"></svg>
+        @if (pedido.entregado) {
+          Lo retiraron el {{ fecha(pedido.entregado) }} a las {{ hora(pedido.entregado) }}.
+        } @else {
+          Lo retiraron de la tienda.
+        }
+      </p>
+    </section>
   } @else if (pedido.estado === 'PAGO_A_DEVOLVER') {
     <section class="cerrado devolver" role="status" tabindex="-1">
       <p>

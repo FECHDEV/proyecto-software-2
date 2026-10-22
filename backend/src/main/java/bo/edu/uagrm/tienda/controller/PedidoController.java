@@ -1,7 +1,5 @@
 package bo.edu.uagrm.tienda.controller;
 
-import java.math.BigInteger;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,7 +36,7 @@ public class PedidoController {
 	@GetMapping
 	public MisPedidosResponse misPedidos(@AuthenticationPrincipal Long idUsuario,
 			@RequestParam(required = false) String pagina) {
-		return pedidoService.misPedidos(idUsuario, numeroDePagina(pagina));
+		return pedidoService.misPedidos(idUsuario, Paginas.numeroDePagina(pagina));
 	}
 
 	@GetMapping("/retiro")
@@ -61,15 +59,5 @@ public class PedidoController {
 	@PostMapping(ID + "/cancelacion")
 	public CancelacionResponse cancelar(@AuthenticationPrincipal Long idUsuario, @PathVariable Long idPedido) {
 		return pedidoService.cancelar(idUsuario, idPedido);
-	}
-
-	// Solo dígitos, con signo opcional: lo demás es la primera página. Un número que no entra en un int es «después de
-	// la última», como cualquier otro número grande
-	private static int numeroDePagina(String pagina) {
-		if (pagina == null || !pagina.strip().matches("-?\\d{1,40}")) {
-			return 0;
-		}
-		BigInteger numero = new BigInteger(pagina.strip());
-		return numero.signum() < 0 ? 0 : numero.min(BigInteger.valueOf(Integer.MAX_VALUE)).intValue();
 	}
 }

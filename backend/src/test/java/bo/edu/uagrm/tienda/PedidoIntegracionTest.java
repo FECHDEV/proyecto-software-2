@@ -817,7 +817,7 @@ class PedidoIntegracionTest {
 		assertThat(post(PEDIDOS + "/abc/cancelacion", ana, "")).hasStatus(HttpStatus.NOT_FOUND);
 	}
 
-	private static List<Object> aLaVez(Callable<?>... pedidos) throws Exception {
+	static List<Object> aLaVez(Callable<?>... pedidos) throws Exception {
 		ExecutorService hilos = Executors.newFixedThreadPool(pedidos.length);
 		try {
 			CountDownLatch largada = new CountDownLatch(1);

@@ -26,6 +26,7 @@ const PEDIDO: Pedido = {
   retiro: { direccion: 'Av. Principal 123', horario: null },
   pagado: null,
   cobro: null,
+  entregado: null,
 };
 
 const VACIO: Carrito = { lineas: [], total: 0, cantidadLineas: 0, idPedidoPendiente: null, correoVerificado: true };

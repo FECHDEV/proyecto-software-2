@@ -116,6 +116,16 @@ describe('PanelPage', () => {
     }
   });
 
+  // HU-17 RF-11
+  it('la tarjeta Pedidos para el personal y no para el Cliente', () => {
+    for (const rol of ['EMPLEADO', 'CONTADOR', 'ADMINISTRADOR'] as const) {
+      sesion.iniciar(sesionCon(rol));
+      expect(crear().querySelector('a[href="/pedidos"]')?.textContent).toContain('Pedidos');
+    }
+    sesion.iniciar(sesionCon('CLIENTE'));
+    expect(crear().querySelector('a[href="/pedidos"]')).toBeNull();
+  });
+
   // HU-07 RF-1
   it('el administrador tiene el acceso a productos', () => {
     sesion.iniciar(sesionCon('ADMINISTRADOR'));
