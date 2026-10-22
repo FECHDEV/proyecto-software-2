@@ -22,6 +22,8 @@ const MENSAJES: Record<string, string> = {
 	NO_AUTENTICADO: 'Su sesión terminó. Vuelva a iniciar sesión.',
 	ROL_DE_CUENTA_DESACTIVADA: 'No se puede cambiar el rol de una cuenta desactivada. Reactívela primero.',
 	TIPO_SOLO_CLIENTE: 'Solo una cuenta de cliente tiene tipo de cliente.',
+	PERIODO_INVALIDO: 'El período no es válido. Elija las fechas de nuevo.',
+	FORMATO_INVALIDO: 'Ese formato no se puede exportar. Elija Excel o PDF.',
 	ROL_PROPIO_NO_MODIFICABLE: 'No puede cambiar su propio rol.',
 	CUENTA_PROPIA_NO_DESACTIVABLE: 'No puede desactivar su propia cuenta.',
 	ULTIMO_ADMINISTRADOR_ACTIVO: 'Debe quedar al menos un administrador activo. Nombre a otro antes de hacer este cambio.',
