@@ -869,6 +869,9 @@ después de los 30 minutos del pedido.
   inactivos.
 - **Margen** solo con las líneas que tienen costo guardado; lo vendido sin
   costo se muestra aparte.
+- **Pedidos perdidos:** los vencidos y cancelados entre los confirmados del
+  período. La proporción de vendidos no cuenta los que esperan el pago ni los
+  «Pago a devolver», que se pagaron pero no fueron venta (revisión de código).
 - **Sin venderse:** productos activos con stock, por días desde la última
   venta o desde el alta, con el dinero inmovilizado (stock × costo, o × precio
   sin costo). **Clientes inactivos:** clientes activos que compraron alguna

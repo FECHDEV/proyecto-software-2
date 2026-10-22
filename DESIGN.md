@@ -314,8 +314,11 @@ no baja de 400.
 ## Layout
 
 Columna de contenido de hasta 1120 px (`--app-ancho-maximo`), centrada, con
-margen lateral que crece de 16 a 48 px (`clamp(16px, 5vw, 48px)`); encabezado y
-contenido comparten ancho y margen. Lo angosto (formularios de 420 px) va
+margen lateral que crece de 16 a 48 px (`clamp(16px, 5vw, 48px)`). *22/10/2026:*
+la barra del encabezado ya no comparte ese ancho: ocupa toda la ventana, con
+16 px a cada lado, y los módulos van centrados (si no entran, se desplazan de
+costado desde el borde). **Motivo:** lo pidió el usuario; con más módulos
+(Reportes), la barra centrada se lee mejor que una fila pegada a la izquierda. Lo angosto (formularios de 420 px) va
 centrado con el mixin `pagina-angosta` de `_pagina.scss`, nunca con un
 `max-width` suelto.
 
