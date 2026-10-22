@@ -4,6 +4,7 @@ import static bo.edu.uagrm.tienda.IpsDePrueba.ipNueva;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -37,7 +38,7 @@ import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import bo.edu.uagrm.tienda.service.AdministradorInicial;
 
 // HU-18: las listas paginadas de /api/reportes (productos, sin venderse, clientes inactivos y perdidos), de punta a
-// punta. Las del período usan fechas de 2025; las que miran hacia atrás desde hoy, la hora real, como el servicio
+// punta. Las del período usan fechas de 2025; las que miran hacia atrás desde hoy, la del reloj del servicio
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -68,6 +69,10 @@ class ReportesListasIntegracionTest {
 	@Autowired
 	private UsuarioRepository usuarioRepository;
 
+	// El reloj de la aplicación (La Paz): con la zona de la máquina, en el CI (UTC) los días salían uno menos
+	@Autowired
+	private Clock clock;
+
 	private String admin;
 	private String contador;
 	private Usuario ana;
@@ -85,7 +90,7 @@ class ReportesListasIntegracionTest {
 		ana = cliente("ana.hu18l@mail.com", TipoCliente.PUBLICO_GENERAL);
 		fede = cliente("fede.hu18l@mail.com", TipoCliente.CONTRATISTA);
 		herramientas = categoriaRepository.save(Categoria.crear("Herramientas", null));
-		ahora = LocalDateTime.now();
+		ahora = LocalDateTime.now(clock);
 	}
 
 	@AfterEach
