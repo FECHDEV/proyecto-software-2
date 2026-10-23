@@ -14,6 +14,10 @@ public enum FormatoImagen {
 	private static final byte[] FIRMA_RIFF = { 'R', 'I', 'F', 'F' };
 	private static final byte[] FIRMA_WEBP = { 'W', 'E', 'B', 'P' };
 
+	// Las fotos de productos y categorías (decisiones.md → Imágenes subidas): multipart deja pasar más, por los
+	// modelos 3D
+	public static final long MAXIMO = 2L * 1024 * 1024;
+
 	private final String tipoDeContenido;
 	private final String extension;
 

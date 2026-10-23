@@ -58,8 +58,9 @@ form {
 }
 
 // Las etiquetas van como rótulo: en mayúsculas y espaciadas. La monoespaciada
-// queda para los datos (DESIGN.md → Typography)
-label {
+// queda para los datos (DESIGN.md → Typography). Un label que hace de botón
+// (el de elegir un archivo) se ve como los demás botones
+label:not(.boton) {
 	font-family: var(--app-familia-texto);
 	font-size: 12px;
 	font-weight: 600;

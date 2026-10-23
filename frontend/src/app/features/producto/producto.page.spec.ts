@@ -10,6 +10,7 @@ import { CategoriaGestion } from '../../core/modelos/categoria';
 import { ErrorApi } from '../../core/modelos/error-api';
 import { DatosDeProducto, Producto } from '../../core/modelos/producto';
 import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
+import { CARGAR_VISOR_3D } from '../../shared/visor-3d/visor-3d';
 import { ProductoPage } from './producto.page';
 
 // Como responde GET /api/gestion/productos/7 (ProductosIntegracionTest)
@@ -29,7 +30,10 @@ const TALADRO: Producto = {
   ficha: [{ nombre: 'Potencia', valor: '750 W' }],
   imagenes: ['a.png', 'b.png'],
   destacado: false,
+  modelo: null,
 };
+
+const MB = 1024 * 1024;
 
 const CATEGORIAS: CategoriaGestion[] = [
   { idCategoria: 3, nombre: 'Herramientas eléctricas', descripcion: null, tieneImagen: false, visible: true, productos: 1 },
@@ -59,6 +63,8 @@ class ProductosFalso {
   subidas: Array<{ id: number; archivo: File }> = [];
   ordenes: Array<{ id: number; imagenes: readonly string[] }> = [];
   quitadas: string[] = [];
+  modelosSubidos: Array<{ id: number; archivo: File }> = [];
+  modelosQuitados: number[] = [];
 
   producto(id: Signal<number | null>) {
     this.id = id;
@@ -86,6 +92,17 @@ class ProductosFalso {
   }
   urlDeImagen(id: number, imagen: string) {
     return `/api/productos/${id}/imagenes/${imagen}`;
+  }
+  subirModelo(id: number, archivo: File) {
+    this.modelosSubidos.push({ id, archivo });
+    return this.respuesta;
+  }
+  quitarModelo(id: number) {
+    this.modelosQuitados.push(id);
+    return this.respuesta;
+  }
+  urlDeModelo(id: number, archivo: string) {
+    return `/api/productos/${id}/modelo/${archivo}`;
   }
 }
 
@@ -122,6 +139,8 @@ describe('ProductoPage', () => {
         ]),
         { provide: ProductosService, useValue: productos },
         { provide: CategoriasService, useValue: categorias },
+        // jsdom no tiene WebGL: el visor se da por disponible sin descargarlo
+        { provide: CARGAR_VISOR_3D, useValue: () => Promise.resolve(true) },
       ],
     });
     harness = await RouterTestingHarness.create();
@@ -483,6 +502,208 @@ describe('ProductoPage', () => {
     await harness.fixture.whenStable();
 
     expect(texto()).toContain('El producto ya tiene 5 fotos. Quite una antes de subir otra.');
+  });
+
+  // Elige un archivo en «Subir modelo» o «Reemplazar»
+  async function elegirModelo(archivo: File) {
+    const entrada = campo('modelo-nuevo');
+    Object.defineProperty(entrada, 'files', { value: [archivo], configurable: true });
+    entrada.dispatchEvent(new Event('change'));
+    await harness.fixture.whenStable();
+  }
+
+  const glb = (nombre = 'martillo.glb') => new File([new Uint8Array([0x67, 0x6c, 0x54, 0x46])], nombre);
+  const visor = () => pantalla().querySelector('model-viewer');
+  const tarjetaModelo = () => pantalla().querySelector('[aria-labelledby="titulo-modelo"]')!;
+
+  // HU-15 RF-9
+  it('sin modelo ofrece subirlo', async () => {
+    await abrir('/productos/7', (falso) => falso.recurso.value.set(TALADRO));
+
+    expect(texto()).toContain('Modelo 3D');
+    expect(pantalla().querySelector('label[for="modelo-nuevo"]')?.textContent?.trim()).toBe('Subir modelo');
+    expect(campo('modelo-nuevo').accept).toContain('.glb');
+    expect(visor()).toBeNull();
+    expect(pantalla().querySelector('[aria-label="Quitar el modelo"]')).toBeNull();
+  });
+
+  // HU-15 RF-2, RF-9: el modelo subido se ve en el visor, con su peso
+  it('sube el modelo y lo muestra en el visor', async () => {
+    await abrir('/productos/7', (falso) => {
+      falso.recurso.value.set(TALADRO);
+      falso.respuesta = Promise.resolve({ ...TALADRO, modelo: { archivo: 'm.glb', peso: 0.4 * MB } });
+    });
+    const archivo = glb();
+
+    await elegirModelo(archivo);
+
+    expect(productos.modelosSubidos).toEqual([{ id: 7, archivo }]);
+    expect(visor()?.getAttribute('src')).toBe('/api/productos/7/modelo/m.glb');
+    expect(visor()?.getAttribute('alt')).toBe('Modelo 3D de Taladro percutor 750 W');
+    expect(texto()).toContain('Modelo subido.');
+    expect(texto()).toContain('Pesa 410 KB');
+    expect(texto()).not.toContain('Lo recomendado');
+    expect(document.activeElement?.id).toBe('titulo-modelo');
+  });
+
+  // HU-15 RF-10: más de 1 MB se guarda, con el aviso
+  it('avisa si el modelo pesa más de 1 MB', async () => {
+    await abrir('/productos/7', (falso) => {
+      falso.recurso.value.set(TALADRO);
+      falso.respuesta = Promise.resolve({ ...TALADRO, modelo: { archivo: 'm.glb', peso: 2.4 * MB } });
+    });
+
+    await elegirModelo(glb());
+
+    expect(texto()).toContain(
+      'El modelo pesa 2,40 MB: en un celular con datos puede tardar en cargar. Lo recomendado es menos de 1 MB.',
+    );
+    expect(visor()).not.toBeNull();
+  });
+
+  // HU-15 RF-4 y el caso límite «30 MB desde la pantalla»: ni se sube
+  it('un archivo de 30 MB no se sube', async () => {
+    await abrir('/productos/7', (falso) => falso.recurso.value.set(TALADRO));
+    const grande = glb();
+    Object.defineProperty(grande, 'size', { value: 30 * MB });
+
+    await elegirModelo(grande);
+
+    expect(productos.modelosSubidos).toEqual([]);
+    expect(tarjetaModelo().querySelector('[role="alert"]')?.textContent).toContain(
+      'El modelo pesa más de 3 MB. Prepárelo más liviano antes de subirlo.',
+    );
+  });
+
+  // HU-15 RF-11: mientras sube lo dice y no deja subir otro
+  it('muestra «Subiendo…» y no sube dos veces', async () => {
+    let entregar!: (producto: Producto) => void;
+    await abrir('/productos/7', (falso) => {
+      falso.recurso.value.set(TALADRO);
+      falso.respuesta = new Promise((resolver) => (entregar = resolver));
+    });
+
+    await elegirModelo(glb());
+    const tarjeta = tarjetaModelo();
+    expect(tarjeta.getAttribute('aria-busy')).toBe('true');
+    expect(pantalla().querySelector('label[for="modelo-nuevo"]')?.textContent?.trim()).toBe('Subiendo…');
+    // aria-disabled y no disabled: el foco no se pierde si falla (revisión de interfaz)
+    expect(campo('modelo-nuevo').getAttribute('aria-disabled')).toBe('true');
+    expect(campo('modelo-nuevo').disabled).toBe(false);
+    // Ni abre el selector de archivos mientras sube (/code-review, ronda 2)
+    const clic = new MouseEvent('click', { cancelable: true });
+    campo('modelo-nuevo').dispatchEvent(clic);
+    expect(clic.defaultPrevented).toBe(true);
+    await elegirModelo(glb('otro.glb'));
+    expect(productos.modelosSubidos).toHaveLength(1);
+
+    entregar({ ...TALADRO, modelo: { archivo: 'm.glb', peso: 100 } });
+    await vi.waitFor(() => expect(tarjeta.getAttribute('aria-busy')).toBeNull());
+  });
+
+  // HU-15 RF-3, RF-11: el motivo, y se puede volver a intentar
+  it('muestra el error y deja reintentar', async () => {
+    await abrir('/productos/7', (falso) => {
+      falso.recurso.value.set(TALADRO);
+      falso.respuesta = rechaza('MODELO_INVALIDO', 400);
+    });
+
+    await elegirModelo(glb('foto.glb'));
+    expect(tarjetaModelo().querySelector('[role="alert"]')?.textContent).toContain('Ese archivo no es un modelo 3D .glb.');
+    expect(visor()).toBeNull();
+
+    productos.respuesta = Promise.resolve({ ...TALADRO, modelo: { archivo: 'm.glb', peso: 100 } });
+    await elegirModelo(glb());
+    expect(tarjetaModelo().querySelector('[role="alert"]')?.textContent?.trim()).toBe('');
+    expect(visor()).not.toBeNull();
+  });
+
+  // HU-15 RF-5
+  it('reemplaza el modelo', async () => {
+    await abrir('/productos/7', (falso) => {
+      falso.recurso.value.set({ ...TALADRO, modelo: { archivo: 'viejo.glb', peso: 100 } });
+      falso.respuesta = Promise.resolve({ ...TALADRO, modelo: { archivo: 'nuevo.glb', peso: 200 } });
+    });
+    expect(pantalla().querySelector('label[for="modelo-nuevo"]')?.textContent?.trim()).toBe('Reemplazar');
+    expect(visor()?.getAttribute('src')).toBe('/api/productos/7/modelo/viejo.glb');
+
+    await elegirModelo(glb());
+
+    expect(productos.modelosSubidos).toHaveLength(1);
+    expect(visor()?.getAttribute('src')).toBe('/api/productos/7/modelo/nuevo.glb');
+    expect(texto()).toContain('Modelo reemplazado.');
+  });
+
+  // HU-15 RF-6, RF-11: quitar pregunta antes; si no se confirma, no pasa nada
+  it('quitar pide confirmación', async () => {
+    await abrir('/productos/7', (falso) => {
+      falso.recurso.value.set({ ...TALADRO, modelo: { archivo: 'm.glb', peso: 100 } });
+      falso.respuesta = Promise.resolve(TALADRO);
+    });
+    const confirmar = vi.spyOn(dialogo(), 'abrir').mockResolvedValueOnce(false);
+
+    await pulsar('Quitar el modelo');
+    expect(confirmar).toHaveBeenCalledWith(expect.objectContaining({ titulo: '¿Quitar el modelo 3D?' }));
+    expect(productos.modelosQuitados).toEqual([]);
+
+    confirmar.mockResolvedValueOnce(true);
+    await pulsar('Quitar el modelo');
+
+    expect(productos.modelosQuitados).toEqual([7]);
+    expect(visor()).toBeNull();
+    expect(texto()).toContain('Modelo quitado.');
+    expect(pantalla().querySelector('label[for="modelo-nuevo"]')?.textContent?.trim()).toBe('Subir modelo');
+  });
+
+  // /code-review: subir una foto y un modelo a la vez; la respuesta que llega última no deshace la otra
+  it('una foto y un modelo a la vez no se pisan', async () => {
+    let entregarFoto!: (producto: Producto) => void;
+    await abrir('/productos/7', (falso) => {
+      falso.recurso.value.set(TALADRO);
+      falso.respuesta = new Promise((resolver) => (entregarFoto = resolver));
+    });
+    const foto = campo('foto-nueva');
+    Object.defineProperty(foto, 'files', { value: [new File([], 'c.png')] });
+    foto.dispatchEvent(new Event('change'));
+    await harness.fixture.whenStable();
+
+    // La foto se guardó primero, pero su respuesta (sin el modelo) llega después de la del modelo (sin la foto)
+    productos.respuesta = Promise.resolve({ ...TALADRO, modelo: { archivo: 'm.glb', peso: 100 } });
+    await elegirModelo(glb());
+    entregarFoto({ ...TALADRO, imagenes: ['a.png', 'b.png', 'c.png'], modelo: null });
+    await vi.waitFor(() => expect(texto()).toContain('Fotos 3 de 5'));
+
+    expect(visor()?.getAttribute('src')).toBe('/api/productos/7/modelo/m.glb');
+  });
+
+  // /code-review, ronda 2: guardar los datos mientras sube el modelo no lo hace desaparecer
+  it('guardar mientras sube el modelo no lo pisa', async () => {
+    let entregarModelo!: (producto: Producto) => void;
+    await abrir('/productos/7', (falso) => {
+      falso.recurso.value.set(TALADRO);
+      falso.respuesta = new Promise((resolver) => (entregarModelo = resolver));
+    });
+    await elegirModelo(glb());
+
+    // El guardado se leyó antes de que el modelo se confirmara, y llega después
+    let entregarGuardado!: (producto: Producto) => void;
+    productos.respuesta = new Promise((resolver) => (entregarGuardado = resolver));
+    await escribir('nombre', 'Taladro 800 W');
+    boton('Guardar cambios').click();
+    entregarModelo({ ...TALADRO, modelo: { archivo: 'm.glb', peso: 100 } });
+    await vi.waitFor(() => expect(visor()).not.toBeNull());
+    entregarGuardado({ ...TALADRO, nombre: 'Taladro 800 W', modelo: null });
+    await vi.waitFor(() => expect(texto()).toContain('Cambios guardados.'));
+
+    expect(visor()?.getAttribute('src')).toBe('/api/productos/7/modelo/m.glb');
+  });
+
+  // HU-15 RF-9: el modelo es de un producto ya creado, como las fotos
+  it('antes de crear el producto no hay modelo', async () => {
+    await abrir('/productos/nuevo');
+
+    expect(texto()).toContain('Cree el producto para subir su modelo 3D.');
+    expect(pantalla().querySelector('#modelo-nuevo')).toBeNull();
   });
 
   it('avisa si la dirección no es la de un producto', async () => {

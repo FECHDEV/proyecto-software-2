@@ -24,6 +24,7 @@ const TALADRO: Producto = {
   ficha: [{ nombre: 'Potencia', valor: '750 W' }],
   imagenes: ['a.png', 'b.png'],
   destacado: false,
+  modelo: null,
 };
 
 const PAGINA: Pagina<ProductoResumen> = {
@@ -201,5 +202,46 @@ describe('ProductosService', () => {
 
   it('arma la dirección pública de una imagen', () => {
     expect(servicio.urlDeImagen(7, 'a.png')).toBe('/api/productos/7/imagenes/a.png');
+  });
+
+  // HU-15 RF-2, RF-5: el modelo viaja como multipart, en el campo «modelo»
+  it('sube el modelo como multipart', async () => {
+    const archivo = new File(['glTF'], 'martillo.glb');
+    const respuesta = servicio.subirModelo(7, archivo);
+
+    const peticion = http.expectOne('/api/gestion/productos/7/modelo');
+    expect(peticion.request.method).toBe('PUT');
+    expect((peticion.request.body as FormData).get('modelo')).toBe(archivo);
+    peticion.flush({ ...TALADRO, modelo: { archivo: 'm.glb', peso: 4 } });
+
+    expect((await respuesta).modelo).toEqual({ archivo: 'm.glb', peso: 4 });
+  });
+
+  // HU-15 RF-6
+  it('quita el modelo', async () => {
+    const respuesta = servicio.quitarModelo(7);
+
+    const peticion = http.expectOne('/api/gestion/productos/7/modelo');
+    expect(peticion.request.method).toBe('DELETE');
+    peticion.flush(TALADRO);
+
+    expect((await respuesta).modelo).toBeNull();
+  });
+
+  // HU-15 RF-3: el error del backend llega con su código
+  it('rechaza un archivo que no es glb con MODELO_INVALIDO', async () => {
+    const respuesta = servicio.subirModelo(7, new File(['x'], 'foto.glb'));
+
+    http.expectOne('/api/gestion/productos/7/modelo').flush(
+      { status: 400, detail: 'El modelo debe ser un archivo .glb (glTF binario 2.0).', codigo: 'MODELO_INVALIDO' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+
+    await expect(respuesta).rejects.toMatchObject({ status: 400, codigo: 'MODELO_INVALIDO' });
+  });
+
+  // HU-15 RF-8
+  it('arma la dirección pública del modelo', () => {
+    expect(servicio.urlDeModelo(7, 'a.glb')).toBe('/api/productos/7/modelo/a.glb');
   });
 });

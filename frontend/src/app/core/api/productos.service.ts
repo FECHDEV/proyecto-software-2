@@ -82,6 +82,22 @@ export class ProductosService {
 	urlDeImagen(idProducto: number, imagen: string): string {
 		return urlDeImagen(idProducto, imagen);
 	}
+
+	// HU-15: subir el modelo reemplaza el que hubiera
+	subirModelo(idProducto: number, archivo: File): Promise<Producto> {
+		const cuerpo = new FormData();
+		cuerpo.append('modelo', archivo);
+		return escribir(this.http.put<Producto>(`${GESTION}/${idProducto}/modelo`, cuerpo));
+	}
+
+	quitarModelo(idProducto: number): Promise<Producto> {
+		return escribir(this.http.delete<Producto>(`${GESTION}/${idProducto}/modelo`));
+	}
+
+	// Sin sesión, como las imágenes
+	urlDeModelo(idProducto: number, archivo: string): string {
+		return `/api/productos/${idProducto}/modelo/${encodeURIComponent(archivo)}`;
+	}
 }
 
 // El backend vuelve a recortar y validar; acá se manda limpio: sin textos

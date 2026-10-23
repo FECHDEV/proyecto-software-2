@@ -17,6 +17,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
@@ -97,12 +98,13 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
 				: List.of(error(ex.getPropertyName(), "no tiene un formato válido")));
 	}
 
-	// Multipart corta la subida antes del controlador (spring.servlet.multipart.max-file-size): sale con el código de
-	// la imagen demasiado grande
+	// Multipart corta la subida antes del controlador (spring.servlet.multipart.max-file-size): sale con el código del
+	// modelo demasiado grande si se subía un modelo (HU-15), y si no con el de la imagen
 	@Override
 	protected ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex,
 			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-		ImagenDemasiadoGrandeException error = new ImagenDemasiadoGrandeException();
+		ErrorNegocioException error = esSubidaDeModelo(request) ? new ModeloDemasiadoGrandeException()
+				: new ImagenDemasiadoGrandeException();
 		ProblemDetail problema = ProblemDetail.forStatusAndDetail(error.getEstadoHttp(), error.getMessage());
 		problema.setProperty("codigo", error.getCodigo());
 		return ResponseEntity.status(error.getEstadoHttp()).body(problema);
@@ -139,5 +141,9 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
 			}
 		}
 		return Optional.empty();
+	}
+
+	private static boolean esSubidaDeModelo(WebRequest request) {
+		return request instanceof ServletWebRequest servlet && servlet.getRequest().getRequestURI().endsWith("/modelo");
 	}
 }

@@ -1,0 +1,26 @@
+@let fallo = disponible() === false || modelo() === 'error';
+<div class="visor">
+  @if (!fallo) {
+    <div class="marco">
+      @if (disponible()) {
+        <model-viewer
+          [attr.src]="src()"
+          [attr.alt]="alt()"
+          camera-controls
+          touch-action="pan-y"
+          shadow-intensity="1"
+          (load)="modelo.set('listo')"
+          (error)="modelo.set('error')"
+        ></model-viewer>
+      }
+    </div>
+  }
+  <!-- La región está siempre: un lector anuncia la carga y el error cuando aparecen -->
+  <p role="status" [class.cargando]="!fallo" [class.sin-visor]="fallo">
+    @if (fallo) {
+      No pudimos mostrar el modelo en este dispositivo.
+    } @else if (modelo() === 'cargando') {
+      Cargando el modelo 3D…
+    }
+  </p>
+</div>

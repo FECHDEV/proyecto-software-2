@@ -22,7 +22,10 @@ import bo.edu.uagrm.tienda.entity.Categoria;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.exception.CategoriaNoEncontradaException;
 import bo.edu.uagrm.tienda.exception.FichaInvalidaException;
+import bo.edu.uagrm.tienda.exception.ImagenDemasiadoGrandeException;
 import bo.edu.uagrm.tienda.exception.ImagenInvalidaException;
+import bo.edu.uagrm.tienda.exception.ModeloDemasiadoGrandeException;
+import bo.edu.uagrm.tienda.exception.ModeloInvalidoException;
 import bo.edu.uagrm.tienda.exception.OrdenDeImagenesInvalidoException;
 import bo.edu.uagrm.tienda.exception.ProductoLlenoDeImagenesException;
 import bo.edu.uagrm.tienda.exception.ProductoNoEncontradoException;
@@ -104,6 +107,9 @@ public class ProductoService {
 	// contenido (decisiones.md → Imágenes subidas); si la transacción se revierte, el archivo nuevo se borra
 	@Transactional
 	public ProductoResponse agregarImagen(Long idProducto, byte[] contenido) {
+		if (contenido.length > FormatoImagen.MAXIMO) {
+			throw new ImagenDemasiadoGrandeException();
+		}
 		FormatoImagen formato = FormatoImagen.detectar(contenido).orElseThrow(ImagenInvalidaException::new);
 		Producto producto = bloquear(idProducto);
 		if (producto.getImagenes().size() >= MAXIMO_IMAGENES) {
@@ -143,6 +149,42 @@ public class ProductoService {
 		return productoRepository.findById(idProducto).filter(producto -> producto.getImagenes().contains(imagen))
 				.flatMap(producto -> almacen.leer(imagen))
 				.map(contenido -> new ImagenGuardada(contenido, FormatoImagen.deArchivo(imagen)));
+	}
+
+	// Como agregarImagen: con la fila bloqueada, dos reemplazos a la vez dejan un solo modelo; el anterior se borra
+	// solo si se confirma, y el nuevo si se revierte (decisiones.md → Visor 3D y modelos)
+	@Transactional
+	public ProductoResponse subirModelo(Long idProducto, byte[] contenido) {
+		if (contenido.length > FormatoModelo.MAXIMO) {
+			throw new ModeloDemasiadoGrandeException();
+		}
+		if (!FormatoModelo.esGlb(contenido)) {
+			throw new ModeloInvalidoException();
+		}
+		Producto producto = bloquear(idProducto);
+		String anterior = producto.getModelo();
+		String nuevo = almacen.guardar(contenido, FormatoModelo.EXTENSION);
+		ArchivosAlTerminar.borrar(almacen, anterior, nuevo);
+		producto.cambiarModelo(nuevo, contenido.length);
+		return ProductoResponse.from(producto);
+	}
+
+	// Sin modelo no cambia nada (HU-15 RF-6)
+	@Transactional
+	public ProductoResponse quitarModelo(Long idProducto) {
+		Producto producto = bloquear(idProducto);
+		if (producto.getModelo() != null) {
+			ArchivosAlTerminar.borrar(almacen, producto.getModelo(), null);
+			producto.quitarModelo();
+		}
+		return ProductoResponse.from(producto);
+	}
+
+	// Pública, como las imágenes: solo el modelo actual del producto (HU-15 RF-8)
+	@Transactional(readOnly = true)
+	public Optional<byte[]> modelo(Long idProducto, String archivo) {
+		return productoRepository.findById(idProducto).filter(producto -> archivo.equals(producto.getModelo()))
+				.flatMap(producto -> almacen.leer(archivo));
 	}
 
 	// Las tres primeras letras del nombre, sin tildes y en mayúsculas («Jardín» → «JAR»)

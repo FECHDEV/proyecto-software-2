@@ -1,0 +1,57 @@
+<section class="tarjeta" aria-labelledby="titulo-modelo" [attr.aria-busy]="operando() ? 'true' : null">
+  <h2 id="titulo-modelo" tabindex="-1">Modelo 3D</h2>
+  @if (producto(); as actual) {
+    <p class="ayuda">
+      Opcional: los clientes lo giran y lo acercan. Un archivo .glb de hasta 3 MB; lo recomendado es menos de 1 MB.
+    </p>
+
+    <div class="avisos">
+      <div role="alert">
+        @if (error()) {
+          <p class="aviso">{{ error() }}</p>
+        }
+      </div>
+      <div role="status">
+        @if (exito()) {
+          <p class="aviso exito">{{ exito() }}</p>
+        }
+        @if (avisoDePeso()) {
+          <p class="aviso atencion">{{ avisoDePeso() }}</p>
+        }
+      </div>
+    </div>
+
+    @if (modelo(); as modelo) {
+      <app-visor-3d [src]="url(modelo.archivo)" [alt]="'Modelo 3D de ' + actual.nombre" />
+      <p class="ayuda">Pesa {{ peso(modelo.peso) }}</p>
+    }
+
+    <div class="acciones">
+      <input
+        id="modelo-nuevo"
+        class="archivo"
+        type="file"
+        accept=".glb,model/gltf-binary"
+        [attr.aria-disabled]="operando() ? 'true' : null"
+        (click)="alPulsarElArchivo($event)"
+        (change)="elegir($event)"
+      />
+      <label class="boton secundario" for="modelo-nuevo">
+        {{ operando() ? 'Subiendo…' : modelo() ? 'Reemplazar' : 'Subir modelo' }}
+      </label>
+      @if (modelo()) {
+        <button
+          type="button"
+          class="boton secundario peligro"
+          aria-label="Quitar el modelo"
+          [attr.aria-disabled]="operando() ? 'true' : null"
+          (click)="quitar()"
+        >
+          Quitar
+        </button>
+      }
+    </div>
+  } @else {
+    <p class="ayuda">Cree el producto para subir su modelo 3D.</p>
+  }
+</section>

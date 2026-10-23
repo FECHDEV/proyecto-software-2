@@ -43,7 +43,19 @@ export interface Producto {
 	imagenes: string[];
 	// Sale en «Destacados» de la portada (HU-09 RF-4)
 	destacado: boolean;
+	// El modelo 3D, o null (HU-15)
+	modelo: ModeloDeProducto | null;
 }
+
+// El archivo .glb que guardó el backend y su peso en bytes
+export interface ModeloDeProducto {
+	archivo: string;
+	peso: number;
+}
+
+// Hasta 3 MB; más de 1 MB se acepta con un aviso (decisiones.md → Visor 3D y modelos)
+export const MAXIMO_MODELO = 3 * 1024 * 1024;
+export const MODELO_RECOMENDADO = 1024 * 1024;
 
 // Una fila de la lista de la gestión
 export interface ProductoResumen {
@@ -56,6 +68,8 @@ export interface ProductoResumen {
 	unidad: UnidadVenta;
 	activo: boolean;
 	imagenPrincipal: string | null;
+	// Tiene modelo 3D (HU-15 RF-12)
+	conModelo: boolean;
 }
 
 // Los filtros de la lista. null en categoría o estado es "todas"; la página

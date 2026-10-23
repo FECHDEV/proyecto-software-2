@@ -41,6 +41,8 @@ const MENSAJES: Record<string, string> = {
 		'El stock o el mínimo de este producto tienen decimales y esa unidad no los admite. Ajuste el stock antes de cambiarla.',
 	IMAGEN_INVALIDA: 'Ese archivo no es una imagen JPG, PNG o WebP.',
 	IMAGEN_DEMASIADO_GRANDE: 'La imagen pesa más de 2 MB. Elija una más liviana.',
+	MODELO_INVALIDO: 'Ese archivo no es un modelo 3D .glb.',
+	MODELO_DEMASIADO_GRANDE: 'El modelo pesa más de 3 MB. Prepárelo más liviano antes de subirlo.',
 	PRODUCTO_AGOTADO: 'Este producto está agotado.',
 	CARRITO_LLENO: 'Su carrito ya tiene 50 productos distintos. Quite alguno para agregar otro.',
 	CARRITO_VACIO: 'Su carrito está vacío. Agregue algún producto antes de confirmar.',
@@ -64,7 +66,12 @@ export function mensajeDeError(error: ErrorApi | null): string {
 	if (error === null) {
 		return '';
 	}
-	return (error.codigo === undefined ? undefined : MENSAJES[error.codigo]) ?? GENERICO;
+	return error.codigo === undefined ? GENERICO : mensajeDelCodigo(error.codigo);
+}
+
+// Lo que también se controla en el navegador antes de enviar (un modelo de más de 3 MB, HU-15)
+export function mensajeDelCodigo(codigo: string): string {
+	return MENSAJES[codigo] ?? GENERICO;
 }
 
 // Los errores por campo del backend son predicados pensados para leerse detrás

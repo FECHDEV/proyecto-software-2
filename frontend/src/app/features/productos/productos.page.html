@@ -99,6 +99,9 @@
               <th scope="row" data-etiqueta="Producto">
                 <span>
                   {{ producto.nombre }}
+                  @if (producto.conModelo) {
+                    <span class="tres-d" role="img" aria-label="Tiene modelo 3D">3D</span>
+                  }
                   @if (producto.marca) {
                     <span class="marca">{{ producto.marca }}</span>
                   }

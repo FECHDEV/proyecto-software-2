@@ -113,6 +113,18 @@ class CategoriasIntegracionTest {
 				.multipart().file(new MockMultipartFile("imagen", nombre, "image/jpeg", contenido)).exchange();
 	}
 
+	// HU-06: la imagen sigue en 2 MB aunque multipart deje pasar los 3 MB de un modelo (HU-15)
+	@Test
+	void unaImagenDe3MbEsDemasiadoGrande() throws Exception {
+		Integer id = idDe(crear(tokenAdmin, "Jardín", null));
+		byte[] grande = java.util.Arrays.copyOf(new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF }, 3 * 1024 * 1024);
+
+		MvcTestResult resultado = subirImagen(id, grande, "foto.jpg");
+
+		assertThat(resultado).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(resultado).bodyJson().extractingPath("$.codigo").isEqualTo("IMAGEN_DEMASIADO_GRANDE");
+	}
+
 	// HU-06 RF-1
 	@Test
 	void sinSesionLaGestionDevuelve401YUnClienteRecibe403() throws Exception {

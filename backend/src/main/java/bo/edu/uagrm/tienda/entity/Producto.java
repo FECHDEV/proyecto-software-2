@@ -112,6 +112,13 @@ public class Producto {
 	@Column(name = "imagen", nullable = false, length = 64)
 	private List<String> imagenes = new ArrayList<>();
 
+	// El modelo 3D (HU-15): el archivo que generó AlmacenImagenes y su peso en bytes, los dos o ninguno
+	@Column(length = 64)
+	private String modelo;
+
+	@Column(name = "peso_modelo")
+	private Long pesoModelo;
+
 	public static Producto crear(String nombre, String marca, String descripcion, BigDecimal precio,
 			UnidadVenta unidad, Categoria categoria, List<Caracteristica> ficha, LocalDateTime fechaAlta) {
 		Producto producto = new Producto();
@@ -179,6 +186,16 @@ public class Producto {
 	public void ordenarImagenes(List<String> orden) {
 		imagenes.clear();
 		imagenes.addAll(orden);
+	}
+
+	public void cambiarModelo(String modelo, long peso) {
+		this.modelo = Objects.requireNonNull(modelo);
+		this.pesoModelo = peso;
+	}
+
+	public void quitarModelo() {
+		modelo = null;
+		pesoModelo = null;
 	}
 
 	// Lo llama InventarioService con la fila bloqueada, junto con el movimiento que lo explica

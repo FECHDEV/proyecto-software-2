@@ -115,18 +115,20 @@ class CatalogoDemoIntegracionTest {
 		// La H2 es compartida y otro contexto pudo recrearla sin el administrador inicial
 		administradorInicial.run(new DefaultApplicationArguments());
 		limpiar();
-		for (String archivo : new String[] { "catalogo.csv", "martillo.png", "pala.png", "pala-detalle.png" }) {
+		for (String archivo : new String[] { "catalogo.csv", "martillo.png", "pala.png", "pala-detalle.png",
+				"martillo.glb" }) {
 			try (InputStream origen = getClass().getResourceAsStream("/demo/" + archivo)) {
 				Files.copy(origen, carpeta.resolve(archivo));
 			}
 		}
 	}
 
-	// También las imágenes que guardó la carga: la carpeta de las pruebas es compartida
+	// También las imágenes y los modelos que guardó la carga: la carpeta de las pruebas es compartida
 	@AfterEach
 	void limpiar() {
 		transaccion.execute(estado -> productoRepository.findAll().stream()
-				.flatMap(producto -> producto.getImagenes().stream()).toList()).forEach(almacen::borrar);
+				.flatMap(producto -> Stream.concat(producto.getImagenes().stream(), Stream.ofNullable(producto.getModelo())))
+				.toList()).forEach(almacen::borrar);
 		movimientoRepository.deleteAll();
 		productoRepository.deleteAll();
 		categoriaRepository.deleteAll();
@@ -138,8 +140,8 @@ class CatalogoDemoIntegracionTest {
 
 	private void cargar(Path directorio, AdministradorInicialProperties admin, InventarioService inventario) {
 		new CatalogoDemo(new CatalogoDemoProperties(directorio), admin, categoriaService, productoService, inventario,
-				productoRepository, categoriaRepository, usuarioRepository, validator, transaccion,
-				DataSize.ofMegabytes(2)).run(new DefaultApplicationArguments());
+				productoRepository, categoriaRepository, usuarioRepository, validator, transaccion)
+				.run(new DefaultApplicationArguments());
 	}
 
 	private long imagenesGuardadas() throws IOException {
@@ -194,12 +196,16 @@ class CatalogoDemoIntegracionTest {
 		assertThat(martillo.activo()).isTrue();
 		assertThat(martillo.imagenes()).hasSize(1);
 		assertThat(almacen.leer(martillo.imagenes().getFirst())).isPresent();
+		// HU-15 RF-13: el modelo de la columna modelo_3d
+		assertThat(martillo.modelo().peso()).isEqualTo(48);
+		assertThat(almacen.leer(martillo.modelo().archivo())).isPresent();
 
 		ProductoResponse pala = productos.get("Pala de punta");
 		assertThat(pala.idCategoria()).isEqualTo(jardin.getIdCategoria());
 		assertThat(pala.imagenes()).hasSize(2);
 
 		assertThat(pala.destacado()).isFalse();
+		assertThat(pala.modelo()).isNull();
 
 		ProductoResponse cinta = productos.get("Cinta métrica 5 m");
 		assertThat(cinta.imagenes()).isEmpty();
@@ -263,6 +269,33 @@ class CatalogoDemoIntegracionTest {
 				.contains("Fila 11: imagenes: pala.png está repetida")
 				.doesNotContain("Fila 2:")
 				.contains("No se cargó el catálogo de demostración");
+	}
+
+	// HU-15 RF-13: un modelo que no está, que no es glb o que pasa de 3 MB invalida su fila, como una imagen
+	@Test
+	void unModeloInvalidoNoCargaNada(CapturedOutput salida) throws IOException {
+		byte[] glb = Files.readAllBytes(carpeta.resolve("martillo.glb"));
+		byte[] grande = new byte[(int) DataSize.ofMegabytes(3).toBytes() + 1];
+		System.arraycopy(glb, 0, grande, 0, glb.length);
+		Files.write(carpeta.resolve("grande.glb"), grande);
+		Files.copy(carpeta.resolve("pala.png"), carpeta.resolve("pala.glb"));
+		escribirCatalogo("""
+				Herramientas manuales,Martillo,Bueno.,85.50,12,,martillo.glb,,
+				Herramientas manuales,Alicate,Bueno.,60,3,,no-existe.glb,,
+				Herramientas manuales,Llave,Bueno.,60,3,,grande.glb,,
+				Herramientas manuales,Pala,Bueno.,60,3,,pala.glb,,
+				Herramientas manuales,Lima,Bueno.,60,3,,../catalogo.csv,,
+				""");
+
+		cargar(carpeta);
+
+		assertThat(productoRepository.count()).isZero();
+		assertThat(salida.getOut())
+				.contains("Fila 3: modelo_3d: no-existe.glb no existe en la carpeta")
+				.contains("Fila 4: modelo_3d: grande.glb pasa de 3 MB")
+				.contains("Fila 5: modelo_3d: pala.glb no es un modelo .glb")
+				.contains("Fila 6: modelo_3d: ../catalogo.csv no es un archivo de la carpeta")
+				.doesNotContain("Fila 2:");
 	}
 
 	@Test

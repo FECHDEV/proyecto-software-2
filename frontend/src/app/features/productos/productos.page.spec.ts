@@ -24,6 +24,7 @@ const TALADRO: ProductoResumen = {
   unidad: 'UNIDAD',
   activo: true,
   imagenPrincipal: 'a.png',
+  conModelo: true,
 };
 
 const MANGUERA: ProductoResumen = {
@@ -36,6 +37,7 @@ const MANGUERA: ProductoResumen = {
   unidad: 'METRO',
   activo: false,
   imagenPrincipal: null,
+  conModelo: false,
 };
 
 const JARDIN: CategoriaGestion = {
@@ -155,6 +157,16 @@ describe('ProductosPage', () => {
     expect(imagen.getAttribute('src')).toBe('/api/productos/7/imagenes/a.png');
     expect(pantalla().querySelectorAll('td.miniatura img')).toHaveLength(1);
     expect(texto()).toContain('Página 1 de 2 · 21 productos');
+  });
+
+  // HU-15 RF-12: la marca «3D» solo en los que tienen modelo, con un nombre para el lector de pantalla
+  it('marca con 3D los que tienen modelo', async () => {
+    await abrir();
+
+    const marcas = pantalla().querySelectorAll('.tres-d');
+    expect(marcas).toHaveLength(1);
+    expect(marcas[0].closest('tr')?.textContent).toContain('Taladro percutor 750 W');
+    expect(marcas[0].getAttribute('aria-label')).toBe('Tiene modelo 3D');
   });
 
   // HU-07 RF-10: los filtros de la URL llegan al servicio; lo inválido se descarta
