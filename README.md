@@ -67,7 +67,7 @@ toma de ahí las credenciales. Las variables de entorno siguen teniendo priorida
 ```properties
 spring.datasource.password=${TIENDA_DB_PASSWORD:<contrasena>}
 tienda.jwt.secreto=${TIENDA_JWT_SECRETO:<clave base64 de al menos 256 bits>}
-tienda.admin.correo=${TIENDA_ADMIN_CORREO:admin@mail.com}
+tienda.admin.correo=${TIENDA_ADMIN_CORREO:<correo>}
 tienda.admin.contrasena=${TIENDA_ADMIN_PASSWORD:<contrasena>}
 ```
 
@@ -117,12 +117,14 @@ Las credenciales van **solo en el `.env`**, que no se versiona.
 
 ## Pago
 
-Por defecto, `TIENDA_PAGO_PROVEEDOR=simulador`: el pedido muestra un QR de
-prueba y los botones «Simular pago» y «Simular error» (solo existen con el
-simulador). Para cobrar de verdad con Libélula, en el `.env`:
-`TIENDA_PAGO_PROVEEDOR=libelula`, `TIENDA_PAGO_LIBELULA_APPKEY` (la de la
-cuenta) y `TIENDA_PAGO_LIBELULA_EMAIL` (el correo que exige en cada deuda); sin
-ellas la API no arranca. `TIENDA_PAGO_LIBELULA_URL` solo cambia para su entorno
+Con Docker, el pago es con Libélula por defecto
+(`TIENDA_PAGO_PROVEEDOR=libelula`): en el `.env` van
+`TIENDA_PAGO_LIBELULA_APPKEY` (la de la cuenta) y `TIENDA_PAGO_LIBELULA_EMAIL`
+(el correo que exige en cada deuda); sin ellas la API no arranca. Para probar
+en la PC sin cobrar, `TIENDA_PAGO_PROVEEDOR=simulador`: el pedido muestra un QR
+de prueba y los botones «Simular pago» y «Simular error» (solo existen con el
+simulador; nunca en un servidor público). Fuera de Docker y en las pruebas, el
+simulador es el que va por defecto. `TIENDA_PAGO_LIBELULA_URL` solo cambia para su entorno
 de pruebas. El aviso de pago de Libélula llega a `TIENDA_SITIO_URL`, así que
 solo funciona con el sitio publicado; en `localhost` alcanzan la pantalla y la
 revisión de cada minuto.

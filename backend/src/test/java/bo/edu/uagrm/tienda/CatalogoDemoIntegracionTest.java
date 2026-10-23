@@ -383,7 +383,7 @@ class CatalogoDemoIntegracionTest {
 
 	@Test
 	void sinLaCuentaDeTiendaAdminCorreoElStockVaAOtroAdministradorActivo() {
-		cargar(carpeta, new AdministradorInicialProperties("ya-no-existe@tienda.test", "clave-admin-pruebas"),
+		cargar(carpeta, new AdministradorInicialProperties("ya-no-existe@tienda.test", "clave-admin-pruebas", null, null),
 				inventarioService);
 
 		assertThat(productoRepository.count()).isEqualTo(3);
@@ -396,7 +396,7 @@ class CatalogoDemoIntegracionTest {
 		Usuario cliente = usuarioRepository.save(Usuario.registrarCliente("Ana", "Pérez", "ana-demo@mail.com",
 				"hash", null, LocalDateTime.of(2026, 10, 17, 9, 0)));
 		try {
-			cargar(carpeta, new AdministradorInicialProperties("ana-demo@mail.com", "clave-admin-pruebas"),
+			cargar(carpeta, new AdministradorInicialProperties("ana-demo@mail.com", "clave-admin-pruebas", null, null),
 					inventarioService);
 
 			assertThat(usuariosDeLosMovimientos())

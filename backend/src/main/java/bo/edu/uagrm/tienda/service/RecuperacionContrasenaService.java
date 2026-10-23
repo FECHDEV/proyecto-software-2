@@ -39,14 +39,19 @@ public class RecuperacionContrasenaService {
 				.ifPresent(this::iniciarRecuperacion);
 	}
 
+	// Primero la cuenta y después el enlace, como verificar el correo: el id de la cuenta se lee sin bloqueo y la cuenta
+	// se bloquea antes de cargarla, porque Usuario se guarda entero y una lectura sin bloqueo reescribiría el rol o el
+	// estado que un Administrador cambió al mismo tiempo
 	@Transactional
 	public void restablecer(RestablecimientoContrasenaRequest solicitud) {
+		String hash = TokenRecuperacion.hash(solicitud.token());
+		Usuario usuario = recuperacionRepository.idUsuarioDelToken(hash)
+				.flatMap(usuarioRepository::findConBloqueoByIdUsuario)
+				.orElseThrow(TokenRecuperacionInvalidoException::new);
 		LocalDateTime ahora = LocalDateTime.now(clock);
-		RecuperacionContrasena recuperacion = recuperacionRepository
-				.findByHashToken(TokenRecuperacion.hash(solicitud.token()))
+		recuperacionRepository.findByHashToken(hash)
 				.filter(registro -> registro.estaVigente(ahora))
 				.orElseThrow(TokenRecuperacionInvalidoException::new);
-		Usuario usuario = recuperacion.getUsuario();
 		usuario.cambiarContrasena(passwordEncoder.encode(solicitud.contrasena()));
 		invalidarPendientes(usuario);
 		// Quien restablece tiene el token que llegó al correo: el bloqueo por intentos fallidos ya no protege la cuenta

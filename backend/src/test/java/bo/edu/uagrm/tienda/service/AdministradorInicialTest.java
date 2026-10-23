@@ -57,8 +57,12 @@ class AdministradorInicialTest {
 	private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 	private void arrancar(String correo, String contrasena) {
+		arrancar(correo, contrasena, null, null);
+	}
+
+	private void arrancar(String correo, String contrasena, String nombre, String apellido) {
 		new AdministradorInicial(usuarioRepository, passwordEncoder, validator, RELOJ,
-				new AdministradorInicialProperties(correo, contrasena))
+				new AdministradorInicialProperties(correo, contrasena, nombre, apellido))
 				.run(new DefaultApplicationArguments());
 	}
 
@@ -81,6 +85,42 @@ class AdministradorInicialTest {
 		assertThat(passwordEncoder.matches("clave-admin-1", admin.getContrasena())).isTrue();
 		// HU-20 RF-2
 		assertThat(admin.isCorreoVerificado()).isTrue();
+	}
+
+	@Test
+	void tomaElNombreYElApellidoDeLasVariablesSinEspaciosDeMas() {
+		given(usuarioRepository.existsByRol(Rol.ADMINISTRADOR)).willReturn(false);
+		given(usuarioRepository.existsByCorreo("admin@tienda.com")).willReturn(false);
+
+		arrancar("admin@tienda.com", "clave-admin-1", " Fabio ", " Cruz ");
+
+		ArgumentCaptor<Usuario> guardado = ArgumentCaptor.forClass(Usuario.class);
+		then(usuarioRepository).should().save(guardado.capture());
+		assertThat(guardado.getValue().getNombre()).isEqualTo("Fabio");
+		assertThat(guardado.getValue().getApellido()).isEqualTo("Cruz");
+	}
+
+	@Test
+	void sinNombreNiApellidoQuedaAdministradorInicial() {
+		given(usuarioRepository.existsByRol(Rol.ADMINISTRADOR)).willReturn(false);
+		given(usuarioRepository.existsByCorreo("admin@tienda.com")).willReturn(false);
+
+		arrancar("admin@tienda.com", "clave-admin-1", "  ", "");
+
+		ArgumentCaptor<Usuario> guardado = ArgumentCaptor.forClass(Usuario.class);
+		then(usuarioRepository).should().save(guardado.capture());
+		assertThat(guardado.getValue().getNombre()).isEqualTo("Administrador");
+		assertThat(guardado.getValue().getApellido()).isEqualTo("Inicial");
+	}
+
+	@Test
+	void unNombreDeMasDe80CaracteresNoArranca() {
+		given(usuarioRepository.existsByRol(Rol.ADMINISTRADOR)).willReturn(false);
+
+		assertThatThrownBy(() -> arrancar("admin@tienda.com", "clave-admin-1", "a".repeat(81), "Cruz"))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("TIENDA_ADMIN_NOMBRE");
+		then(usuarioRepository).should(never()).save(any(Usuario.class));
 	}
 
 	@Test

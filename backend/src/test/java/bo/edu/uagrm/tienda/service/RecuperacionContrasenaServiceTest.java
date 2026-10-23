@@ -93,9 +93,11 @@ class RecuperacionContrasenaServiceTest {
 		return guardada.getValue();
 	}
 
-	// Registro existente para ese token, tal como lo devolvería la base
+	// Registro existente para ese token, tal como lo devolvería la base, con la cuenta que se bloquea antes
 	private RecuperacionContrasena registrada(Usuario usuario, String token, LocalDateTime creada) {
 		RecuperacionContrasena recuperacion = RecuperacionContrasena.crear(usuario, TokenRecuperacion.hash(token), creada);
+		given(recuperacionRepository.idUsuarioDelToken(TokenRecuperacion.hash(token))).willReturn(Optional.of(7L));
+		given(usuarioRepository.findConBloqueoByIdUsuario(7L)).willReturn(Optional.of(usuario));
 		given(recuperacionRepository.findByHashToken(TokenRecuperacion.hash(token))).willReturn(Optional.of(recuperacion));
 		return recuperacion;
 	}

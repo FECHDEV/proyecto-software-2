@@ -326,7 +326,8 @@ el registro, el correo real por Gmail con su enlace, el aviso del carrito y
 ### Pendientes
 
 - `RecuperacionContrasenaService` cruza los bloqueos (`restablecer` bloquea el
-  enlace antes que la cuenta), lo mismo que se corrigió acá.
+  enlace antes que la cuenta), lo mismo que se corrigió acá. *Resuelto el
+  23/10/2026* (`decisiones.md` → «`Usuario` es una sola clase…»).
 - El correo (verificación y recuperación) se envía antes del commit: si la
   transacción falla después, llega un enlace que no sirve. Se arregla
   enviando después del commit (`@TransactionalEventListener`).

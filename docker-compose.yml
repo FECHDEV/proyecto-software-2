@@ -39,9 +39,12 @@ services:
       # El Administrador inicial se crea solo si todavía no hay ninguno (decisiones.md)
       TIENDA_ADMIN_CORREO: ${TIENDA_ADMIN_CORREO:?Falta TIENDA_ADMIN_CORREO en .env}
       TIENDA_ADMIN_PASSWORD: ${TIENDA_ADMIN_PASSWORD:?Falta TIENDA_ADMIN_PASSWORD en .env}
+      TIENDA_ADMIN_NOMBRE: ${TIENDA_ADMIN_NOMBRE:-}
+      TIENDA_ADMIN_APELLIDO: ${TIENDA_ADMIN_APELLIDO:-}
       TIENDA_CORS_ORIGENES: ${TIENDA_CORS_ORIGENES:-http://localhost}
-      TIENDA_PAGO_PROVEEDOR: ${TIENDA_PAGO_PROVEEDOR:-simulador}
-      # Solo con libelula (decisiones.md → Pagos); la URL vacía usa la de producción
+      # Libélula por defecto, y sin appkey ni correo la API no arranca; simulador solo para probar en la PC
+      # (decisiones.md → Pagos). La URL vacía usa la de producción
+      TIENDA_PAGO_PROVEEDOR: ${TIENDA_PAGO_PROVEEDOR:-libelula}
       TIENDA_PAGO_LIBELULA_URL: ${TIENDA_PAGO_LIBELULA_URL:-https://api.libelula.bo}
       TIENDA_PAGO_LIBELULA_APPKEY: ${TIENDA_PAGO_LIBELULA_APPKEY:-}
       TIENDA_PAGO_LIBELULA_EMAIL: ${TIENDA_PAGO_LIBELULA_EMAIL:-}

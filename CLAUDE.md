@@ -25,7 +25,7 @@ Integral del Norte, Montero, Santa Cruz, Bolivia. Metodología **Scrum**.
 | Backend | Java 21 / Spring Boot 4.1.1 |
 | Base de datos | MySQL 8.4 LTS (*20/10/2026*, antes 8.0, sin soporte desde abril de 2026); H2 en las pruebas |
 | Correo | Gmail por SMTP con una cuenta del proyecto y una contraseña de aplicación en `.env`; simulador por defecto en desarrollo y pruebas |
-| Pago | Detrás de la interfaz propia `IPago`, con simulador por defecto |
+| Pago | Detrás de la interfaz propia `IPago`: Libélula por defecto en Docker, simulador en desarrollo y pruebas |
 | Contenedores | Docker Compose; Caddy con HTTPS en la nube |
 | CI | GitHub Actions (`.github/workflows/pruebas.yml`) en cada PR y en cada push a `main` |
 
@@ -59,9 +59,11 @@ de asumir.
   exista; sin modelo, se ve solo con sus fotos.
 
 ### Pago
-- Detrás de `IPago`, con un **simulador local** por defecto. El proveedor real
-  es **Libélula**: su adaptador existe desde HU-13 y se activa con
-  `TIENDA_PAGO_PROVEEDOR=libelula` y la appkey en `.env`.
+- Detrás de `IPago`. El proveedor real es **Libélula** (adaptador desde
+  HU-13), **por defecto en Docker** desde el *23/10/2026*: sin la appkey y el
+  correo en `.env`, la API no arranca. El **simulador local** queda en
+  desarrollo, en las pruebas y con `TIENDA_PAGO_PROVEEDOR=simulador` (solo
+  para probar en la PC: con él, cualquier cliente marca pagado su pedido).
 - **Sin facturación SIAT.**
 - El nombre del proveedor aparece **solo** en su adaptador y en su
   configuración; nunca en entidades, servicios, controladores ni en la API.

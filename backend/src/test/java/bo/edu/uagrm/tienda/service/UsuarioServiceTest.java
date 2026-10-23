@@ -204,7 +204,7 @@ class UsuarioServiceTest {
 	@Test
 	void actualizarDatosCambiaSoloNombreApellidoYTelefono() {
 		Usuario ana = ana();
-		given(usuarioRepository.findById(7L)).willReturn(Optional.of(ana));
+		given(usuarioRepository.findConBloqueoByIdUsuario(7L)).willReturn(Optional.of(ana));
 
 		Usuario actualizado = usuarioService.actualizarDatos(7L,
 				new DatosPersonalesRequest("Ana María", "Rojas Paz", "71111111"));
@@ -222,7 +222,7 @@ class UsuarioServiceTest {
 	// HU-04 RF-3
 	@Test
 	void telefonoEnBlancoAlActualizarDejaLaCuentaSinTelefono() {
-		given(usuarioRepository.findById(7L)).willReturn(Optional.of(ana()));
+		given(usuarioRepository.findConBloqueoByIdUsuario(7L)).willReturn(Optional.of(ana()));
 
 		assertThat(usuarioService.actualizarDatos(7L, new DatosPersonalesRequest("Ana", "Rojas", "  ")).getTelefono())
 				.isNull();
@@ -232,7 +232,7 @@ class UsuarioServiceTest {
 	@Test
 	void actualizarConLosMismosDatosNoAlteraLaCuenta() {
 		Usuario ana = ana();
-		given(usuarioRepository.findById(7L)).willReturn(Optional.of(ana));
+		given(usuarioRepository.findConBloqueoByIdUsuario(7L)).willReturn(Optional.of(ana));
 
 		usuarioService.actualizarDatos(7L, new DatosPersonalesRequest("Ana", "Rojas", "70000000"));
 

@@ -20,9 +20,18 @@ public record AdministradorInicialProperties(
 		@NotBlank(message = "TIENDA_ADMIN_PASSWORD es obligatoria")
 		@Size(min = 8, message = "TIENDA_ADMIN_PASSWORD debe tener al menos 8 caracteres")
 		@MaximoBytesUtf8(value = 72, message = "TIENDA_ADMIN_PASSWORD admite hasta 72 bytes")
-		String contrasena) {
+		String contrasena,
+
+		// Opcionales: vacíos, la cuenta queda como «Administrador Inicial»
+		@Size(max = 80, message = "TIENDA_ADMIN_NOMBRE admite hasta 80 caracteres")
+		String nombre,
+
+		@Size(max = 80, message = "TIENDA_ADMIN_APELLIDO admite hasta 80 caracteres")
+		String apellido) {
 
 	public AdministradorInicialProperties {
 		correo = correo == null ? null : Usuario.normalizarCorreo(correo);
+		nombre = nombre == null || nombre.isBlank() ? "Administrador" : nombre.strip();
+		apellido = apellido == null || apellido.isBlank() ? "Inicial" : apellido.strip();
 	}
 }
