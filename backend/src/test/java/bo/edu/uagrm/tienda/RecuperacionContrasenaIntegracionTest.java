@@ -33,9 +33,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.jayway.jsonpath.JsonPath;
 
+import bo.edu.uagrm.tienda.dto.RestablecimientoContrasenaRequest;
 import bo.edu.uagrm.tienda.dto.SolicitudRecuperacionRequest;
 import bo.edu.uagrm.tienda.entity.EstadoCuenta;
 import bo.edu.uagrm.tienda.entity.Rol;
@@ -68,6 +70,9 @@ class RecuperacionContrasenaIntegracionTest {
 
 	@Autowired
 	private GestionUsuariosService gestionUsuarios;
+
+	@Autowired
+	private TransactionTemplate transaccion;
 
 	// Deja pasar la llamada al simulador y permite leer el token, que la base no guarda
 	@MockitoSpyBean
@@ -295,5 +300,43 @@ class RecuperacionContrasenaIntegracionTest {
 
 		assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM recuperacion_contrasena WHERE usado = FALSE",
 				Integer.class)).isEqualTo(1);
+	}
+
+	// HU-03 RF-8 (23/10/2026): restablecer bloquea la cuenta antes que el enlace y no reescribe el rol anterior sobre
+	// un cambio de rol hecho al mismo tiempo
+	@Test
+	void restablecerMientrasUnAdministradorCambiaElRolNoLoRevierte() throws Exception {
+		solicitar("ana@mail.com", "10.1.0.13");
+		String token = ultimoTokenEnviadoA("ana@mail.com");
+		Long idAdmin = usuarioRepository.findAll().stream().filter(cuenta -> cuenta.getRol() == Rol.ADMINISTRADOR)
+				.findFirst().orElseThrow().getIdUsuario();
+		Long idAna = usuarioRepository.findByCorreo("ana@mail.com").orElseThrow().getIdUsuario();
+		CountDownLatch bloqueada = new CountDownLatch(1);
+		ExecutorService hilo = Executors.newSingleThreadExecutor();
+		try {
+			// El administrador cambia el rol y tarda en confirmar: sin bloqueo, el restablecimiento lee el rol anterior
+			Future<?> cambio = hilo.submit(() -> transaccion.executeWithoutResult(estado -> {
+				gestionUsuarios.cambiarRol(idAdmin, idAna, Rol.EMPLEADO);
+				bloqueada.countDown();
+				esperar(300);
+			}));
+			assertThat(bloqueada.await(10, TimeUnit.SECONDS)).isTrue();
+
+			recuperacionContrasenaService.restablecer(new RestablecimientoContrasenaRequest(token, "nueva-clave-1"));
+			cambio.get(10, TimeUnit.SECONDS);
+		} finally {
+			hilo.shutdownNow();
+		}
+
+		assertThat(usuarioRepository.findById(idAna).orElseThrow().getRol()).isEqualTo(Rol.EMPLEADO);
+		assertThat(iniciarSesion("ana@mail.com", "nueva-clave-1")).hasStatus(HttpStatus.OK);
+	}
+
+	private static void esperar(long milisegundos) {
+		try {
+			Thread.sleep(milisegundos);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 	}
 }

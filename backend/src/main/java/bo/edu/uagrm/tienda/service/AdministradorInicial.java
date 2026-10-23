@@ -54,7 +54,7 @@ public class AdministradorInicial implements ApplicationRunner {
 			throw new IllegalStateException("No existe ningún administrador y TIENDA_ADMIN_CORREO ya pertenece a "
 					+ "otra cuenta, a la que no se le cambia el rol. Configure otro correo.");
 		}
-		usuarioRepository.save(Usuario.crearAdministrador("Administrador", "Inicial", propiedades.correo(),
+		usuarioRepository.save(Usuario.crearAdministrador(propiedades.nombre(), propiedades.apellido(), propiedades.correo(),
 				passwordEncoder.encode(propiedades.contrasena()), LocalDateTime.now(clock)));
 		log.info("Administrador inicial creado.");
 	}

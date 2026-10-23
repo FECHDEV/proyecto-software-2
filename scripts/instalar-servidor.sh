@@ -7,8 +7,8 @@
 #   bash scripts/instalar-servidor.sh completar   interactiva: la contraseña del Administrador y los
 #                                                 contenedores
 #   bash scripts/instalar-servidor.sh             las dos
-# Variables opcionales: TIENDA_DOMINIO (por defecto, la IP en sslip.io) y ADMIN_CORREO
-# (admin@mail.com). Se puede volver a correr. Las credenciales de Gmail no las pide: se ponen a mano en
+# Variable opcional: TIENDA_DOMINIO (por defecto, la IP en sslip.io). El correo, el nombre y el apellido del
+# Administrador los pide la parte completar. Se puede volver a correr. Las credenciales de Gmail no las pide: se ponen a mano en
 # el .env (TIENDA_CORREO_*), y mientras falten los correos van al simulador.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -52,21 +52,39 @@ preparar() {
     poner MYSQL_ROOT_PASSWORD "$(openssl rand -hex 24)"
     poner TIENDA_JWT_SECRETO "$(openssl rand -base64 48 | tr -d '\n')"
     poner TIENDA_DOMINIO "${TIENDA_DOMINIO:-${IP//./-}.sslip.io}"
-    poner TIENDA_ADMIN_CORREO "${ADMIN_CORREO:-admin@mail.com}"
     chmod 600 .env
-    echo "Listo: .env creado con claves nuevas. Falta la contraseña del Administrador (parte completar)."
+    echo "Listo: .env creado con claves nuevas. Faltan los datos del Administrador (parte completar)."
   else
     echo ".env ya existe: se deja como está."
   fi
 
   paso "Imágenes (la primera vez tarda 10-15 minutos: compila el backend y el frontend)"
-  # docker-compose.yml exige la contraseña del Administrador hasta para compilar. Todavía no está (la pone
-  # la parte completar): un valor provisional solo para este comando, que no se guarda en el .env
-  TIENDA_ADMIN_PASSWORD=provisional "${COMPOSE[@]}" build
-  TIENDA_ADMIN_PASSWORD=provisional "${COMPOSE[@]}" pull --quiet --ignore-buildable
+  # docker-compose.yml exige el correo y la contraseña del Administrador hasta para compilar. Todavía no
+  # están (los pone la parte completar): valores provisionales solo para estos comandos, que no se guardan
+  export TIENDA_ADMIN_CORREO=provisional@localhost TIENDA_ADMIN_PASSWORD=provisional
+  "${COMPOSE[@]}" build
+  "${COMPOSE[@]}" pull --quiet --ignore-buildable
+  unset TIENDA_ADMIN_CORREO TIENDA_ADMIN_PASSWORD
 }
 
 completar() {
+  paso "Administrador inicial"
+  if [ -z "$(valor TIENDA_ADMIN_CORREO)" ]; then
+    while true; do
+      read -rp "Correo: " CORREO
+      [[ "$CORREO" == ?*@?*.?* && "$CORREO" != *[[:space:]\']* ]] && break
+      echo "No parece un correo (sin espacios ni comillas simples). De nuevo."
+    done
+    read -rp "Nombre (vacío: Administrador): " NOMBRE
+    read -rp "Apellido (vacío: Inicial): " APELLIDO
+    poner TIENDA_ADMIN_CORREO "$CORREO"
+    # Sin comillas simples: poner las usa para encerrar el valor
+    poner TIENDA_ADMIN_NOMBRE "${NOMBRE//\'/}"
+    poner TIENDA_ADMIN_APELLIDO "${APELLIDO//\'/}"
+  else
+    echo "Correo: $(valor TIENDA_ADMIN_CORREO) (ya está en el .env)"
+  fi
+
   paso "Contraseña del Administrador inicial ($(valor TIENDA_ADMIN_CORREO))"
   if [ -z "$(valor TIENDA_ADMIN_PASSWORD)" ]; then
     while true; do
@@ -79,6 +97,13 @@ completar() {
     unset CLAVE CLAVE2
   else
     echo "Ya está en el .env."
+  fi
+
+  # Con Libélula (el proveedor por defecto) y sin su appkey o su correo, la API no arranca
+  if [ "$(valor TIENDA_PAGO_PROVEEDOR)" != simulador ] &&     { [ -z "$(valor TIENDA_PAGO_LIBELULA_APPKEY)" ] || [ -z "$(valor TIENDA_PAGO_LIBELULA_EMAIL)" ]; }; then
+    echo "Faltan TIENDA_PAGO_LIBELULA_APPKEY o TIENDA_PAGO_LIBELULA_EMAIL en el .env: completarlos y volver a"
+    echo "correr '$0 completar'. Solo para probar, sin cobrar: TIENDA_PAGO_PROVEEDOR=simulador."
+    exit 1
   fi
 
   paso "Contenedores"
@@ -104,6 +129,7 @@ completar() {
   echo "Sitio:   https://$(valor TIENDA_DOMINIO)"
   echo "El certificado HTTPS se pide la primera vez que se abre la dirección (unos segundos)."
   [ "$(valor TIENDA_CORREO_PROVEEDOR)" = smtp ] || echo "Correo: simulador. Para Gmail, completar TIENDA_CORREO_* en el .env y volver a levantar."
+  [ "$(valor TIENDA_PAGO_PROVEEDOR)" != simulador ] || echo "Pago: SIMULADOR. Cualquier cliente puede marcar pagado su pedido: solo para pruebas."
 }
 
 case "$PARTE" in

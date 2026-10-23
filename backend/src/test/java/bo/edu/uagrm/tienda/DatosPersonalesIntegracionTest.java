@@ -24,14 +24,21 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.jayway.jsonpath.JsonPath;
 
 import bo.edu.uagrm.tienda.dto.CambioContrasenaRequest;
+import bo.edu.uagrm.tienda.dto.DatosPersonalesRequest;
+import bo.edu.uagrm.tienda.entity.EstadoCuenta;
+import bo.edu.uagrm.tienda.entity.Rol;
+import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.exception.ContrasenaActualIncorrectaException;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import bo.edu.uagrm.tienda.service.AdministradorInicial;
 import bo.edu.uagrm.tienda.service.AutenticacionService;
+import bo.edu.uagrm.tienda.service.GestionUsuariosService;
+import bo.edu.uagrm.tienda.service.UsuarioService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -55,6 +62,15 @@ class DatosPersonalesIntegracionTest {
 
 	@Autowired
 	private AutenticacionService autenticacionService;
+
+	@Autowired
+	private UsuarioService usuarioService;
+
+	@Autowired
+	private GestionUsuariosService gestionUsuarios;
+
+	@Autowired
+	private TransactionTemplate transaccion;
 
 	@BeforeEach
 	void registrarAna() {
@@ -224,6 +240,44 @@ class DatosPersonalesIntegracionTest {
 			assertThat(resultados).containsExactlyInAnyOrder("cambiada", "rechazada");
 		} finally {
 			hilos.shutdownNow();
+		}
+	}
+
+	// HU-04 RF-2 (23/10/2026): guardar los datos bloquea la cuenta y no reescribe el estado anterior sobre una
+	// desactivación hecha al mismo tiempo
+	@Test
+	void guardarLosDatosMientrasUnAdministradorDesactivaLaCuentaNoLaReactiva() throws Exception {
+		administradorInicial.run(new DefaultApplicationArguments());
+		Long idAdmin = usuarioRepository.findByCorreo("admin@tienda.test").orElseThrow().getIdUsuario();
+		Long idAna = usuarioRepository.findByCorreo("ana@mail.com").orElseThrow().getIdUsuario();
+		CountDownLatch bloqueada = new CountDownLatch(1);
+		ExecutorService hilo = Executors.newSingleThreadExecutor();
+		try {
+			// El administrador desactiva y tarda en confirmar: sin bloqueo, Ana lee la cuenta todavía activa
+			Future<?> desactivacion = hilo.submit(() -> transaccion.executeWithoutResult(estado -> {
+				gestionUsuarios.cambiarEstado(idAdmin, idAna, EstadoCuenta.DESACTIVADA);
+				bloqueada.countDown();
+				esperar(300);
+			}));
+			assertThat(bloqueada.await(10, TimeUnit.SECONDS)).isTrue();
+
+			usuarioService.actualizarDatos(idAna, new DatosPersonalesRequest("Ana María", "Rojas", null));
+			desactivacion.get(10, TimeUnit.SECONDS);
+		} finally {
+			hilo.shutdownNow();
+		}
+
+		Usuario ana = usuarioRepository.findById(idAna).orElseThrow();
+		assertThat(ana.getEstado()).isEqualTo(EstadoCuenta.DESACTIVADA);
+		assertThat(ana.getNombre()).isEqualTo("Ana María");
+		assertThat(ana.getRol()).isEqualTo(Rol.CLIENTE);
+	}
+
+	private static void esperar(long milisegundos) {
+		try {
+			Thread.sleep(milisegundos);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 		}
 	}
 }

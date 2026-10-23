@@ -65,9 +65,11 @@ public class UsuarioService {
 		return usuarioRepository.findById(idUsuario).orElseThrow();
 	}
 
+	// Con la cuenta bloqueada: Usuario se guarda entero, y una lectura sin bloqueo reescribiría el estado o el rol
+	// anteriores sobre lo que un Administrador cambió al mismo tiempo
 	@Transactional
 	public Usuario actualizarDatos(Long idUsuario, DatosPersonalesRequest solicitud) {
-		Usuario usuario = usuarioRepository.findById(idUsuario).orElseThrow();
+		Usuario usuario = usuarioRepository.findConBloqueoByIdUsuario(idUsuario).orElseThrow();
 		usuario.actualizarDatos(solicitud.nombre(), solicitud.apellido(), solicitud.telefono());
 		return usuario;
 	}

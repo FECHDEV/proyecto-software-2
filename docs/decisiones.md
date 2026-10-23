@@ -82,7 +82,8 @@ cambia: un estado nuevo vuelve a pedir esta decisión.
 ### Pago: interfaz propia con dos implementaciones
 
 `IPago` (`service/pago/`) tiene un **simulador local**, que se usa por defecto
-en desarrollo y pruebas, y un **adaptador del proveedor real**
+en desarrollo y pruebas, y un **adaptador del proveedor real**, por defecto en
+Docker desde el 23/10/2026 (ver «Pagos»)
 (`AdaptadorLibelula`, desde HU-13; ver «Pagos»). Se elige con `tienda.pago.proveedor`
 (`simulador` | el nombre del proveedor), y las credenciales del adaptador van
 en variables `TIENDA_PAGO_*` del `.env`.
@@ -137,6 +138,14 @@ cambia el id y rompe el historial.
 **El control de acceso se valida en el backend** (`SecurityConfig`). Ocultar
 opciones en Angular según el rol es usabilidad, no seguridad.
 
+*23/10/2026 (antes de publicar).* **Todo lo que escribe una cuenta la lee
+bloqueada** (`findConBloqueoByIdUsuario`). `Usuario` se guarda entero (sin
+`@DynamicUpdate` ni `@Version`): una lectura sin bloqueo reescribía el estado
+o el rol anteriores sobre lo que un Administrador cambió al mismo tiempo. Lo
+corrigen «Mis datos» (`UsuarioService.actualizarDatos`) y restablecer la
+contraseña, que ahora bloquea la cuenta antes que el enlace, como verificar el
+correo.
+
 ### Autenticación por JWT stateless
 
 Spring Security con el token en el header `Authorization`.
@@ -178,7 +187,11 @@ compara con costo 12); en un servidor nuevo no hay cuentas viejas.
 `AdministradorInicial`: al arrancar, si no existe ningún usuario con rol
 ADMINISTRADOR, crea uno con `TIENDA_ADMIN_CORREO` y la contraseña hasheada de
 `TIENDA_ADMIN_PASSWORD`. Es idempotente y no deja un hash escrito en un
-archivo versionado, como haría un `data.sql`.
+archivo versionado, como haría un `data.sql`. *23/10/2026:* el nombre y el
+apellido salen de `TIENDA_ADMIN_NOMBRE` y `TIENDA_ADMIN_APELLIDO`
+(opcionales; vacíos, «Administrador Inicial»), e `instalar-servidor.sh` pide
+el correo, el nombre y el apellido en vez de usar `admin@mail.com`. Ningún dato
+personal en el repositorio: van en el `.env`.
 
 - Si no hay ningún administrador y faltan las variables, o no cumplen las
   reglas del registro, la aplicación **no arranca**: un despliegue sin
@@ -888,6 +901,13 @@ mismo equipo.
 - **El simulador sigue por defecto,** y con él, bajo el QR, «Simular pago» y
   «Simular error», marcados como herramienta de pruebas; con otro proveedor
   ni los botones ni su endpoint existen.
+- *23/10/2026 (antes de publicar).* **En Docker, Libélula por defecto**
+  (`application-prod.properties` y `docker-compose.yml`): con el simulador
+  por defecto, un servidor sin `TIENDA_PAGO_PROVEEDOR` dejaba a cualquier
+  cliente marcar pagado su pedido. Sin la appkey o el correo, la API no
+  arranca (`instalar-servidor.sh` lo avisa antes de levantar). El simulador
+  queda para probar en la PC, con `TIENDA_PAGO_PROVEEDOR=simulador` en el
+  `.env`, y sigue por defecto fuera de Docker y en las pruebas.
 
 - *20/10/2026 (revisión de HU-13).* **Lo que puede vencer un pedido va con
   READ_COMMITTED** (`PedidoService` y `CarritoService.ver`, además de
