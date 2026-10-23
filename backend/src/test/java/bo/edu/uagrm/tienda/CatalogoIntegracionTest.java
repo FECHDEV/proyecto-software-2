@@ -14,8 +14,10 @@ import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
@@ -26,6 +28,7 @@ import bo.edu.uagrm.tienda.repository.CategoriaRepository;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 import bo.edu.uagrm.tienda.service.AdministradorInicial;
+import bo.edu.uagrm.tienda.service.FormatoModeloTest;
 
 // HU-09: la API pública del catálogo, sin sesión
 @SpringBootTest
@@ -191,7 +194,7 @@ class CatalogoIntegracionTest {
 
 		Map<String, Object> tarjeta = JsonPath.read(resultado.getResponse().getContentAsString(), "$.contenido[0]");
 		assertThat(tarjeta).containsOnlyKeys("idProducto", "nombre", "marca", "precio", "unidad", "imagenPrincipal",
-				"disponible");
+				"disponible", "conModelo");
 		assertThat(tarjeta).containsEntry("nombre", "Pala").containsEntry("disponible", true);
 		assertThat(nombres(resultado, "$.contenido[*].disponible")).isEqualTo(List.of(true, false));
 		assertThat(resultado.getResponse().getContentAsString()).doesNotContain("stock", "activo", "destacado",
@@ -293,8 +296,9 @@ class CatalogoIntegracionTest {
 
 		Map<String, Object> detalle = JsonPath.read(json, "$");
 		assertThat(detalle).containsOnlyKeys("idProducto", "codigo", "nombre", "marca", "idCategoria", "categoria",
-				"precio", "unidad", "descripcion", "ficha", "imagenes", "disponible", "relacionados");
-		assertThat(json).doesNotContain("stock", "activo", "destacado", "fechaAlta");
+				"precio", "unidad", "descripcion", "ficha", "imagenes", "disponible", "modelo", "relacionados");
+		// Del modelo, solo el archivo: su peso es de la gestión (HU-16 RF-1)
+		assertThat(json).doesNotContain("stock", "activo", "destacado", "fechaAlta", "peso");
 	}
 
 	// HU-10 RF-4
@@ -332,6 +336,58 @@ class CatalogoIntegracionTest {
 		List<String> relacionados = nombres(get(PRODUCTOS + "/{id}", taladro), "$.relacionados[*].nombre");
 
 		assertThat(relacionados).hasSize(12).doesNotContain("Taladro").first().isEqualTo("Llave 12");
+	}
+
+	// --- HU-16: el modelo 3D en el catálogo público ---
+
+	private String subirModelo(Integer idProducto) throws Exception {
+		MvcTestResult subido = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+				.multipart(HttpMethod.PUT, "/api/gestion/productos/{id}/modelo", idProducto)
+				.file(new MockMultipartFile("modelo", "martillo.glb", "model/gltf-binary", FormatoModeloTest.glb(256)))
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + admin));
+		assertThat(subido).hasStatus(HttpStatus.OK);
+		return JsonPath.read(subido.getResponse().getContentAsString(), "$.modelo.archivo");
+	}
+
+	// HU-16 RF-1
+	@Test
+	void detalleTraeElModeloSiTiene() throws Exception {
+		Integer martillo = producto("Martillo", null, herramientas, "85.00", 3, false);
+		String archivo = subirModelo(martillo);
+
+		MvcTestResult resultado = get(PRODUCTOS + "/{id}", martillo);
+
+		assertThat((String) JsonPath.read(resultado.getResponse().getContentAsString(), "$.modelo")).isEqualTo(archivo);
+		assertThat(get(PRODUCTOS + "/{id}/modelo/{archivo}", martillo, archivo)).hasStatus(HttpStatus.OK);
+	}
+
+	// HU-16 RF-1
+	@Test
+	void detalleSinModeloTraeNull() throws Exception {
+		Integer pala = producto("Pala", null, jardin, "50.00", 3, false);
+
+		Map<String, Object> detalle = JsonPath.read(get(PRODUCTOS + "/{id}", pala).getResponse().getContentAsString(),
+				"$");
+
+		assertThat(detalle).containsEntry("modelo", null);
+	}
+
+	// HU-16 RF-2: el catálogo, la portada y «Más de…» del detalle
+	@Test
+	void tarjetasDicenSiTienenModelo() throws Exception {
+		Integer martillo = producto("Martillo", null, herramientas, "85.00", 3, true);
+		Integer llave = producto("Llave", null, herramientas, "30.00", 3, true);
+		subirModelo(martillo);
+
+		MvcTestResult catalogo = get(PRODUCTOS + "?orden=NOMBRE");
+		assertThat(nombres(catalogo, "$.contenido[*].nombre")).containsExactly("Llave", "Martillo");
+		assertThat(nombres(catalogo, "$.contenido[*].conModelo")).isEqualTo(List.of(false, true));
+
+		MvcTestResult portada = get(PRODUCTOS + "/portada");
+		assertThat(nombres(portada, "$.destacados[?(@.nombre == 'Martillo')].conModelo")).isEqualTo(List.of(true));
+		assertThat(nombres(portada, "$.destacados[?(@.nombre == 'Llave')].conModelo")).isEqualTo(List.of(false));
+
+		assertThat(nombres(get(PRODUCTOS + "/{id}", llave), "$.relacionados[*].conModelo")).isEqualTo(List.of(true));
 	}
 
 	// HU-10 RF-8: los tres casos responden igual

@@ -3,15 +3,33 @@
   @if (!fallo) {
     <div class="marco">
       @if (disponible()) {
+        <!-- Sin auto-rotate: el modelo queda quieto, como los carruseles (HU-16 RF-7) -->
         <model-viewer
           [attr.src]="src()"
           [attr.alt]="alt()"
+          [attr.poster]="poster()"
           camera-controls
           touch-action="pan-y"
           shadow-intensity="1"
+          [class.foco-teclado]="focoConTeclado()"
+          (focusin)="alEnfocar($event)"
+          (focusout)="focoConTeclado.set(false)"
+          (pointerdown)="focoConTeclado.set(false)"
+          [attr.interaction-prompt]="movimientoReducido ? 'none' : 'auto'"
+          [attr.ar]="realidadAumentada() ? '' : null"
+          [attr.ar-modes]="realidadAumentada() ? 'webxr scene-viewer quick-look' : null"
+          [attr.ar-scale]="realidadAumentada() ? 'fixed' : null"
           (load)="modelo.set('listo')"
           (error)="modelo.set('error')"
-        ></model-viewer>
+        >
+          @if (realidadAumentada()) {
+            <button type="button" slot="ar-button" class="boton-ra">
+              <svg lucideView aria-hidden="true"></svg>Ver en su espacio
+            </button>
+          }
+        </model-viewer>
+      } @else if (poster(); as poster) {
+        <img class="poster" [src]="poster" alt="" />
       }
     </div>
   }
@@ -23,4 +41,9 @@
       Cargando el modelo 3D…
     }
   </p>
+  @if (!fallo && movimientoReducido && modelo() === 'listo') {
+    <p class="gestos">
+      Arrastre para girar el modelo; pellizque o use la rueda para acercarlo. Con el teclado, use las flechas.
+    </p>
+  }
 </div>

@@ -33,6 +33,16 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "{draco_decoder.js,draco_decoder.wasm,draco_wasm_wrapper.js}",
+                "input": "node_modules/three/examples/jsm/libs/draco/gltf",
+                "output": "decodificadores/draco"
+              },
+              {
+                "glob": "basis_transcoder.{js,wasm}",
+                "input": "node_modules/three/examples/jsm/libs/basis",
+                "output": "decodificadores/basis"
               }
             ],
             "styles": [

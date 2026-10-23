@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { aTarjeta, idDeProducto, ProductoEnTienda, SIN_FILTROS, urlDeImagen } from '../modelos/catalogo';
+import { aTarjeta, idDeProducto, ProductoEnTienda, SIN_FILTROS, urlDeImagen, urlDeModelo } from '../modelos/catalogo';
 import { CatalogoService } from './catalogo.service';
 
 const PAGINA = { contenido: [], pagina: 0, tamano: 24, totalElementos: 0, totalPaginas: 0 };
@@ -17,6 +17,7 @@ const MANGUERA: ProductoEnTienda = {
   unidad: 'METRO',
   imagenPrincipal: 'b.webp',
   disponible: false,
+  conModelo: false,
 };
 
 // HU-09: llamadas al catálogo público
@@ -90,7 +91,10 @@ describe('CatalogoService', () => {
       imagen: '/api/productos/9/imagenes/b.webp',
       agotado: true,
       enlace: '/producto/9',
+      conModelo: false,
     });
+    // HU-16 RF-2
+    expect(aTarjeta({ ...MANGUERA, conModelo: true }).conModelo).toBe(true);
     expect(aTarjeta({ ...MANGUERA, unidad: 'UNIDAD', imagenPrincipal: null }).unidad).toBeNull();
     expect(aTarjeta({ ...MANGUERA, imagenPrincipal: null }).imagen).toBeNull();
   });
@@ -125,5 +129,11 @@ describe('CatalogoService', () => {
     expect(urlDeImagen(9, 'b.webp')).toBe('/api/productos/9/imagenes/b.webp');
     // Revisión de HU-10: el nombre va codificado, como en la gestión
     expect(urlDeImagen(9, 'a b#1.webp')).toBe('/api/productos/9/imagenes/a%20b%231.webp');
+  });
+
+  // HU-16 RF-1: la misma regla que la gestión (HU-15)
+  it('arma la dirección del modelo', () => {
+    expect(urlDeModelo(9, 'm.glb')).toBe('/api/productos/9/modelo/m.glb');
+    expect(urlDeModelo(9, 'a b#1.glb')).toBe('/api/productos/9/modelo/a%20b%231.glb');
   });
 });

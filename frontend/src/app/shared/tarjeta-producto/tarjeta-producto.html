@@ -1,5 +1,5 @@
 <a class="placa" [routerLink]="datos().enlace" [class.sin-stock]="datos().agotado">
-  <span class="foto" [class.sin-foto]="datos().imagen === null || fotoRota()">
+  <span class="foto" [class.sin-foto]="sinFoto()">
     @if (!fotoRota() && datos().imagen; as imagen) {
       <img
         [src]="imagen"
@@ -14,10 +14,18 @@
       <svg lucideWrench class="icono-foto" aria-hidden="true"></svg>
     }
   </span>
+  <!-- Fuera de la foto, que se gasta si está agotado; sin foto va invertida (revisión de interfaz, /code-review) -->
+  @if (datos().conModelo) {
+    <span class="tres-d" [class.sobre-oscuro]="sinFoto()" aria-hidden="true">3D</span>
+  }
   <span class="cuerpo">
     <!-- La línea de la marca se reserva aunque no haya: los nombres de una fila quedan alineados -->
     <span class="marca" [title]="datos().marca ?? ''">{{ datos().marca ?? '' }}</span>
     <span class="nombre" [title]="datos().nombre">{{ datos().nombre }}</span>
+    @if (datos().conModelo) {
+      <!-- La marca «3D» se oye después del nombre (revisión de interfaz) -->
+      <span class="solo-lectores">Con vista 3D</span>
+    }
     <span class="pie">
       <span class="precio">
         {{ precio() }}

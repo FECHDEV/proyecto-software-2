@@ -1,4 +1,14 @@
-@if (total() === 0) {
+<!-- HU-16: con modelo, el visor ocupa el lugar de la foto grande y se crea recién al tocar «Ver en 3D». Sin
+     pantalla completa: es solo de las fotos -->
+@if (vista() === '3d' && modelo(); as modelo) {
+  <app-visor-3d
+    class="en-galeria"
+    [src]="modelo"
+    [alt]="'Modelo 3D de ' + nombre()"
+    [poster]="total() > 0 && !rota(0) ? fotos()[0] : null"
+    [realidadAumentada]="true"
+  />
+} @else if (total() === 0) {
   <div class="foto-sola">
     <svg lucideWrench class="icono-foto" aria-hidden="true"></svg>
   </div>
@@ -24,14 +34,15 @@
       />
     }
   </button>
+}
 
-  @if (total() > 1) {
+@if (total() > 1) {
     <ul class="miniaturas">
       @for (foto of fotos(); track $index) {
         <li>
           <button
             type="button"
-            [attr.aria-pressed]="$index === actual()"
+            [attr.aria-pressed]="vista() === 'fotos' && $index === actual()"
             [attr.aria-label]="'Ver la foto ' + ($index + 1) + ' de ' + total()"
             (click)="elegir($index)"
           >
@@ -44,8 +55,20 @@
         </li>
       }
     </ul>
-  }
+}
 
+<!-- Un solo botón que cambia su texto: el foco no se pierde al cambiar de vista -->
+@if (modelo()) {
+  <button type="button" class="vista" (click)="cambiarVista()">
+    @if (vista() === '3d') {
+      <svg lucideImage aria-hidden="true"></svg>Ver fotos
+    } @else {
+      <svg lucideBox aria-hidden="true"></svg>Ver en 3D
+    }
+  </button>
+}
+
+@if (total() > 0) {
   <dialog
     #dialogo
     class="pantalla-completa"

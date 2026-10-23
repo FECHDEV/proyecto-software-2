@@ -20,6 +20,7 @@ const PALA: ProductoEnTienda = {
   unidad: 'UNIDAD',
   imagenPrincipal: null,
   disponible: true,
+  conModelo: false,
 };
 const AZADA: ProductoEnTienda = { ...PALA, idProducto: 3, nombre: 'Azada', marca: null, disponible: false };
 

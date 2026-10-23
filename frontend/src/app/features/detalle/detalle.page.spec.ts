@@ -11,10 +11,11 @@ import { CatalogoService } from '../../core/api/catalogo.service';
 import { ProductoEnDetalle, ProductoEnTienda } from '../../core/modelos/catalogo';
 import { Rol } from '../../core/modelos/usuario';
 import { SesionService } from '../../core/sesion/sesion.service';
+import { CARGAR_VISOR_3D } from '../../shared/visor-3d/visor-3d';
 import { DetallePage } from './detalle.page';
 
 function tarjeta(idProducto: number, nombre: string): ProductoEnTienda {
-  return { idProducto, nombre, marca: null, precio: 85, unidad: 'UNIDAD', imagenPrincipal: null, disponible: true };
+  return { idProducto, nombre, marca: null, precio: 85, unidad: 'UNIDAD', imagenPrincipal: null, disponible: true, conModelo: false };
 }
 
 // Como responde GET /api/productos/7 (CatalogoIntegracionTest)
@@ -34,6 +35,7 @@ const TALADRO: ProductoEnDetalle = {
   ],
   imagenes: ['a.webp', 'b.webp'],
   disponible: true,
+  modelo: null,
   relacionados: [tarjeta(8, 'Martillo')],
 };
 
@@ -108,6 +110,7 @@ describe('DetallePage', () => {
         { provide: CatalogoService, useValue: catalogo },
         { provide: CarritoService, useValue: carrito },
         { provide: SesionService, useValue: { rol: signal(rol) } },
+        { provide: CARGAR_VISOR_3D, useValue: () => Promise.resolve(true) },
       ],
     });
     harness = await RouterTestingHarness.create();
@@ -130,6 +133,28 @@ describe('DetallePage', () => {
   function enlace(textoDelEnlace: string): HTMLAnchorElement | undefined {
     return Array.from(pantalla().querySelectorAll('a')).find((cada) => cada.textContent?.trim() === textoDelEnlace);
   }
+
+  // HU-16 RF-1, RF-3: la galería recibe la dirección del modelo
+  it('pasa la dirección del modelo a la galería', async () => {
+    await abrir('/producto/7', null, false);
+    catalogo.recurso.value.set({ ...TALADRO, modelo: 'm b.glb' });
+    await harness.fixture.whenStable();
+
+    const boton = pantalla().querySelector<HTMLButtonElement>('app-galeria .vista')!;
+    expect(boton.textContent).toContain('Ver en 3D');
+    boton.click();
+    await harness.fixture.whenStable();
+
+    expect(pantalla().querySelector('model-viewer')?.getAttribute('src')).toBe('/api/productos/7/modelo/m%20b.glb');
+  });
+
+  // HU-16 RF-3: sin modelo, la galería de HU-10
+  it('sin modelo la galería es la de HU-10', async () => {
+    await abrir();
+
+    expect(pantalla().querySelector('app-galeria .vista')).toBeNull();
+    expect(texto()).not.toContain('Ver en 3D');
+  });
 
   // HU-10 RF-1: sin guard, para cualquiera
   it('abre sin sesión', async () => {

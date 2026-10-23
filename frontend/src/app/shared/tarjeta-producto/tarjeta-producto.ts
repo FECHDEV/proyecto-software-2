@@ -14,6 +14,8 @@ export interface DatosDeTarjeta {
 	imagen: string | null;
 	agotado: boolean;
 	enlace: string;
+	// Tiene modelo 3D: la marca «3D» sobre la foto (HU-16)
+	conModelo: boolean;
 }
 
 // La tarjeta de un producto en la tienda (HU-09 RF-6, RF-7): una placa de lona
@@ -33,4 +35,6 @@ export class TarjetaProducto {
 	protected readonly precio = computed(() => precio(this.datos().precio));
 	// Una foto que no carga muestra el ícono; vuelve a probar si cambia la foto
 	protected readonly fotoRota = linkedSignal({ source: () => this.datos().imagen, computation: () => false });
+	// Sin foto, o con la foto rota: el fondo oscuro, y la marca «3D» invertida
+	protected readonly sinFoto = computed(() => this.datos().imagen === null || this.fotoRota());
 }

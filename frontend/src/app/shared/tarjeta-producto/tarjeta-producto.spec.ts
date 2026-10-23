@@ -12,6 +12,7 @@ const MARTILLO: DatosDeTarjeta = {
   imagen: '/api/productos/7/imagenes/a.jpg',
   agotado: false,
   enlace: '/producto/7',
+  conModelo: false,
 };
 
 @Component({
@@ -42,6 +43,37 @@ describe('TarjetaProducto', () => {
   function texto(): string {
     return (fijo.nativeElement.textContent ?? '').replace(/\s+/g, ' ');
   }
+
+  // HU-16 RF-11
+  it('marca 3D con texto para lectores si tiene modelo', async () => {
+    await con({ conModelo: true });
+
+    const marca = fijo.nativeElement.querySelector('.tres-d');
+    expect(marca.textContent.trim()).toBe('3D');
+    // El enlace se anuncia con «Con vista 3D», no con un «3D» suelto, y después del nombre (revisión de interfaz)
+    expect(marca.getAttribute('aria-hidden')).toBe('true');
+    const nombre = fijo.nativeElement.querySelector('.nombre');
+    const paraLectores = fijo.nativeElement.querySelector('.solo-lectores');
+    expect(paraLectores.textContent.trim()).toBe('Con vista 3D');
+    expect(nombre.compareDocumentPosition(paraLectores) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  // /code-review: sin foto (o con la foto rota) la marca va invertida, y no queda dentro de la foto que se gasta
+  it('la marca va fuera de la foto e invertida sin foto', async () => {
+    await con({ conModelo: true, agotado: true });
+    const marca = () => fijo.nativeElement.querySelector('.tres-d') as HTMLElement;
+    expect(marca().closest('.foto')).toBeNull();
+    expect(marca().classList).not.toContain('sobre-oscuro');
+
+    await con({ conModelo: true, imagen: null });
+    expect(marca().classList).toContain('sobre-oscuro');
+  });
+
+  // HU-16 RF-11
+  it('sin modelo no hay marca', () => {
+    expect(fijo.nativeElement.querySelector('.tres-d')).toBeNull();
+    expect(texto()).not.toContain('3D');
+  });
 
   // HU-09 RF-6
   it('muestra nombre, marca y precio con su unidad', async () => {

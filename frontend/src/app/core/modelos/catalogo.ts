@@ -2,7 +2,8 @@ import { DatosDeTarjeta } from '../../shared/tarjeta-producto/tarjeta-producto';
 import { Caracteristica, UnidadVenta } from './producto';
 
 // Espejo de ProductoTarjetaResponse, PortadaResponse y de los parámetros de
-// GET /api/productos (HU-09). La API nunca dice cuánto stock hay: solo si hay
+// GET /api/productos (HU-09). La API nunca dice cuánto stock hay: solo si hay.
+// conModelo, para la marca «3D» de la tarjeta (HU-16)
 
 export type OrdenCatalogo = 'RECIENTES' | 'PRECIO_ASC' | 'PRECIO_DESC' | 'NOMBRE';
 
@@ -26,6 +27,7 @@ export interface ProductoEnTienda {
 	unidad: UnidadVenta;
 	imagenPrincipal: string | null;
 	disponible: boolean;
+	conModelo: boolean;
 }
 
 export interface Seccion {
@@ -65,7 +67,8 @@ export const SIN_FILTROS: FiltrosDeCatalogo = {
 };
 
 // Espejo de ProductoDetalleResponse (HU-10): como la tarjeta, sin la cantidad
-// en stock. imagenes son nombres de archivo; la primera es la principal
+// en stock. imagenes son nombres de archivo; la primera es la principal. modelo
+// es el nombre del archivo del modelo 3D, o null (HU-16)
 export interface ProductoEnDetalle {
 	idProducto: number;
 	codigo: string;
@@ -79,6 +82,7 @@ export interface ProductoEnDetalle {
 	ficha: Caracteristica[];
 	imagenes: string[];
 	disponible: boolean;
+	modelo: string | null;
 	relacionados: ProductoEnTienda[];
 }
 
@@ -97,6 +101,11 @@ export function urlDeImagen(idProducto: number, imagen: string): string {
 	return `/api/productos/${idProducto}/imagenes/${encodeURIComponent(imagen)}`;
 }
 
+// La única regla para la dirección de un modelo 3D (HU-15, HU-16), sin sesión como las fotos
+export function urlDeModelo(idProducto: number, archivo: string): string {
+	return `/api/productos/${idProducto}/modelo/${encodeURIComponent(archivo)}`;
+}
+
 // La ruta del detalle (HU-10)
 export function rutaDelProducto(idProducto: number): string {
 	return `/producto/${idProducto}`;
@@ -112,5 +121,6 @@ export function aTarjeta(producto: ProductoEnTienda): DatosDeTarjeta {
 		imagen: producto.imagenPrincipal === null ? null : urlDeImagen(producto.idProducto, producto.imagenPrincipal),
 		agotado: !producto.disponible,
 		enlace: rutaDelProducto(producto.idProducto),
+		conModelo: producto.conModelo,
 	};
 }

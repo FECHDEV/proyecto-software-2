@@ -1,7 +1,7 @@
 import { HttpClient, httpResource, HttpResourceRef } from '@angular/common/http';
 import { inject, Injectable, Signal } from '@angular/core';
 
-import { urlDeImagen } from '../modelos/catalogo';
+import { urlDeImagen, urlDeModelo } from '../modelos/catalogo';
 import { Pagina } from '../modelos/pagina';
 import {
 	Caracteristica,
@@ -94,9 +94,9 @@ export class ProductosService {
 		return escribir(this.http.delete<Producto>(`${GESTION}/${idProducto}/modelo`));
 	}
 
-	// Sin sesión, como las imágenes
+	// Sin sesión, como las imágenes; la regla vive en el catálogo (HU-16)
 	urlDeModelo(idProducto: number, archivo: string): string {
-		return `/api/productos/${idProducto}/modelo/${encodeURIComponent(archivo)}`;
+		return urlDeModelo(idProducto, archivo);
 	}
 }
 

@@ -16,12 +16,56 @@
 	border-radius: var(--app-radio);
 }
 
+// El foco de model-viewer es un contorno de 1 px que casi no se ve: el de la tienda (revisión de interfaz)
+model-viewer.foco-teclado {
+	outline: 3px solid var(--app-acento-texto);
+	outline-offset: 2px;
+}
+
 model-viewer {
 	display: block;
 	width: 100%;
 	height: 100%;
 	// model-viewer se pinta por sus variables: la barra de carga, con el ámbar de la tienda
 	--progress-bar-color: var(--app-ambar);
+}
+
+// Mientras se descarga el visor, la foto principal en su lugar (HU-16 RF-4)
+.poster {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+// «Ver en su espacio»: abajo a la derecha, sobre el modelo, con el ámbar de la tienda
+.boton-ra {
+	position: absolute;
+	right: var(--app-espacio-3);
+	bottom: var(--app-espacio-3);
+	display: inline-flex;
+	align-items: center;
+	gap: var(--app-espacio-2);
+	min-height: 44px;
+	padding: 0 var(--app-espacio-4);
+	background: var(--app-ambar);
+	color: var(--app-sobre-ambar);
+	font: inherit;
+	font-weight: 700;
+	border: 0;
+	border-radius: var(--app-radio);
+	cursor: pointer;
+}
+
+.boton-ra svg {
+	width: 20px;
+	height: 20px;
+}
+
+// Con movimiento reducido, en lugar de la mano animada (HU-16 RF-7)
+.gestos {
+	margin: var(--app-espacio-2) 0 0;
+	color: var(--app-texto-suave);
+	font-size: 14px;
 }
 
 .cargando {
@@ -32,6 +76,20 @@ model-viewer {
 	margin: 0;
 	color: var(--app-texto-suave);
 	pointer-events: none;
+}
+
+// En la galería (HU-16) ocupa la caja de la foto grande, sobre su fondo: al cambiar de vista nada salta
+:host(.en-galeria) .marco {
+	max-height: none;
+	background: var(--app-foto);
+	border: 0;
+}
+
+:host(.en-galeria) .sin-visor {
+	display: grid;
+	place-items: center;
+	aspect-ratio: 4 / 3;
+	text-align: center;
 }
 
 .sin-visor {
