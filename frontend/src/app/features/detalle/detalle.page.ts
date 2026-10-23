@@ -18,7 +18,7 @@ import { comoErrorApi } from '../../core/modelos/error-api';
 import { CatalogoService } from '../../core/api/catalogo.service';
 import { mensajeDeError } from '../../core/api/mensajes-error';
 import { MARCA } from '../../core/marca';
-import { aTarjeta, idDeProducto, urlDeImagen } from '../../core/modelos/catalogo';
+import { aTarjeta, idDeProducto, urlDeImagen, urlDeModelo } from '../../core/modelos/catalogo';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { Carrusel } from '../../shared/carrusel/carrusel';
 import { precio } from '../../shared/formato/precios';
@@ -70,6 +70,12 @@ export class DetallePage {
 	protected readonly fotos = computed(() => {
 		const producto = this.producto();
 		return producto === undefined ? [] : producto.imagenes.map((imagen) => urlDeImagen(producto.idProducto, imagen));
+	});
+
+	// HU-16: la dirección del modelo 3D, o null; la galería ofrece «Ver en 3D»
+	protected readonly modelo = computed(() => {
+		const producto = this.producto();
+		return producto?.modelo ? urlDeModelo(producto.idProducto, producto.modelo) : null;
 	});
 
 	protected readonly precio = computed(() => {

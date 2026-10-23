@@ -596,6 +596,33 @@ previa evita publicar uno roto, girado o a otra escala; el aviso de peso
 sostiene la recomendación del spike sin bloquear la carga; con la
 demostración, los modelos de Poly Haven quedan listos para mostrar.
 
+*23/10/2026 (HU-16).* **El modelo en el detalle del producto:**
+
+- **En la galería:** si el producto tiene modelo, la galería ofrece «Ver en
+  3D». El modelo reemplaza a la foto grande, con la foto principal como póster
+  mientras carga, y «Ver fotos» (o una miniatura) vuelve a las fotos.
+- **Quieto, con la pista de gesto:** el modelo no gira solo, como los
+  carruseles. Si el cliente no lo toca, aparece la mano que muestra cómo
+  girarlo; con movimiento reducido, un texto en su lugar.
+- **Realidad aumentada en Android y en iPhone:** WebXR o Scene Viewer en
+  Android y Quick Look en iPhone (`<model-viewer>` convierte el `.glb` a USDZ
+  en el momento; no se sube otro archivo). El botón «Ver en su espacio» va
+  dentro del visor y aparece solo donde el dispositivo la soporta.
+- **Marca «3D» en las tarjetas** del catálogo, de la portada y de «Más de…»,
+  sin filtro nuevo.
+- **Los decodificadores los sirve la tienda:** si un modelo viene comprimido
+  con Draco, KTX2 o meshopt, sus decodificadores salen de la propia tienda
+  (copiados de `three` en el build), no de los servidores de Google. Van en
+  `/decodificadores/`, sin hash en el nombre, así que nginx los revalida en
+  cada visita (`no-cache`) y responde 404 si falta uno. meshopt ya viene
+  dentro de `<model-viewer>`: un archivo vacío de la tienda solo lo activa.
+
+**Motivo:** en la galería, el modelo es otra forma de ver el producto y no
+tapa el resto de la página; que no gire solo respeta a quien lo está mirando;
+la conversión a USDZ evita pedirle al Administrador un segundo archivo; la
+marca avisa antes de abrir el producto; y el navegador del cliente no le pide
+nada a terceros.
+
 ### Categorías del catálogo
 
 *10/10/2026 (HU-06).* Un solo nivel, sin subcategorías. Cada categoría tiene
@@ -723,7 +750,8 @@ pública en `/producto/:id`, con o sin sesión.
   existe responde 404, igual en los tres casos, y la pantalla dice que no
   está disponible, con un enlace al catálogo.
 - **Sin compra todavía:** el botón para agregar al carrito llega con HU-11; el
-  modelo 3D, con HU-15 y HU-16.
+  modelo 3D, con HU-15 y HU-16. *(23/10/2026: el modelo y la realidad aumentada, en
+  «Visor 3D y modelos».)*
 - **El Administrador** ve un acceso «Editar producto» (usabilidad; el permiso
   lo valida el backend).
 

@@ -11,7 +11,7 @@
   </div>
 } @else if (producto(); as producto) {
   <article class="ficha-producto">
-    <app-galeria class="fotos" [fotos]="fotos()" [nombre]="producto.nombre" />
+    <app-galeria class="fotos" [fotos]="fotos()" [nombre]="producto.nombre" [modelo]="modelo()" />
 
     <div class="datos">
       <p class="identidad">

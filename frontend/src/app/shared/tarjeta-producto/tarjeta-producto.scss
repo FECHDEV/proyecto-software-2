@@ -7,6 +7,7 @@
 }
 
 .placa {
+	position: relative;
 	container-type: inline-size;
 	display: flex;
 	flex-direction: column;
@@ -51,6 +52,31 @@
 	background: var(--app-foto);
 	border-radius: var(--app-radio) var(--app-radio) 0 0;
 	overflow: hidden;
+}
+
+// La marca «3D»: una etiqueta chica cosida en la esquina de la foto, como «Agotado». Va en la placa, no en la foto
+.tres-d {
+	position: absolute;
+	top: var(--app-espacio-2);
+	right: var(--app-espacio-2);
+	padding: 0 var(--app-espacio-1);
+	background: var(--app-sobre-lona);
+	color: var(--app-lona);
+	font-family: var(--app-familia-titulos);
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	line-height: 1.5;
+	outline: 1px dashed var(--app-lona);
+	outline-offset: -3px;
+	border-radius: var(--app-radio);
+}
+
+// Sin foto el fondo ya es el de la marca: va invertida
+.tres-d.sobre-oscuro {
+	background: var(--app-lona);
+	color: var(--app-sobre-lona);
+	outline-color: var(--app-sobre-lona);
 }
 
 .foto img {

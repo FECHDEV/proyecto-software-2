@@ -7,7 +7,9 @@ import {
 	linkedSignal,
 	viewChild,
 } from '@angular/core';
-import { LucideChevronLeft, LucideChevronRight, LucideWrench, LucideX } from '@lucide/angular';
+import { LucideBox, LucideChevronLeft, LucideChevronRight, LucideImage, LucideWrench, LucideX } from '@lucide/angular';
+
+import { Visor3d } from '../visor-3d/visor-3d';
 
 // Lo que hay que deslizar con el dedo para pasar de foto; menos es un toque
 const DESLIZAMIENTO = 40;
@@ -15,10 +17,11 @@ const DESLIZAMIENTO = 40;
 // Las fotos de un producto (HU-10 RF-5, RF-6): la elegida grande, miniaturas
 // para cambiar y pantalla completa en un <dialog> con showModal(), que atrapa
 // el foco y se cierra con Escape. No da la vuelta: se detiene en la primera y
-// en la última. Recibe las direcciones ya armadas: shared/ no conoce la API
+// en la última. Recibe las direcciones ya armadas: shared/ no conoce la API.
+// Con modelo 3D (HU-16), «Ver en 3D» cambia la foto grande por el visor
 @Component({
 	selector: 'app-galeria',
-	imports: [LucideChevronLeft, LucideChevronRight, LucideWrench, LucideX],
+	imports: [LucideBox, LucideChevronLeft, LucideChevronRight, LucideImage, LucideWrench, LucideX, Visor3d],
 	templateUrl: './galeria.html',
 	styleUrl: './galeria.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,15 +30,29 @@ export class Galeria {
 	readonly fotos = input.required<string[]>();
 	// Para el texto alternativo: «Taladro, foto 1 de 3»
 	readonly nombre = input.required<string>();
+	// La dirección del modelo 3D, o null sin modelo (HU-16)
+	readonly modelo = input<string | null>(null);
 
 	private readonly dialogo = viewChild<ElementRef<HTMLDialogElement>>('dialogo');
 	private readonly grande = viewChild<ElementRef<HTMLButtonElement>>('grande');
 
+	// Las fotos por su contenido: la misma lista leída otra vez no es otro producto (/code-review, ronda 2)
+	private readonly mismasFotos = computed(() => this.fotos(), {
+		equal: (antes, ahora) => antes.length === ahora.length && antes.every((foto, indice) => foto === ahora[indice]),
+	});
+
 	// Con otras fotos (otro producto), vuelve a la primera y olvida las rotas
-	protected readonly actual = linkedSignal({ source: this.fotos, computation: () => 0 });
+	protected readonly actual = linkedSignal({ source: this.mismasFotos, computation: () => 0 });
 	protected readonly rotas = linkedSignal<string[], ReadonlySet<number>>({
-		source: this.fotos,
+		source: this.mismasFotos,
 		computation: () => new Set<number>(),
+	});
+
+	// Con otro producto vuelve a las fotos (HU-16 RF-6). La dirección del modelo lleva el producto: la misma lista
+	// de fotos con otra identidad no saca al visitante del modelo (/code-review)
+	protected readonly vista = linkedSignal<string | null, 'fotos' | '3d'>({
+		source: this.modelo,
+		computation: () => 'fotos',
 	});
 
 	protected readonly total = computed(() => this.fotos().length);
@@ -59,8 +76,14 @@ export class Galeria {
 		this.rotas.update((rotas) => new Set(rotas).add(indice));
 	}
 
+	// Una miniatura, también desde el modelo, muestra esa foto (HU-16 RF-6)
 	protected elegir(indice: number): void {
 		this.actual.set(indice);
+		this.vista.set('fotos');
+	}
+
+	protected cambiarVista(): void {
+		this.vista.update((vista) => (vista === 'fotos' ? '3d' : 'fotos'));
 	}
 
 	protected ampliar(): void {

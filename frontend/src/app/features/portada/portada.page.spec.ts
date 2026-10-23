@@ -9,7 +9,7 @@ import { Portada, ProductoEnTienda } from '../../core/modelos/catalogo';
 import { PortadaPage } from './portada.page';
 
 function producto(idProducto: number, nombre: string): ProductoEnTienda {
-  return { idProducto, nombre, marca: null, precio: 10, unidad: 'UNIDAD', imagenPrincipal: null, disponible: true };
+  return { idProducto, nombre, marca: null, precio: 10, unidad: 'UNIDAD', imagenPrincipal: null, disponible: true, conModelo: false };
 }
 
 // Como responde GET /api/productos/portada (CatalogoIntegracionTest)

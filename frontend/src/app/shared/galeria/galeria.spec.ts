@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 
+import { CARGAR_VISOR_3D, MOVIMIENTO_REDUCIDO } from '../visor-3d/visor-3d';
 import { Galeria } from './galeria';
 
 const FOTOS = ['/fotos/a.webp', '/fotos/b.webp', '/fotos/c.webp'];
@@ -255,5 +257,188 @@ describe('Galeria', () => {
 
     expect(fotoGrande()).toBe('/fotos/x.webp');
     expect(miniaturas()[0].getAttribute('aria-pressed')).toBe('true');
+  });
+
+  // --- HU-16: el modelo 3D en la galería ---
+
+  const MODELO = '/api/productos/7/modelo/m.glb';
+  let cargar: ReturnType<typeof vi.fn<() => Promise<boolean>>>;
+
+  async function abrirConModelo(fotos: string[] = FOTOS, disponible = true) {
+    TestBed.resetTestingModule();
+    cargar = vi.fn(() => Promise.resolve(disponible));
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: CARGAR_VISOR_3D, useValue: cargar },
+        { provide: MOVIMIENTO_REDUCIDO, useValue: () => false },
+      ],
+    });
+    fijo = TestBed.createComponent(Galeria);
+    fijo.componentRef.setInput('fotos', fotos);
+    fijo.componentRef.setInput('nombre', 'Taladro');
+    fijo.componentRef.setInput('modelo', MODELO);
+    fijo.autoDetectChanges();
+    await fijo.whenStable();
+  }
+
+  function botonDeVista(): HTMLButtonElement | null {
+    return raiz().querySelector('.vista');
+  }
+
+  function visor(): Element | null {
+    return raiz().querySelector('app-visor-3d');
+  }
+
+  async function cambiarVista() {
+    botonDeVista()!.click();
+    await fijo.whenStable();
+  }
+
+  // HU-16 RF-3
+  it('sin modelo no ofrece Ver en 3D', async () => {
+    await abrir();
+
+    expect(botonDeVista()).toBeNull();
+    expect(raiz().textContent).not.toContain('Ver en 3D');
+  });
+
+  // HU-16 RF-3, RF-4
+  it('con modelo, Ver en 3D cambia la foto por el visor con el póster', async () => {
+    await abrirConModelo();
+    expect(botonDeVista()!.textContent).toContain('Ver en 3D');
+
+    await cambiarVista();
+
+    expect(grande()).toBeNull();
+    const modelo = raiz().querySelector('model-viewer')!;
+    expect(modelo.getAttribute('src')).toBe(MODELO);
+    expect(modelo.getAttribute('poster')).toBe(FOTOS[0]);
+    expect(modelo.getAttribute('alt')).toBe('Modelo 3D de Taladro');
+    // En la tienda, con realidad aumentada
+    expect(modelo.hasAttribute('ar')).toBe(true);
+    expect(botonDeVista()!.textContent).toContain('Ver fotos');
+  });
+
+  // HU-16 RF-4: el visor y el modelo se descargan recién al tocar
+  it('el visor no se crea antes de tocar Ver en 3D', async () => {
+    await abrirConModelo();
+
+    expect(visor()).toBeNull();
+    expect(cargar).not.toHaveBeenCalled();
+  });
+
+  // HU-16 RF-6
+  it('Ver fotos vuelve a la foto que estaba', async () => {
+    await abrirConModelo();
+    miniaturas()[1].click();
+    await fijo.whenStable();
+
+    await cambiarVista();
+    // En 3D ninguna miniatura está elegida
+    expect(miniaturas().map((cada) => cada.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false']);
+    await cambiarVista();
+
+    expect(visor()).toBeNull();
+    expect(fotoGrande()).toBe(FOTOS[1]);
+  });
+
+  // HU-16 RF-6
+  it('una miniatura vuelve a esa foto', async () => {
+    await abrirConModelo();
+    await cambiarVista();
+
+    miniaturas()[2].click();
+    await fijo.whenStable();
+
+    expect(visor()).toBeNull();
+    expect(fotoGrande()).toBe(FOTOS[2]);
+    expect(botonDeVista()!.textContent).toContain('Ver en 3D');
+  });
+
+  // HU-16 caso límite: otro producto desde «Más de…»
+  it('con otro producto vuelve a las fotos', async () => {
+    await abrirConModelo();
+    await cambiarVista();
+
+    fijo.componentRef.setInput('fotos', ['/fotos/x.webp']);
+    fijo.componentRef.setInput('modelo', '/api/productos/8/modelo/n.glb');
+    await fijo.whenStable();
+
+    expect(visor()).toBeNull();
+    expect(fotoGrande()).toBe('/fotos/x.webp');
+  });
+
+  // /code-review: una foto principal rota no es el póster
+  it('sin póster si la foto principal está rota', async () => {
+    await abrirConModelo();
+    grande().querySelector('img')!.dispatchEvent(new Event('error'));
+    await fijo.whenStable();
+
+    await cambiarVista();
+
+    expect(raiz().querySelector('model-viewer')!.hasAttribute('poster')).toBe(false);
+  });
+
+  // /code-review: las mismas fotos en otra lista (el producto se volvió a leer) no sacan del modelo, y «Ver fotos»
+  // vuelve a la que estaba (ronda 2)
+  it('las mismas fotos otra vez no sacan del modelo', async () => {
+    await abrirConModelo();
+    miniaturas()[2].click();
+    await fijo.whenStable();
+    await cambiarVista();
+
+    fijo.componentRef.setInput('fotos', [...FOTOS]);
+    await fijo.whenStable();
+    expect(visor()).not.toBeNull();
+
+    await cambiarVista();
+    expect(fotoGrande()).toBe(FOTOS[2]);
+  });
+
+  // HU-16 caso límite: un modelo sin fotos
+  it('con modelo y sin fotos ofrece Ver en 3D sin póster', async () => {
+    await abrirConModelo([]);
+    expect(raiz().querySelector('.foto-sola')).not.toBeNull();
+
+    await cambiarVista();
+
+    const modelo = raiz().querySelector('model-viewer')!;
+    expect(modelo.getAttribute('src')).toBe(MODELO);
+    expect(modelo.hasAttribute('poster')).toBe(false);
+    expect(raiz().querySelector('.foto-sola')).toBeNull();
+  });
+
+  // HU-16 caso límite: la pantalla completa es solo de las fotos
+  it('en 3D no hay pantalla completa', async () => {
+    await abrirConModelo();
+    await cambiarVista();
+
+    expect(grande()).toBeNull();
+    expect(raiz().querySelector('[aria-haspopup="dialog"]')).toBeNull();
+  });
+
+  // HU-16 RF-9
+  it('si el visor falla, Ver fotos sigue', async () => {
+    await abrirConModelo(FOTOS, false);
+    await cambiarVista();
+    expect(raiz().textContent).toContain('No pudimos mostrar el modelo en este dispositivo.');
+
+    await cambiarVista();
+
+    expect(fotoGrande()).toBe(FOTOS[0]);
+  });
+
+  // HU-16 caso límite «Teclado»: el botón no se reemplaza, así el foco no se pierde
+  it('al cambiar de vista el foco queda en el botón', async () => {
+    await abrirConModelo();
+    const boton = botonDeVista()!;
+    boton.focus();
+
+    await cambiarVista();
+    expect(document.activeElement).toBe(boton);
+    expect(boton.textContent).toContain('Ver fotos');
+
+    await cambiarVista();
+    expect(document.activeElement).toBe(boton);
   });
 });
