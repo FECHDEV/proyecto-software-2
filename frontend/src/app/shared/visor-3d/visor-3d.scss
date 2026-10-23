@@ -1,0 +1,44 @@
+// El modelo sobre la superficie de la tarjeta, con el aviso de carga encima
+:host {
+	display: block;
+}
+
+.visor {
+	position: relative;
+}
+
+.marco {
+	aspect-ratio: 4 / 3;
+	max-height: 420px;
+	width: 100%;
+	background: var(--app-superficie-alta);
+	border: 1px solid var(--app-borde);
+	border-radius: var(--app-radio);
+}
+
+model-viewer {
+	display: block;
+	width: 100%;
+	height: 100%;
+	// model-viewer se pinta por sus variables: la barra de carga, con el ámbar de la tienda
+	--progress-bar-color: var(--app-ambar);
+}
+
+.cargando {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	margin: 0;
+	color: var(--app-texto-suave);
+	pointer-events: none;
+}
+
+.sin-visor {
+	margin: 0;
+	padding: var(--app-espacio-4);
+	color: var(--app-texto-suave);
+	background: var(--app-superficie-alta);
+	border: 1px dashed var(--app-borde-control);
+	border-radius: var(--app-radio);
+}

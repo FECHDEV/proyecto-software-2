@@ -316,6 +316,12 @@
       }
     }
   </section>
+
+  <app-modelo-de-producto
+    [producto]="esNuevo() ? undefined : actual"
+    [dialogo]="confirmacion"
+    (cambiado)="alCambiarModelo($event)"
+  />
 }
 
-<app-dialogo-confirmacion />
+<app-dialogo-confirmacion #confirmacion />

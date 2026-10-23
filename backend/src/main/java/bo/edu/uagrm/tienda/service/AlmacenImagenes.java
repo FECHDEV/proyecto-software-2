@@ -15,15 +15,15 @@ import org.springframework.stereotype.Component;
 import bo.edu.uagrm.tienda.config.ImagenesProperties;
 import lombok.extern.slf4j.Slf4j;
 
-// Las imágenes viven en una carpeta del servidor con nombres que genera este componente. Ninguna ruta se arma con lo
-// que manda el cliente: solo se aceptan nombres con la forma de los que genera guardar()
+// Las imágenes, y los modelos 3D de HU-15, viven en una carpeta del servidor con nombres que genera este componente.
+// Ninguna ruta se arma con lo que manda el cliente: solo se aceptan nombres con la forma de los que genera guardar()
 @Slf4j
 @Component
 @EnableConfigurationProperties(ImagenesProperties.class)
 public class AlmacenImagenes {
 
 	private static final Pattern NOMBRE_GENERADO = Pattern
-			.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(jpg|png|webp)");
+			.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(jpg|png|webp|glb)");
 
 	private final Path directorio;
 
@@ -37,7 +37,11 @@ public class AlmacenImagenes {
 	}
 
 	public String guardar(byte[] contenido, FormatoImagen formato) {
-		String nombre = UUID.randomUUID() + "." + formato.extension();
+		return guardar(contenido, formato.extension());
+	}
+
+	public String guardar(byte[] contenido, String extension) {
+		String nombre = UUID.randomUUID() + "." + extension;
 		try {
 			Files.write(directorio.resolve(nombre), contenido);
 		} catch (IOException e) {

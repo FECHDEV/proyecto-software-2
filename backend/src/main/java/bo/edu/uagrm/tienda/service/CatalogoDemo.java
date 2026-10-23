@@ -19,7 +19,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -48,9 +47,9 @@ import lombok.extern.slf4j.Slf4j;
 // hay productos. catalogo.csv lleva una fila por producto, con estas columnas:
 //   categoria,nombre,descripcion,precio_bs,stock_inicial,imagenes,modelo_3d,destacado,unidad
 // El lector es simple: separa por comas, sin comillas, así que ningún campo puede llevar una coma. El precio y el
-// stock van con punto decimal; imagenes, los archivos de la carpeta separados por '|'; modelo_3d se ignora (spike
-// #14); destacado, «si» o vacío; unidad, una de UnidadVenta o vacía (UNIDAD). Todo pasa por los servicios y las
-// validaciones de la gestión. Si una fila tiene errores, se informan todas
+// stock van con punto decimal; imagenes, los archivos de la carpeta separados por '|'; modelo_3d, un .glb de la
+// carpeta o vacío (HU-15); destacado, «si» o vacío; unidad, una de UnidadVenta o vacía (UNIDAD). Todo pasa por los
+// servicios y las validaciones de la gestión. Si una fila tiene errores, se informan todas
 // con su número (la 1 es el encabezado) y no se carga nada: una carga a medias ya no se podría completar, porque
 // con productos en la base no se vuelve a cargar. Un fallo durante la carga la revierte entera; en los dos casos la
 // aplicación arranca igual, con el catálogo vacío (decisiones.md → Catálogo de demostración)
@@ -81,14 +80,11 @@ public class CatalogoDemo implements ApplicationRunner {
 	private final UsuarioRepository usuarioRepository;
 	private final Validator validator;
 	private final TransactionTemplate transaccion;
-	// El mismo límite que una imagen subida desde la gestión (decisiones.md → Imágenes subidas)
-	private final DataSize maximoImagen;
 
 	public CatalogoDemo(CatalogoDemoProperties propiedades, AdministradorInicialProperties administrador,
 			CategoriaService categoriaService, ProductoService productoService, InventarioService inventarioService,
 			ProductoRepository productoRepository, CategoriaRepository categoriaRepository,
-			UsuarioRepository usuarioRepository, Validator validator, TransactionTemplate transaccion,
-			@Value("${spring.servlet.multipart.max-file-size}") DataSize maximoImagen) {
+			UsuarioRepository usuarioRepository, Validator validator, TransactionTemplate transaccion) {
 		this.propiedades = propiedades;
 		this.administrador = administrador;
 		this.categoriaService = categoriaService;
@@ -99,7 +95,6 @@ public class CatalogoDemo implements ApplicationRunner {
 		this.usuarioRepository = usuarioRepository;
 		this.validator = validator;
 		this.transaccion = transaccion;
-		this.maximoImagen = maximoImagen;
 	}
 
 	@Override
@@ -184,7 +179,10 @@ public class CatalogoDemo implements ApplicationRunner {
 				}
 				Long idProducto = productoService.crear(fila.producto(idCategoria)).idProducto();
 				for (Path imagen : fila.imagenes()) {
-					productoService.agregarImagen(idProducto, leerImagen(imagen));
+					productoService.agregarImagen(idProducto, leerArchivo(imagen));
+				}
+				if (fila.modelo() != null) {
+					productoService.subirModelo(idProducto, leerArchivo(fila.modelo()));
 				}
 				if (fila.stock().signum() > 0) {
 					inventarioService.registrarEntrada(idProducto, admin.getIdUsuario(),
@@ -238,7 +236,8 @@ public class CatalogoDemo implements ApplicationRunner {
 		boolean destacado = destacado(campos[7].strip(), errores);
 		UnidadVenta unidad = unidad(campos[8].strip(), errores);
 		Fila fila = new Fila(numero, categoria, campos[1].strip(), campos[2].strip(), precio, stock,
-				imagenes(carpeta, campos[5].strip(), errores), destacado, unidad);
+				imagenes(carpeta, campos[5].strip(), errores), modelo(carpeta, campos[6].strip(), errores), destacado,
+				unidad);
 		ProductoRequest producto = fila.producto(CATEGORIA_POR_RESOLVER, precio != null ? precio : PRECIO_POR_RESOLVER);
 		errores(validator.validate(producto), Map.of("precio", "precio_bs"), errores);
 		if (stock != null && stock.signum() > 0) {
@@ -319,8 +318,9 @@ public class CatalogoDemo implements ApplicationRunner {
 		try {
 			if (!carpeta.equals(archivo.toRealPath().getParent())) {
 				errores.add("imagenes: " + nombre + " no es un archivo de la carpeta");
-			} else if (Files.size(archivo) > maximoImagen.toBytes()) {
-				errores.add("imagenes: " + nombre + " pasa de " + maximoImagen.toMegabytes() + " MB");
+			} else if (Files.size(archivo) > FormatoImagen.MAXIMO) {
+				errores.add("imagenes: " + nombre + " pasa de "
+						+ DataSize.ofBytes(FormatoImagen.MAXIMO).toMegabytes() + " MB");
 			} else if (FormatoImagen.detectar(firma(archivo)).isEmpty()) {
 				errores.add("imagenes: " + nombre + " no es JPG, PNG ni WebP");
 			} else {
@@ -332,17 +332,44 @@ public class CatalogoDemo implements ApplicationRunner {
 		return false;
 	}
 
+	// Con las reglas de un modelo subido desde la gestión (HU-15 RF-13); vacío es sin modelo
+	private static Path modelo(Path carpeta, String nombre, List<String> errores) {
+		if (nombre.isEmpty()) {
+			return null;
+		}
+		Path archivo = carpeta.resolve(nombre).normalize();
+		try {
+			if (!carpeta.equals(archivo.getParent())) {
+				errores.add("modelo_3d: " + nombre + " no es un archivo de la carpeta");
+			} else if (!Files.isRegularFile(archivo)) {
+				errores.add("modelo_3d: " + nombre + " no existe en la carpeta");
+			} else if (!carpeta.equals(archivo.toRealPath().getParent())) {
+				errores.add("modelo_3d: " + nombre + " no es un archivo de la carpeta");
+			} else if (Files.size(archivo) > FormatoModelo.MAXIMO) {
+				errores.add("modelo_3d: " + nombre + " pasa de "
+						+ DataSize.ofBytes(FormatoModelo.MAXIMO).toMegabytes() + " MB");
+			} else if (!FormatoModelo.esGlb(Files.readAllBytes(archivo))) {
+				errores.add("modelo_3d: " + nombre + " no es un modelo .glb");
+			} else {
+				return archivo;
+			}
+		} catch (IOException e) {
+			errores.add("modelo_3d: " + nombre + " no se pudo leer");
+		}
+		return null;
+	}
+
 	private static byte[] firma(Path archivo) throws IOException {
 		try (InputStream entrada = Files.newInputStream(archivo)) {
 			return entrada.readNBytes(BYTES_DE_FIRMA);
 		}
 	}
 
-	private static byte[] leerImagen(Path archivo) {
+	private static byte[] leerArchivo(Path archivo) {
 		try {
 			return Files.readAllBytes(archivo);
 		} catch (IOException e) {
-			throw new UncheckedIOException("No se pudo leer la imagen " + archivo, e);
+			throw new UncheckedIOException("No se pudo leer " + archivo, e);
 		}
 	}
 
@@ -354,9 +381,9 @@ public class CatalogoDemo implements ApplicationRunner {
 		}).sorted().forEach(errores::add);
 	}
 
-	// Una fila válida del CSV. Las imágenes se vuelven a leer al cargar, para no tener todas en memoria
+	// Una fila válida del CSV. Las imágenes y el modelo se vuelven a leer al cargar, para no tener todos en memoria
 	private record Fila(int numero, String categoria, String nombre, String descripcion, BigDecimal precio,
-			BigDecimal stock, List<Path> imagenes, boolean destacado, UnidadVenta unidad) {
+			BigDecimal stock, List<Path> imagenes, Path modelo, boolean destacado, UnidadVenta unidad) {
 
 		ProductoRequest producto(Long idCategoria) {
 			return producto(idCategoria, precio);

@@ -89,6 +89,22 @@ a.boton.secundario:hover {
 	white-space: nowrap;
 }
 
+// HU-15: tiene modelo 3D. Un rótulo chico junto al nombre, sin color de estado
+.tres-d {
+	display: inline-block;
+	margin-left: var(--app-espacio-1);
+	padding: 0 var(--app-espacio-1);
+	color: var(--app-texto-suave);
+	font-family: var(--app-familia-titulos);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	line-height: 1.4;
+	border: 1px solid var(--app-borde-control);
+	border-radius: var(--app-radio);
+	vertical-align: 0.1em;
+}
+
 .marca,
 .unidad {
 	display: block;

@@ -14,6 +14,7 @@ import bo.edu.uagrm.tienda.entity.Categoria;
 import bo.edu.uagrm.tienda.exception.CategoriaConProductosException;
 import bo.edu.uagrm.tienda.exception.CategoriaExistenteException;
 import bo.edu.uagrm.tienda.exception.CategoriaNoEncontradaException;
+import bo.edu.uagrm.tienda.exception.ImagenDemasiadoGrandeException;
 import bo.edu.uagrm.tienda.exception.ImagenInvalidaException;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
@@ -97,6 +98,9 @@ public class CategoriaService {
 	// transacción se revierte, el nuevo: un fallo nunca deja la categoría apuntando a un archivo borrado
 	@Transactional
 	public Categoria cambiarImagen(Long idCategoria, byte[] contenido) {
+		if (contenido.length > FormatoImagen.MAXIMO) {
+			throw new ImagenDemasiadoGrandeException();
+		}
 		FormatoImagen formato = FormatoImagen.detectar(contenido).orElseThrow(ImagenInvalidaException::new);
 		Categoria categoria = bloquear(idCategoria);
 		String anterior = categoria.getImagen();

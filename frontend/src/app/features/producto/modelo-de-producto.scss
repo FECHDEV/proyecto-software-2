@@ -1,0 +1,86 @@
+// La tarjeta «Modelo 3D», con las mismas piezas que la de fotos de producto.page.scss
+@use '../../../styles/formulario';
+
+:host {
+	display: block;
+}
+
+h2 {
+	margin: 0;
+	font-size: 22px;
+}
+
+// El título recibe el foco después de cambiar el modelo, sin marco propio
+h2:focus {
+	outline: none;
+}
+
+.tarjeta {
+	max-width: none;
+	margin: 0;
+}
+
+.ayuda {
+	margin: 0;
+	color: var(--app-texto-suave);
+	font-size: 14px;
+}
+
+.avisos:not(:has(.aviso)) {
+	position: absolute;
+}
+
+.avisos,
+.avisos > div {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-2);
+}
+
+// Se guardó, pero pesa más de lo recomendado
+.aviso.atencion {
+	border-color: var(--app-aviso);
+	background: var(--app-aviso-fondo);
+	color: var(--app-aviso);
+}
+
+.acciones {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-2);
+	align-items: center;
+}
+
+.boton.secundario {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--app-espacio-2);
+	background: transparent;
+	border-color: var(--app-borde-control);
+	color: var(--app-texto);
+}
+
+.boton.secundario:hover:not([disabled], [aria-disabled='true']) {
+	background: var(--app-superficie-alta);
+}
+
+.boton.peligro {
+	color: var(--app-error);
+}
+
+.archivo {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+}
+
+.archivo[aria-disabled='true'] + .boton {
+	opacity: 0.6;
+	cursor: default;
+}
+
+.archivo:focus-visible + .boton {
+	outline: 3px solid var(--app-acento-texto);
+	outline-offset: 2px;
+}

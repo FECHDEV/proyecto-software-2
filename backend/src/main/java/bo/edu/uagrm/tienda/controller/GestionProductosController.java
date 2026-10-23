@@ -75,6 +75,18 @@ public class GestionProductosController {
 		return productoService.reordenar(idProducto, solicitud.imagenes());
 	}
 
+	// HU-15: subir el modelo lo reemplaza si ya había uno
+	@PutMapping("/{idProducto}/modelo")
+	public ProductoResponse subirModelo(@PathVariable Long idProducto, @RequestParam("modelo") MultipartFile modelo)
+			throws IOException {
+		return productoService.subirModelo(idProducto, modelo.getBytes());
+	}
+
+	@DeleteMapping("/{idProducto}/modelo")
+	public ProductoResponse quitarModelo(@PathVariable Long idProducto) {
+		return productoService.quitarModelo(idProducto);
+	}
+
 	@DeleteMapping("/{idProducto}/imagenes/{imagen}")
 	public ProductoResponse quitarImagen(@PathVariable Long idProducto, @PathVariable String imagen) {
 		return productoService.quitarImagen(idProducto, imagen);

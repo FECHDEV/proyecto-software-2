@@ -60,6 +60,26 @@ class AlmacenImagenesTest {
 		almacen.borrar("5f2c1d3e-0000-4000-8000-000000000000.png");
 	}
 
+	// HU-15 RF-2, RF-8: los modelos van a la misma carpeta, con nombre generado y extensión glb
+	@Test
+	void guardaYLeeUnGlb() {
+		byte[] modelo = FormatoModeloTest.glb(64);
+		String nombre = almacen.guardar(modelo, FormatoModelo.EXTENSION);
+
+		assertThat(nombre).matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.glb");
+		assertThat(almacen.leer(nombre)).hasValueSatisfying(bytes -> assertThat(bytes).isEqualTo(modelo));
+	}
+
+	// HU-15 RF-8: otra extensión o un nombre que no generó no se lee
+	@Test
+	void ignoraNombresQueNoGenero() throws IOException {
+		Files.writeString(carpeta.resolve("imagenes").resolve("modelo.glb"), "no");
+
+		assertThat(almacen.leer("modelo.glb")).isEmpty();
+		assertThat(almacen.leer("5f2c1d3e-0000-4000-8000-000000000000.gltf")).isEmpty();
+		assertThat(almacen.leer("../5f2c1d3e-0000-4000-8000-000000000000.glb")).isEmpty();
+	}
+
 	// RF-29: nada de rutas armadas con datos de afuera, aunque vengan de la base
 	@Test
 	void noLeeNiBorraFueraDeSuCarpeta() throws IOException {

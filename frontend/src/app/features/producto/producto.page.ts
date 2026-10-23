@@ -46,6 +46,7 @@ import {
 } from '../../shared/formularios/primer-campo-con-error';
 import { sinEspaciosSolos } from '../../shared/formularios/reglas-de-campo';
 import { idDeLaUrl } from '../../shared/navegacion/id-de-la-url';
+import { ModeloDeProducto } from './modelo-de-producto';
 
 type Campo = 'nombre' | 'marca' | 'idCategoria' | 'unidad' | 'precio' | 'costo' | 'descripcion';
 
@@ -114,7 +115,7 @@ const esquema = schema<DatosDeProducto>((ruta) => {
 // Las fotos se suben con el producto ya creado: necesitan su número.
 @Component({
 	selector: 'app-producto',
-	imports: [FormField, RouterLink, DialogoConfirmacion, LucideArrowLeft, LucidePlus, LucideTrash2],
+	imports: [FormField, RouterLink, DialogoConfirmacion, ModeloDeProducto, LucideArrowLeft, LucidePlus, LucideTrash2],
 	templateUrl: './producto.page.html',
 	styleUrl: './producto.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -262,7 +263,12 @@ export class ProductoPage implements ConCambiosSinGuardar {
 						await this.creado(await this.productos.crear(enviados));
 					} else {
 						const guardado = await this.productos.editar(id, enviados);
-						this.producto.set(guardado);
+						// Las fotos y el modelo tienen sus propias operaciones, que pudieron responder antes
+						this.producto.update((producto) =>
+							producto === undefined
+								? guardado
+								: { ...guardado, imagenes: producto.imagenes, modelo: producto.modelo },
+						);
 						// Si el backend solo descartó algo (un par vacío, espacios), base no cambia:
 						// el formulario se pone igual a lo guardado
 						this.datos.set(aFormulario(guardado));
@@ -333,6 +339,12 @@ export class ProductoPage implements ConCambiosSinGuardar {
 		}
 	}
 
+	// Las fotos y el modelo se cambian por separado y pueden responder en otro orden: cada uno toca solo lo suyo,
+	// así una respuesta que llega tarde no deshace la otra (/code-review)
+	protected alCambiarModelo({ modelo }: Producto): void {
+		this.producto.update((producto) => producto && { ...producto, modelo });
+	}
+
 	private async creado(producto: Producto): Promise<void> {
 		this.producto.set(producto);
 		this.avisoDeExito.set(`Producto creado con el código ${producto.codigo}. Ya puede subir sus fotos.`);
@@ -352,7 +364,8 @@ export class ProductoPage implements ConCambiosSinGuardar {
 		this.errorDeFotos.set('');
 		this.exitoDeFotos.set('');
 		try {
-			this.producto.set(await operacion());
+			const { imagenes } = await operacion();
+			this.producto.update((producto) => producto && { ...producto, imagenes });
 			this.exitoDeFotos.set(exito);
 			// El botón usado puede desaparecer (la foto quitada, la que pasó a principal): el foco va al título
 			afterNextRender(() => enfocarCampo(this.elemento.nativeElement, 'titulo-fotos'), { injector: this.injector });
