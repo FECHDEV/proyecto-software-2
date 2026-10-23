@@ -110,6 +110,9 @@ en variables `TIENDA_PAGO_*` del `.env`.
   descarta. La tabla guarda solo ese nombre, y ninguna ruta se arma con lo que
   manda el cliente.
 - Se sirve desde el backend, por el registro al que pertenece.
+- *22/10/2026 (HU-15).* La misma carpeta guarda los modelos 3D (`.glb`), con
+  las mismas reglas de nombres. Multipart deja pasar hasta 3 MB, el límite de
+  un modelo; los 2 MB de una imagen los controla el servicio.
 
 **Motivo:** una URL externa haría depender la imagen de un sitio ajeno, que
 además vería cada visita; guardarla en la base agranda la base y sus respaldos.
@@ -571,6 +574,28 @@ pieza que ya resuelve los casos difíciles (realidad aumentada en dos
 sistemas, gestos, accesibilidad) aunque pese un poco más, y con modelos
 livianos la diferencia que se nota es la de los modelos, no la de la librería.
 
+*22/10/2026 (HU-15).* **Carga del modelo:**
+
+- **Un modelo `.glb` por producto,** opcional. El Administrador lo sube,
+  lo reemplaza o lo quita desde el formulario del producto. Al reemplazarlo
+  o quitarlo se borra el archivo anterior, como con las fotos.
+- **Se comprueba por su contenido,** no por la extensión: un glTF binario
+  versión 2. Hasta **3 MB**. Entre 1 y 3 MB se acepta con un aviso de que
+  puede tardar en cargar en un celular con datos.
+- **Vista previa con el mismo visor:** `<model-viewer>` entra en HU-15 y el
+  Administrador gira el modelo en el formulario antes de que lo vean los
+  clientes. HU-16 reutiliza el visor en el detalle.
+- **Marca «3D»** en la lista «Productos» del Administrador, sin filtro nuevo.
+- **El catálogo de demostración carga la columna `modelo_3d`** con las mismas
+  reglas. Un modelo inválido hace inválida la fila, como una imagen.
+- El archivo se guarda y se sirve como las imágenes («Imágenes subidas»): el
+  nombre lo genera el sistema y se sirve por el producto al que pertenece.
+
+**Motivo:** reemplazar y quitar cubren un modelo mal preparado; la vista
+previa evita publicar uno roto, girado o a otra escala; el aviso de peso
+sostiene la recomendación del spike sin bloquear la carga; con la
+demostración, los modelos de Poly Haven quedan listos para mostrar.
+
 ### Categorías del catálogo
 
 *10/10/2026 (HU-06).* Un solo nivel, sin subcategorías. Cada categoría tiene
@@ -922,7 +947,8 @@ lectura) con `catalogo.csv` y sus imágenes. Lo hace `CatalogoDemo`.
   `categoria,nombre,descripcion,precio_bs,stock_inicial,imagenes,modelo_3d,destacado,unidad`.
   Separado por comas y sin comillas: **ningún campo lleva comas**. Precio y
   stock con punto decimal; `imagenes`, archivos de la carpeta separados por
-  `|`; `modelo_3d` se ignora hasta HU-15 (el spike #14 ya se cerró); `destacado`, `si` o vacío
+  `|`; `modelo_3d`, un archivo `.glb` de la carpeta o vacío (desde HU-15, con sus
+  reglas en «Visor 3D y modelos»); `destacado`, `si` o vacío
   (sale en «Destacados» de la portada); `unidad`, `unidad`, `metro`, `kilo`,
   `litro`, `caja`, `par` o `rollo`, y vacía es `unidad`.
 - **Las reglas de siempre:** categorías, productos, imágenes (2 MB, JPG, PNG o
