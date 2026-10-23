@@ -35,8 +35,9 @@ generador).
 ## Catálogo de demostración (issue #25)
 
 El catálogo con el que se muestra la tienda en las reviews y en la defensa. El
-código que lo carga ya existe (`decisiones.md` → «Catálogo de demostración»);
-falta el contenido.
+código que lo carga ya existe (`decisiones.md` → «Catálogo de demostración»).
+*23/10/2026:* contenido entregado en `docs/proyecto/demo/`: 22 productos en 5
+categorías, todos con modelo 3D de Poly Haven y fotos sacadas de esos modelos.
 
 - **Entrega:** `docs/proyecto/demo/catalogo.csv` y
   `docs/proyecto/demo/README.md`, por PR con `Closes #25`.
