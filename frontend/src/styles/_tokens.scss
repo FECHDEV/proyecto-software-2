@@ -78,6 +78,9 @@
 	// Esquinas rectas, como la lona cortada (DESIGN.md)
 	--app-radio: 2px;
 	--app-radio-control: 0;
+	// El contorno del foco con teclado: el global de styles.scss y los que lo muestran en otro elemento
+	--app-foco: 3px solid var(--app-acento-texto);
+	--app-foco-separacion: 2px;
 	// El sesgo de los paneles y las placas del letrero; el texto va derecho
 	--app-sesgo: -12deg;
 	--app-ancho-maximo: 1120px;

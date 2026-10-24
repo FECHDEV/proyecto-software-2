@@ -1,4 +1,5 @@
 // Formulario y botones de _formulario.scss; acá la lista de categorías
+@use '../../../styles/archivo';
 @use '../../../styles/formulario';
 @use '../../../styles/pagina';
 
@@ -132,20 +133,6 @@ h2 {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--app-espacio-2);
-}
-
-// El input de archivo se usa con su etiqueta «Imagen»; queda accesible pero fuera de la vista
-.archivo {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	opacity: 0;
-}
-
-// Con teclado, el foco está en el input invisible: se muestra en su etiqueta, que es lo que se ve
-.archivo:focus-visible + .boton {
-	outline: 3px solid var(--app-acento-texto);
-	outline-offset: 2px;
 }
 
 .cargando,

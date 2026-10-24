@@ -80,9 +80,12 @@
             accept="image/jpeg,image/png,image/webp"
             [id]="'imagen-' + categoria.idCategoria"
             [attr.aria-label]="'Imagen de ' + categoria.nombre"
+            [ocupado]="subiendoImagen() === categoria.idCategoria"
             (change)="elegirImagen(categoria, $event)"
           />
-          <label class="boton secundario" [attr.for]="'imagen-' + categoria.idCategoria">Imagen</label>
+          <label class="boton secundario" [attr.for]="'imagen-' + categoria.idCategoria">
+            {{ subiendoImagen() === categoria.idCategoria ? 'Subiendo…' : 'Imagen' }}
+          </label>
           @if (categoria.tieneImagen) {
             <button type="button" class="boton secundario" (click)="quitarImagen(categoria)">Quitar imagen</button>
           }

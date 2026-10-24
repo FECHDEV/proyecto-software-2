@@ -374,6 +374,13 @@ qué correos tienen cuenta. El adaptador SMTP envía en segundo plano (`@Async`)
 y registra los fallos en el log sin propagarlos. Cada correo va en texto plano
 y en HTML, y en el HTML todo dato que escribió un usuario se escapa.
 
+*24/10/2026:* **el correo sale después del commit** (`TrasElCommit`): si la
+transacción que creó el enlace se deshace, no llega un enlace que no sirve.
+Sin transacción abierta, sale en el momento. Un fallo al encargar el envío
+solo va al log: la cuenta o el enlace ya quedaron guardados. Los archivos que
+se borran al terminar la transacción (`ArchivosAlTerminar`) usan la misma
+pieza.
+
 Cada correo nuevo es un método más de la interfaz, con su versión en el
 simulador y en el adaptador.
 

@@ -63,7 +63,9 @@ public class RecuperacionContrasenaService {
 		String token = TokenRecuperacion.generar();
 		recuperacionRepository.save(
 				RecuperacionContrasena.crear(usuario, TokenRecuperacion.hash(token), LocalDateTime.now(clock)));
-		notificadorCorreo.enviarRecuperacion(usuario.getCorreo(), usuario.getNombre(), token);
+		String correo = usuario.getCorreo();
+		String nombre = usuario.getNombre();
+		TrasElCommit.ejecutar(() -> notificadorCorreo.enviarRecuperacion(correo, nombre, token));
 	}
 
 	// Incluye la recuperación que se acaba de usar al restablecer

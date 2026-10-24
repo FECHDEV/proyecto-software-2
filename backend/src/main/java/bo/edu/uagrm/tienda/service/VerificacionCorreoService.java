@@ -38,7 +38,9 @@ public class VerificacionCorreoService {
 		String token = TokenRecuperacion.generar();
 		verificacionRepository.save(
 				VerificacionCorreo.crear(usuario, TokenRecuperacion.hash(token), LocalDateTime.now(clock)));
-		notificadorCorreo.enviarVerificacion(usuario.getCorreo(), usuario.getNombre(), token);
+		String correo = usuario.getCorreo();
+		String nombre = usuario.getNombre();
+		TrasElCommit.ejecutar(() -> notificadorCorreo.enviarVerificacion(correo, nombre, token));
 	}
 
 	// Con la cuenta bloqueada, dos reenvíos a la vez se esperan y queda un solo enlace vigente (RF-9). El ya verificado

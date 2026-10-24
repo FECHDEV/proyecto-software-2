@@ -332,6 +332,20 @@ class RecuperacionContrasenaIntegracionTest {
 		assertThat(iniciarSesion("ana@mail.com", "nueva-clave-1")).hasStatus(HttpStatus.OK);
 	}
 
+	// HU-03 (24/10/2026): el correo sale después del commit. Si la transacción se deshace, no llega un enlace que no
+	// sirve. Con otra cuenta: el límite de solicitudes vive en memoria y no se deshace con la transacción
+	@Test
+	void siLaSolicitudSeDeshaceNoSeEnviaElEnlace() {
+		registrar("beto@mail.com");
+		transaccion.executeWithoutResult(estado -> {
+			recuperacionContrasenaService.solicitar(new SolicitudRecuperacionRequest("beto@mail.com"), "10.1.0.14");
+			estado.setRollbackOnly();
+		});
+
+		then(notificadorCorreo).should(never()).enviarRecuperacion(anyString(), anyString(), anyString());
+		assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM recuperacion_contrasena", Integer.class)).isZero();
+	}
+
 	private static void esperar(long milisegundos) {
 		try {
 			Thread.sleep(milisegundos);

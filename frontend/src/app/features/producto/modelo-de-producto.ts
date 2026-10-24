@@ -15,6 +15,7 @@ import { mensajeDeError, mensajeDelCodigo } from '../../core/api/mensajes-error'
 import { ProductosService } from '../../core/api/productos.service';
 import { comoError } from '../../core/modelos/error-api';
 import { MAXIMO_MODELO, MODELO_RECOMENDADO, Producto } from '../../core/modelos/producto';
+import { ArchivoOcupado } from '../../shared/archivo/archivo-ocupado';
 import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
 import { enfocarCampo } from '../../shared/formularios/primer-campo-con-error';
 import { Visor3d } from '../../shared/visor-3d/visor-3d';
@@ -24,7 +25,7 @@ import { Visor3d } from '../../shared/visor-3d/visor-3d';
 // actualizado vuelve a la pantalla por «cambiado»
 @Component({
 	selector: 'app-modelo-de-producto',
-	imports: [Visor3d],
+	imports: [ArchivoOcupado, Visor3d],
 	templateUrl: './modelo-de-producto.html',
 	styleUrl: './modelo-de-producto.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -56,7 +57,7 @@ export class ModeloDeProducto {
 	}
 
 	// Lo que pasa de 3 MB ni se sube: el backend lo rechazaría, y uno muy grande lo corta el servidor (RF-4). Mientras
-	// sube, el campo va con aria-disabled y no disabled: el foco se queda ahí si falla y se vuelve a intentar
+	// sube, el campo queda ocupado (ArchivoOcupado) y un change se ignora
 	protected async elegir(evento: Event): Promise<void> {
 		const entrada = evento.target as HTMLInputElement;
 		const archivo = entrada.files?.[0];
@@ -73,13 +74,6 @@ export class ModeloDeProducto {
 		}
 		const exito = producto.modelo === null ? 'Modelo subido.' : 'Modelo reemplazado.';
 		await this.operar(() => this.productos.subirModelo(producto.idProducto, archivo), exito);
-	}
-
-	// aria-disabled no detiene el selector de archivos: mientras sube, no se abre (/code-review, ronda 2)
-	protected alPulsarElArchivo(evento: Event): void {
-		if (this.operando()) {
-			evento.preventDefault();
-		}
 	}
 
 	protected async quitar(): Promise<void> {

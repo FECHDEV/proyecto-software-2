@@ -409,7 +409,10 @@ adentro, siempre derechos.
 - **Cantidad con − y +:** el campo de 5 rem centrado entre dos botones de
   44 px con borde de 2 px del color del texto; en el límite, borde punteado y
   opacidad 0.4 (`shared/paso-de-cantidad`).
-- **Focus:** el contorno global de 3 px.
+- **Focus:** el contorno global de 3 px (`--app-foco` y
+  `--app-foco-separacion`; *24/10/2026*). Lo que lo muestra en otro elemento,
+  como la etiqueta de un campo de archivo o el visor 3D, usa los mismos
+  tokens.
 - **Error:** borde `error` de 2 px (o costura interior en el catálogo) y el
   mensaje en `error` junto al campo; además, resumen al principio del
   formulario, que recibe el foco al fallar el envío y lleva a cada campo.

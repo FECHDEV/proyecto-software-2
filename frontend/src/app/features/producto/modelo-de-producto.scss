@@ -1,4 +1,5 @@
 // La tarjeta «Modelo 3D», con las mismas piezas que la de fotos de producto.page.scss
+@use '../../../styles/archivo';
 @use '../../../styles/formulario';
 
 :host {
@@ -68,19 +69,3 @@ h2:focus {
 	color: var(--app-error);
 }
 
-.archivo {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	opacity: 0;
-}
-
-.archivo[aria-disabled='true'] + .boton {
-	opacity: 0.6;
-	cursor: default;
-}
-
-.archivo:focus-visible + .boton {
-	outline: 3px solid var(--app-acento-texto);
-	outline-offset: 2px;
-}
