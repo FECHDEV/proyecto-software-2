@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
@@ -36,6 +37,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.jayway.jsonpath.JsonPath;
 
@@ -80,6 +82,9 @@ class VerificacionCorreoIntegracionTest {
 
 	@Autowired
 	private VerificacionCorreoService verificacionCorreoService;
+
+	@Autowired
+	private TransactionTemplate transaccion;
 
 	// Vive en el contexto compartido y cuenta por cuenta: sin reiniciarlo, los reenvíos de un test frenan al siguiente
 	@Autowired
@@ -140,6 +145,22 @@ class VerificacionCorreoIntegracionTest {
 		assertThat(sesionDeAna).isNotBlank();
 		assertThat(verificado("ana@mail.com")).isFalse();
 		then(notificadorCorreo).should(times(1)).enviarVerificacion(eq("ana@mail.com"), eq("Ana"), anyString());
+	}
+
+	// HU-20 RF-13 (24/10/2026): el correo sale después del commit. Si la transacción se deshace, no llega un enlace que
+	// no sirve
+	@Test
+	void siElReenvioSeDeshaceNoSeEnviaElEnlace() {
+		clearInvocations(notificadorCorreo);
+		transaccion.executeWithoutResult(estado -> {
+			verificacionCorreoService.reenviar(idDe("ana@mail.com"));
+			estado.setRollbackOnly();
+		});
+
+		then(notificadorCorreo).should(never()).enviarVerificacion(anyString(), anyString(), anyString());
+		// Solo el enlace del registro, todavía vigente
+		assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM verificacion_correo WHERE usado = FALSE",
+				Integer.class)).isEqualTo(1);
 	}
 
 	// HU-20 RF-3, RF-4

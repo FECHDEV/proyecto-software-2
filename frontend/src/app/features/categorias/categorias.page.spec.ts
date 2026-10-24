@@ -252,6 +252,26 @@ describe('CategoriasPage', () => {
     expect(texto()).toContain('Ese archivo no es una imagen JPG, PNG o WebP.');
   });
 
+  // HU-06 RF-6: mientras sube lo dice, el campo queda ocupado y no sube otra a la vez
+  it('mientras sube una imagen no deja subir otra', async () => {
+    let entregar!: (categoria: CategoriaGestion) => void;
+    categorias.respuesta = new Promise((resolver) => (entregar = resolver));
+    const entrada = fila('Jardín').querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(entrada, 'files', { value: [new File([], 'foto.jpg')] });
+
+    entrada.dispatchEvent(new Event('change'));
+    await fijo.whenStable();
+
+    expect(entrada.getAttribute('aria-disabled')).toBe('true');
+    expect(fila('Jardín').querySelector('label')?.textContent?.trim()).toBe('Subiendo…');
+    entrada.dispatchEvent(new Event('change'));
+    expect(categorias.imagenes).toHaveLength(1);
+
+    entregar(JARDIN);
+    await asentar();
+    expect(entrada.hasAttribute('aria-disabled')).toBe(false);
+  });
+
   // HU-07 RF-12, HU-06 RF-10: con productos no se ofrece borrar, sino ocultar
   it('una categoría con productos ofrece ocultarla en vez de borrarla', async () => {
     categorias.recurso.value.set([{ ...JARDIN, productos: 3 }, PLOMERIA]);

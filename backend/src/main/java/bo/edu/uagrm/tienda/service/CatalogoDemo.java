@@ -286,7 +286,6 @@ public class CatalogoDemo implements ApplicationRunner {
 		return UnidadVenta.UNIDAD;
 	}
 
-	// Solo nombres de archivo de la misma carpeta: ninguna ruta sale de ella, tampoco por un enlace simbólico
 	private List<Path> imagenes(Path carpeta, String campo, List<String> errores) {
 		if (campo.isEmpty()) {
 			return List.of();
@@ -300,36 +299,27 @@ public class CatalogoDemo implements ApplicationRunner {
 		Set<String> vistas = new HashSet<>();
 		for (String sinRecortar : nombres) {
 			String nombre = sinRecortar.strip();
-			Path archivo = carpeta.resolve(nombre).normalize();
 			if (!vistas.add(nombre)) {
 				errores.add("imagenes: " + nombre + " está repetida");
-			} else if (nombre.isEmpty() || !carpeta.equals(archivo.getParent())) {
-				errores.add("imagenes: " + nombre + " no es un archivo de la carpeta");
-			} else if (!Files.isRegularFile(archivo)) {
-				errores.add("imagenes: " + nombre + " no existe en la carpeta");
-			} else if (validarImagen(carpeta, nombre, archivo, errores)) {
-				imagenes.add(archivo);
+				continue;
+			}
+			Path archivo = archivoDeLaCarpeta(carpeta, "imagenes", nombre, errores);
+			try {
+				if (archivo == null) {
+					continue;
+				} else if (Files.size(archivo) > FormatoImagen.MAXIMO) {
+					errores.add("imagenes: " + nombre + " pasa de "
+							+ DataSize.ofBytes(FormatoImagen.MAXIMO).toMegabytes() + " MB");
+				} else if (FormatoImagen.detectar(firma(archivo)).isEmpty()) {
+					errores.add("imagenes: " + nombre + " no es JPG, PNG ni WebP");
+				} else {
+					imagenes.add(archivo);
+				}
+			} catch (IOException e) {
+				errores.add("imagenes: " + nombre + " no se pudo leer");
 			}
 		}
 		return imagenes;
-	}
-
-	private boolean validarImagen(Path carpeta, String nombre, Path archivo, List<String> errores) {
-		try {
-			if (!carpeta.equals(archivo.toRealPath().getParent())) {
-				errores.add("imagenes: " + nombre + " no es un archivo de la carpeta");
-			} else if (Files.size(archivo) > FormatoImagen.MAXIMO) {
-				errores.add("imagenes: " + nombre + " pasa de "
-						+ DataSize.ofBytes(FormatoImagen.MAXIMO).toMegabytes() + " MB");
-			} else if (FormatoImagen.detectar(firma(archivo)).isEmpty()) {
-				errores.add("imagenes: " + nombre + " no es JPG, PNG ni WebP");
-			} else {
-				return true;
-			}
-		} catch (IOException e) {
-			errores.add("imagenes: " + nombre + " no se pudo leer");
-		}
-		return false;
 	}
 
 	// Con las reglas de un modelo subido desde la gestión (HU-15 RF-13); vacío es sin modelo
@@ -337,14 +327,10 @@ public class CatalogoDemo implements ApplicationRunner {
 		if (nombre.isEmpty()) {
 			return null;
 		}
-		Path archivo = carpeta.resolve(nombre).normalize();
+		Path archivo = archivoDeLaCarpeta(carpeta, "modelo_3d", nombre, errores);
 		try {
-			if (!carpeta.equals(archivo.getParent())) {
-				errores.add("modelo_3d: " + nombre + " no es un archivo de la carpeta");
-			} else if (!Files.isRegularFile(archivo)) {
-				errores.add("modelo_3d: " + nombre + " no existe en la carpeta");
-			} else if (!carpeta.equals(archivo.toRealPath().getParent())) {
-				errores.add("modelo_3d: " + nombre + " no es un archivo de la carpeta");
+			if (archivo == null) {
+				return null;
 			} else if (Files.size(archivo) > FormatoModelo.MAXIMO) {
 				errores.add("modelo_3d: " + nombre + " pasa de "
 						+ DataSize.ofBytes(FormatoModelo.MAXIMO).toMegabytes() + " MB");
@@ -355,6 +341,26 @@ public class CatalogoDemo implements ApplicationRunner {
 			}
 		} catch (IOException e) {
 			errores.add("modelo_3d: " + nombre + " no se pudo leer");
+		}
+		return null;
+	}
+
+	// Solo nombres de archivo de la misma carpeta: ninguna ruta sale de ella, tampoco por un enlace simbólico. Sin el
+	// archivo, anota el error y devuelve null
+	private static Path archivoDeLaCarpeta(Path carpeta, String columna, String nombre, List<String> errores) {
+		Path archivo = carpeta.resolve(nombre).normalize();
+		try {
+			if (nombre.isEmpty() || !carpeta.equals(archivo.getParent())) {
+				errores.add(columna + ": " + nombre + " no es un archivo de la carpeta");
+			} else if (!Files.isRegularFile(archivo)) {
+				errores.add(columna + ": " + nombre + " no existe en la carpeta");
+			} else if (!carpeta.equals(archivo.toRealPath().getParent())) {
+				errores.add(columna + ": " + nombre + " no es un archivo de la carpeta");
+			} else {
+				return archivo;
+			}
+		} catch (IOException e) {
+			errores.add(columna + ": " + nombre + " no se pudo leer");
 		}
 		return null;
 	}

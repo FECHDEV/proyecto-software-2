@@ -330,7 +330,9 @@ el registro, el correo real por Gmail con su enlace, el aviso del carrito y
   23/10/2026* (`decisiones.md` → «`Usuario` es una sola clase…»).
 - El correo (verificación y recuperación) se envía antes del commit: si la
   transacción falla después, llega un enlace que no sirve. Se arregla
-  enviando después del commit (`@TransactionalEventListener`).
+  enviando después del commit (`@TransactionalEventListener`). *Resuelto el
+  24/10/2026* con `TrasElCommit` (`decisiones.md` → «Envío de correo detrás
+  de `NotificadorCorreo`»).
 - Si la red se corta justo después de verificar, «Reintentar» dice que el
   enlace no sirve aunque el correo ya quedó verificado.
 - Reenviar con la cuenta recién desactivada responde 403 y no 401: la sesión

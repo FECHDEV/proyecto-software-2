@@ -18,8 +18,8 @@
 
 // El foco de model-viewer es un contorno de 1 px que casi no se ve: el de la tienda (revisión de interfaz)
 model-viewer.foco-teclado {
-	outline: 3px solid var(--app-acento-texto);
-	outline-offset: 2px;
+	outline: var(--app-foco);
+	outline-offset: var(--app-foco-separacion);
 }
 
 model-viewer {

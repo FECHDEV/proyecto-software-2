@@ -32,8 +32,7 @@
         class="archivo"
         type="file"
         accept=".glb,model/gltf-binary"
-        [attr.aria-disabled]="operando() ? 'true' : null"
-        (click)="alPulsarElArchivo($event)"
+        [ocupado]="operando()"
         (change)="elegir($event)"
       />
       <label class="boton secundario" for="modelo-nuevo">

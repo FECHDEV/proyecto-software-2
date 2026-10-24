@@ -304,7 +304,7 @@
             class="archivo"
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            [disabled]="operandoFotos()"
+            [ocupado]="operandoFotos()"
             (change)="elegirFoto($event)"
           />
           <label class="boton secundario" for="foto-nueva">

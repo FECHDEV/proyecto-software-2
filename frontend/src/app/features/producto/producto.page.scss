@@ -1,4 +1,5 @@
 // Formulario, botones y avisos de _formulario.scss; acá la ficha y las fotos
+@use '../../../styles/archivo';
 @use '../../../styles/formulario';
 @use '../../../styles/pagina';
 
@@ -230,28 +231,9 @@ legend {
 	color: var(--app-acento-texto);
 }
 
-// El input de archivo se usa con su etiqueta «Subir foto»; queda accesible pero fuera de la vista
-.archivo {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	opacity: 0;
-}
-
-.archivo:disabled + .boton {
-	opacity: 0.6;
-	cursor: default;
-}
-
 // El título recibe el foco después de cambiar las fotos, sin marco propio
 #titulo-fotos:focus {
 	outline: none;
-}
-
-// Con teclado, el foco está en el input invisible: se muestra en su etiqueta, que es lo que se ve
-.archivo:focus-visible + .boton {
-	outline: 3px solid var(--app-acento-texto);
-	outline-offset: 2px;
 }
 
 .tarjeta-error {

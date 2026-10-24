@@ -89,8 +89,8 @@ textarea {
 }
 
 :focus-visible {
-	outline: 3px solid var(--app-acento-texto);
-	outline-offset: 2px;
+	outline: var(--app-foco);
+	outline-offset: var(--app-foco-separacion);
 }
 
 // Para quien navega con teclado: primer tabulador de la página

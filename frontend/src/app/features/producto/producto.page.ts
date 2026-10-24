@@ -37,6 +37,7 @@ import {
 	Producto,
 	UNIDADES,
 } from '../../core/modelos/producto';
+import { ArchivoOcupado } from '../../shared/archivo/archivo-ocupado';
 import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
 import { problemaDelPrecio } from '../../shared/formato/precios';
 import {
@@ -115,7 +116,7 @@ const esquema = schema<DatosDeProducto>((ruta) => {
 // Las fotos se suben con el producto ya creado: necesitan su número.
 @Component({
 	selector: 'app-producto',
-	imports: [FormField, RouterLink, DialogoConfirmacion, ModeloDeProducto, LucideArrowLeft, LucidePlus, LucideTrash2],
+	imports: [FormField, RouterLink, ArchivoOcupado, DialogoConfirmacion, ModeloDeProducto, LucideArrowLeft, LucidePlus, LucideTrash2],
 	templateUrl: './producto.page.html',
 	styleUrl: './producto.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -300,11 +301,12 @@ export class ProductoPage implements ConCambiosSinGuardar {
 		}
 	}
 
+	// Mientras sube, el campo queda ocupado (ArchivoOcupado) y un change se ignora
 	protected async elegirFoto(evento: Event): Promise<void> {
 		const entrada = evento.target as HTMLInputElement;
 		const archivo = entrada.files?.[0];
 		const producto = this.producto();
-		if (archivo !== undefined && producto !== undefined) {
+		if (archivo !== undefined && producto !== undefined && !this.operandoFotos()) {
 			await this.operarFotos(() => this.productos.agregarImagen(producto.idProducto, archivo), 'Foto agregada.');
 		}
 		// El mismo archivo se puede volver a elegir después de un error

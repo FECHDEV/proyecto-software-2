@@ -94,6 +94,9 @@ public class ConciliacionDePagos {
 				} else {
 					pedidoService.revivir(pedido, fecha, ahora); // RF-9
 				}
+				// Al confirmar: si algo falla antes, el cobro sigue pendiente y el log no puede decir que se pagó
+				TrasElCommit.ejecutar(() -> log.info("Cobro {} pagado el {} (pedido {})", datos.idCobro(), fecha,
+						datos.idPedido()));
 			}
 		}
 	}

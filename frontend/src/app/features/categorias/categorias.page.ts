@@ -6,6 +6,7 @@ import { CategoriasService } from '../../core/api/categorias.service';
 import { mensajeDeError } from '../../core/api/mensajes-error';
 import { CategoriaGestion, DatosDeCategoria } from '../../core/modelos/categoria';
 import { comoError, ErrorApi } from '../../core/modelos/error-api';
+import { ArchivoOcupado } from '../../shared/archivo/archivo-ocupado';
 import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
 import { sinEspaciosSolos } from '../../shared/formularios/reglas-de-campo';
 
@@ -23,7 +24,7 @@ const esquema = schema<DatosDeCategoria>((ruta) => {
 // el backend lo valida en cada petición, la ruta solo evita mostrarla a otros.
 @Component({
 	selector: 'app-categorias',
-	imports: [FormField, DialogoConfirmacion, LucideTag],
+	imports: [FormField, ArchivoOcupado, DialogoConfirmacion, LucideTag],
 	templateUrl: './categorias.page.html',
 	styleUrl: './categorias.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,6 +45,8 @@ export class CategoriasPage {
 	protected readonly aviso = signal('');
 	// Cada imagen se pide con un sufijo nuevo después de cambiarla, para no ver la anterior guardada en el navegador
 	protected readonly versionDeImagen = signal(Date.now());
+	// La categoría cuya imagen se está subiendo
+	protected readonly subiendoImagen = signal<number | null>(null);
 
 	protected urlDeImagen(categoria: CategoriaGestion): string {
 		return `${this.categorias.urlDeImagen(categoria.idCategoria)}?v=${this.versionDeImagen()}`;
@@ -101,16 +104,20 @@ export class CategoriasPage {
 		await this.operar(() => this.categorias.cambiarVisibilidad(categoria.idCategoria, !categoria.visible));
 	}
 
+	// Mientras sube, el campo queda ocupado (ArchivoOcupado) y un change se ignora: dos subidas a la vez dejarían la
+	// imagen de la que termine última
 	protected async elegirImagen(categoria: CategoriaGestion, evento: Event): Promise<void> {
 		const entrada = evento.target as HTMLInputElement;
 		const archivo = entrada.files?.[0];
-		if (archivo === undefined) {
+		if (archivo === undefined || this.subiendoImagen() === categoria.idCategoria) {
 			return;
 		}
+		this.subiendoImagen.set(categoria.idCategoria);
 		// Solo si se cambió: una subida rechazada no hace volver a pedir las imágenes
 		if (await this.operar(() => this.categorias.cambiarImagen(categoria.idCategoria, archivo))) {
 			this.versionDeImagen.set(Date.now());
 		}
+		this.subiendoImagen.set(null);
 		// El mismo archivo se puede volver a elegir después de un error
 		entrada.value = '';
 	}

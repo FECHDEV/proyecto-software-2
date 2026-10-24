@@ -480,6 +480,31 @@ describe('ProductoPage', () => {
     expect(texto()).toContain('Foto agregada.');
   });
 
+  // HU-07 RF-7: mientras sube, el campo queda ocupado (ArchivoOcupado, que prueba el foco) y un change se ignora
+  it('mientras sube una foto el campo queda ocupado y no sube otra', async () => {
+    let entregar!: (producto: Producto) => void;
+    await abrir('/productos/7', (falso) => {
+      falso.recurso.value.set(TALADRO);
+      falso.respuesta = new Promise((resolver) => (entregar = resolver));
+    });
+    const entrada = campo('foto-nueva');
+    Object.defineProperty(entrada, 'files', { value: [new File([], 'foto.png')] });
+
+    entrada.dispatchEvent(new Event('change'));
+    harness.fixture.detectChanges();
+
+    expect(entrada.getAttribute('aria-disabled')).toBe('true');
+    expect(entrada.disabled).toBe(false);
+    const clic = new MouseEvent('click', { cancelable: true });
+    entrada.dispatchEvent(clic);
+    expect(clic.defaultPrevented).toBe(true);
+    entrada.dispatchEvent(new Event('change'));
+    expect(productos.subidas).toHaveLength(1);
+
+    entregar({ ...TALADRO, imagenes: ['a.png', 'b.png'] });
+    await harness.fixture.whenStable();
+  });
+
   // HU-07 RF-7: con 5 fotos no se ofrece subir otra; si llega a pasar, se explica
   it('con cinco fotos no ofrece subir otra', async () => {
     await abrir('/productos/7', (falso) =>
