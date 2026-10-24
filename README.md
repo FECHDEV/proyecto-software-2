@@ -14,7 +14,7 @@ historia por historia, con Scrum y el flujo SDD de `docs/flujo-sdd.md`.
 | Comunicación | API REST |
 | Base de datos | MySQL 8.4 (H2 en las pruebas) |
 | Correo | Gmail por SMTP, con simulador por defecto |
-| Pago | Interfaz `IPago`: simulador por defecto o Libélula (QR) |
+| Pago | Interfaz `IPago`: Libélula (QR) por defecto en Docker; simulador en desarrollo y pruebas |
 | Despliegue | Docker Compose; Caddy con HTTPS en la nube |
 | CI | GitHub Actions en cada PR y en cada push a `main` |
 
@@ -163,16 +163,27 @@ solo el certificado de Let's Encrypt: el sitio queda en
 `https://TIENDA_DOMINIO`. Sin dominio propio sirve uno de sslip.io armado con
 la IP (por ejemplo `203-0-113-10.sslip.io`), que no necesita DNS.
 
-En un Ubuntu nuevo, con el repositorio clonado y como root:
+En un Ubuntu nuevo, con el repositorio clonado en `/opt/tienda` y como root:
 
 ```bash
 bash scripts/instalar-servidor.sh preparar   # sin preguntas; compila las imágenes
-bash scripts/instalar-servidor.sh completar  # pide la contraseña del Administrador
 ```
 
 Crea swap, instala Docker, activa el firewall (22, 80 y 443), arma el `.env` con
-claves generadas y levanta los contenedores. Las credenciales de Gmail se
-completan a mano en el `.env`. Se puede volver a correr sin perder nada.
+claves generadas y compila las imágenes. Después, **desde la PC** (Git Bash en
+Windows), con la llave SSH ya autorizada en el servidor:
+
+```bash
+bash scripts/copiar-env-al-servidor.sh root@<ip>
+```
+
+Copia del `.env` de la PC Libélula, Gmail, la marca, el retiro y los datos del
+Administrador (no su contraseña ni las claves de la base y del JWT), apunta el
+catálogo de demostración a `/opt/demo-tienda` si está, y corre `completar`, que
+pide la contraseña del Administrador la primera vez y levanta los contenedores.
+El catálogo se copia antes con `scp -r <carpeta> root@<ip>:/opt/demo-tienda`.
+Sin la PC, `completar` también se puede correr en el servidor con el `.env`
+completado a mano. Todo se puede volver a correr sin perder nada.
 
 ## Documentación
 

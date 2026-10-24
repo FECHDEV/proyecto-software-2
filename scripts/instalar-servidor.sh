@@ -8,8 +8,9 @@
 #                                                 contenedores
 #   bash scripts/instalar-servidor.sh             las dos
 # Variable opcional: TIENDA_DOMINIO (por defecto, la IP en sslip.io). El correo, el nombre y el apellido del
-# Administrador los pide la parte completar. Se puede volver a correr. Las credenciales de Gmail no las pide: se ponen a mano en
-# el .env (TIENDA_CORREO_*), y mientras falten los correos van al simulador.
+# Administrador los pide la parte completar. Se puede volver a correr. Las credenciales de Gmail y de Libélula no las pide: se
+# ponen en el .env a mano o desde la PC con scripts/copiar-env-al-servidor.sh. Mientras falten las de Gmail, los
+# correos van al simulador.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
