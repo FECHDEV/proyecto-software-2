@@ -13,6 +13,7 @@ import bo.edu.uagrm.tienda.entity.Cobro;
 import bo.edu.uagrm.tienda.entity.EstadoCobro;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.Pedido;
+import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CobroRepository;
 import bo.edu.uagrm.tienda.repository.CobroRepository.CobroAConciliar;
 import bo.edu.uagrm.tienda.repository.PedidoRepository;
@@ -25,7 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 // La única pieza que aplica lo que dice el sistema de pago (HU-13; decisiones.md → Pagos). La usan la consulta de la
 // página, el aviso, la tarea de cada minuto y el vencimiento. Consulta sin nada bloqueado y sin transacción abierta,
 // así una llamada de 15 s no retiene una conexión; después bloquea en el orden de siempre (cliente, pedido, cobro y,
-// si revive, productos por id) y vuelve a mirar el cobro ya bloqueado: si otro lo procesó, no hace nada (RF-11)
+// si revive, productos por id) y vuelve a mirar el cobro ya bloqueado: si otro lo procesó, no hace nada (RF-11). Quien
+// aplica el pago encarga el correo del pedido (HU-21)
 @Slf4j
 @Component
 public class ConciliacionDePagos {
@@ -35,18 +37,20 @@ public class ConciliacionDePagos {
 	private final UsuarioRepository usuarioRepository;
 	private final PedidoService pedidoService;
 	private final IPago iPago;
+	private final NotificadorCorreo notificadorCorreo;
 	private final Clock clock;
 	// READ_COMMITTED: lo que se lee sin bloqueo después de bloquear al cliente ve lo último confirmado
 	private final TransactionTemplate transaccion;
 
 	public ConciliacionDePagos(CobroRepository cobroRepository, PedidoRepository pedidoRepository,
-			UsuarioRepository usuarioRepository, PedidoService pedidoService, IPago iPago, Clock clock,
-			PlatformTransactionManager transactionManager) {
+			UsuarioRepository usuarioRepository, PedidoService pedidoService, IPago iPago,
+			NotificadorCorreo notificadorCorreo, Clock clock, PlatformTransactionManager transactionManager) {
 		this.cobroRepository = cobroRepository;
 		this.pedidoRepository = pedidoRepository;
 		this.usuarioRepository = usuarioRepository;
 		this.pedidoService = pedidoService;
 		this.iPago = iPago;
+		this.notificadorCorreo = notificadorCorreo;
 		this.clock = clock;
 		this.transaccion = new TransactionTemplate(transactionManager);
 		this.transaccion.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
@@ -72,7 +76,7 @@ public class ConciliacionDePagos {
 
 	private void aplicar(CobroAConciliar datos, ResultadoDelCobro resultado) {
 		LocalDateTime ahora = LocalDateTime.now(clock);
-		usuarioRepository.findConBloqueoByIdUsuario(datos.idUsuario()).orElseThrow();
+		Usuario usuario = usuarioRepository.findConBloqueoByIdUsuario(datos.idUsuario()).orElseThrow();
 		Pedido pedido = pedidoRepository.findConBloqueoByIdPedidoAndUsuario_IdUsuario(datos.idPedido(),
 				datos.idUsuario()).orElseThrow();
 		Cobro cobro = cobroRepository.findConBloqueoByIdCobro(datos.idCobro()).orElseThrow();
@@ -94,9 +98,20 @@ public class ConciliacionDePagos {
 				} else {
 					pedidoService.revivir(pedido, fecha, ahora); // RF-9
 				}
-				// Al confirmar: si algo falla antes, el cobro sigue pendiente y el log no puede decir que se pagó
-				TrasElCommit.ejecutar(() -> log.info("Cobro {} pagado el {} (pedido {})", datos.idCobro(), fecha,
-						datos.idPedido()));
+				// Dentro de la transacción: las líneas y la cuenta se leen acá, el envío corre sin sesión (HU-21)
+				CorreoDelPedido correo = CorreoDelPedido.de(pedido, usuario);
+				boolean pagado = pedido.getEstado() == EstadoPedido.PAGADO;
+				// Al confirmar: si algo falla antes, el cobro sigue pendiente, el log no puede decir que se pagó y no
+				// sale ningún correo (HU-21 RF-6). Solo la conciliación que encontró el cobro pendiente llega acá: un
+				// correo por pedido (HU-21 RF-5)
+				TrasElCommit.ejecutar(() -> {
+					log.info("Cobro {} pagado el {} (pedido {})", datos.idCobro(), fecha, datos.idPedido());
+					if (pagado) {
+						notificadorCorreo.enviarPedidoPagado(correo); // HU-21 RF-1, RF-2
+					} else {
+						notificadorCorreo.enviarPagoADevolver(correo); // HU-21 RF-4
+					}
+				});
 			}
 		}
 	}

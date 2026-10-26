@@ -16,4 +16,14 @@ public record RetiroProperties(
 
 		@Size(max = 200, message = "TIENDA_RETIRO_HORARIO admite hasta 200 caracteres")
 		String horario) {
+
+	// Una sola vez para la página y el correo del pedido (HU-21): sin espacios de más, y vacío es como no tenerlo
+	public RetiroProperties {
+		direccion = textoONulo(direccion);
+		horario = textoONulo(horario);
+	}
+
+	private static String textoONulo(String texto) {
+		return texto == null || texto.isBlank() ? null : texto.strip();
+	}
 }

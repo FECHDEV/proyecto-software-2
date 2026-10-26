@@ -73,7 +73,10 @@ de asumir.
 ### Correos
 - Recuperación de contraseña.
 - Verificación del correo (*21/10/2026*, HU-20): «Confirme su correo», al
-  registrarse y al pedir el reenvío. *(Sumar acá cada correo nuevo que decida el
+  registrarse y al pedir el reenvío.
+- Correos del pedido (*26/10/2026*, HU-21): «Pedido pagado», cuando se
+  confirma el pago, y «Pago a devolver», cuando el pago llega y el pedido ya
+  no se puede reservar. *(Sumar acá cada correo nuevo que decida el
   proyecto; no proponer correos que no estén en esta lista.)*
 
 *(Las reglas del negocio van acá, por tema, a medida que se deciden en las
