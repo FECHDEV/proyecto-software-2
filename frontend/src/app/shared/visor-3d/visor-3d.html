@@ -1,7 +1,8 @@
 @let fallo = disponible() === false || modelo() === 'error';
+@let gestos = movimientoReducido && modelo() === 'listo';
 <div class="visor">
   @if (!fallo) {
-    <div class="marco">
+    <div #marco class="marco">
       @if (disponible()) {
         <!-- Sin auto-rotate: el modelo queda quieto, como los carruseles (HU-16 RF-7) -->
         <model-viewer
@@ -9,7 +10,7 @@
           [attr.alt]="alt()"
           [attr.poster]="poster()"
           camera-controls
-          touch-action="pan-y"
+          [attr.touch-action]="ampliado() ? 'none' : 'pan-y'"
           shadow-intensity="1"
           [class.foco-teclado]="focoConTeclado()"
           (focusin)="alEnfocar($event)"
@@ -28,6 +29,26 @@
             </button>
           }
         </model-viewer>
+        <!-- Con el modelo listo; ya ampliado, sigue aunque cambie el modelo, para poder salir (/code-review) -->
+        @if (pantallaCompletaPermitida && (modelo() === 'listo' || ampliado())) {
+          <button
+            type="button"
+            class="ampliar"
+            [attr.aria-label]="etiquetaPantallaCompleta()"
+            [attr.title]="etiquetaPantallaCompleta()"
+            (click)="alternarPantallaCompleta()"
+          >
+            @if (ampliado()) {
+              <svg lucideMinimize aria-hidden="true"></svg>
+            } @else {
+              <svg lucideMaximize aria-hidden="true"></svg>
+            }
+          </button>
+        }
+        <!-- En pantalla completa, el texto de los gestos va sobre el modelo: abajo no se vería (RF-7, RF-13) -->
+        @if (gestos && ampliado()) {
+          <p class="gestos sobre-el-modelo">{{ textoDeGestos }}</p>
+        }
       } @else if (poster(); as poster) {
         <img class="poster" [src]="poster" alt="" />
       }
@@ -41,9 +62,7 @@
       Cargando el modelo 3D…
     }
   </p>
-  @if (!fallo && movimientoReducido && modelo() === 'listo') {
-    <p class="gestos">
-      Arrastre para girar el modelo; pellizque o use la rueda para acercarlo. Con el teclado, use las flechas.
-    </p>
+  @if (gestos && !ampliado()) {
+    <p class="gestos">{{ textoDeGestos }}</p>
   }
 </div>

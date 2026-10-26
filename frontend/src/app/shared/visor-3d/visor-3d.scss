@@ -8,6 +8,7 @@
 }
 
 .marco {
+	position: relative;
 	aspect-ratio: 4 / 3;
 	max-height: 420px;
 	width: 100%;
@@ -61,11 +62,72 @@ model-viewer {
 	height: 20px;
 }
 
+// En pantalla completa el marco ocupa toda la pantalla, sin borde ni proporción (HU-16 RF-13)
+.marco:fullscreen {
+	aspect-ratio: auto;
+	max-height: none;
+	border: 0;
+	border-radius: 0;
+}
+
+// «Pantalla completa»: arriba a la derecha, sobre el modelo
+.ampliar {
+	position: absolute;
+	top: var(--app-espacio-3);
+	right: var(--app-espacio-3);
+	display: grid;
+	place-items: center;
+	width: var(--app-area-tocable);
+	height: var(--app-area-tocable);
+	background: var(--app-superficie);
+	color: var(--app-texto);
+	border: 1px solid var(--app-borde-control);
+	border-radius: var(--app-radio);
+	cursor: pointer;
+	transition: transform var(--app-duracion-rapida) var(--app-curva-salida);
+}
+
+.ampliar:active {
+	transform: scale(0.95);
+}
+
+// Pegado al botón: con separación, el contorno quedaba sobre el blanco de la foto y casi no se veía (revisión de
+// interfaz)
+.ampliar:focus-visible {
+	outline-offset: 0;
+}
+
+.ampliar svg {
+	width: 20px;
+	height: 20px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.ampliar:hover {
+		background: var(--app-superficie-alta);
+	}
+}
+
 // Con movimiento reducido, en lugar de la mano animada (HU-16 RF-7)
 .gestos {
 	margin: var(--app-espacio-2) 0 0;
 	color: var(--app-texto-suave);
 	font-size: 14px;
+}
+
+// En pantalla completa: arriba a la izquierda, sin tapar «Pantalla completa» ni «Ver en su espacio» (HU-16 RF-13)
+.sobre-el-modelo {
+	position: absolute;
+	top: var(--app-espacio-3);
+	left: var(--app-espacio-3);
+	max-width: min(36rem, calc(100% - 3 * var(--app-espacio-3) - var(--app-area-tocable)));
+	margin: 0;
+	padding: var(--app-espacio-2) var(--app-espacio-3);
+	color: var(--app-texto);
+	// Los gestos que empiezan sobre el texto llegan al modelo (/code-review)
+	pointer-events: none;
+	background: var(--app-superficie);
+	border-radius: var(--app-radio);
 }
 
 .cargando {

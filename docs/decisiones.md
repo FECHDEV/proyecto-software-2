@@ -643,6 +643,22 @@ la conversión a USDZ evita pedirle al Administrador un segundo archivo; la
 marca avisa antes de abrir el producto; y el navegador del cliente no le pide
 nada a terceros.
 
+*26/10/2026 (HU-16, ampliación).* **El modelo en pantalla completa:**
+
+- **Un botón «Pantalla completa» dentro del visor,** arriba a la derecha, en
+  el detalle del producto y en la vista previa del Administrador (HU-15): es
+  el mismo visor.
+- **La pantalla completa del navegador** sobre el visor: el modelo se sigue
+  girando y acercando, y «Ver en su espacio» sigue ahí. Se sale con el mismo
+  botón («Salir de pantalla completa») o con Esc.
+- **Sin botón donde el navegador no la permite:** Safari del iPhone solo la da
+  a los videos, así que ahí no aparece; no se imita cubriendo la ventana.
+- La pantalla completa de las fotos (HU-10) sigue siendo solo de fotos.
+
+**Motivo:** en el celular la caja de la galería es chica para mirar un
+modelo. Fabio prefirió no mostrar el botón en el iPhone antes que una
+imitación que deja a la vista las barras del navegador.
+
 ### Categorías del catálogo
 
 *10/10/2026 (HU-06).* Un solo nivel, sin subcategorías. Cada categoría tiene

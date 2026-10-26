@@ -1,16 +1,20 @@
 import {
 	ChangeDetectionStrategy,
 	Component,
+	computed,
 	CUSTOM_ELEMENTS_SCHEMA,
 	effect,
+	ElementRef,
 	inject,
 	InjectionToken,
 	input,
 	linkedSignal,
 	signal,
 	untracked,
+	viewChild,
 } from '@angular/core';
-import { LucideView } from '@lucide/angular';
+import { DOCUMENT } from '@angular/common';
+import { LucideMaximize, LucideMinimize, LucideView } from '@lucide/angular';
 
 // Prepara <model-viewer>: true si se puede mostrar, false si el navegador no
 // tiene WebGL. Un token, para que las pruebas sobre jsdom no lo importen
@@ -77,14 +81,16 @@ export function cargadorDeVisor(importar: () => Promise<unknown>, hayWebgl: () =
 // Un modelo .glb que se gira, se acerca y se mueve con el mouse, los dedos o el
 // teclado (HU-15, y el detalle del producto en HU-16). Sin WebGL, o con un
 // archivo que no se puede mostrar, lo dice en lugar del visor. En la tienda
-// lleva póster (la foto principal) y la realidad aumentada; no gira solo
+// lleva póster (la foto principal) y la realidad aumentada; no gira solo. Con la pantalla completa del navegador,
+// un botón la abre y la cierra (HU-16 RF-12)
 @Component({
 	selector: 'app-visor-3d',
 	templateUrl: './visor-3d.html',
 	styleUrl: './visor-3d.scss',
-	imports: [LucideView],
+	imports: [LucideView, LucideMaximize, LucideMinimize],
 	schemas: [CUSTOM_ELEMENTS_SCHEMA],
 	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: { '(document:fullscreenchange)': 'alCambiarPantallaCompleta()' },
 })
 export class Visor3d {
 	readonly src = input.required<string>();
@@ -98,6 +104,19 @@ export class Visor3d {
 	// El foco de model-viewer vive en su shadow DOM: desde afuera, :focus-visible no distingue el teclado del mouse
 	protected readonly focoConTeclado = signal(false);
 
+	private readonly documento = inject(DOCUMENT);
+	private readonly marco = viewChild<ElementRef<HTMLElement>>('marco');
+	// Safari del iPhone solo la da a los videos: ahí no hay botón (HU-16 RF-12)
+	protected readonly pantallaCompletaPermitida = this.documento.fullscreenEnabled === true;
+	// Lo dice el navegador, no el clic: así salir con Esc o el gesto atrás deja bien el botón (HU-16 RF-14)
+	protected readonly ampliado = signal(false);
+	protected readonly etiquetaPantallaCompleta = computed(() =>
+		this.ampliado() ? 'Salir de pantalla completa' : 'Pantalla completa',
+	);
+	// Con movimiento reducido, en lugar de la mano: debajo del visor, o sobre el modelo en pantalla completa
+	protected readonly textoDeGestos =
+		'Arrastre para girar el modelo; pellizque o use la rueda para acercarlo. Con el teclado, use las flechas.';
+
 	// null mientras se prepara el visor
 	protected readonly disponible = signal<boolean | null>(null);
 	// Cada modelo nuevo vuelve a cargar
@@ -110,6 +129,19 @@ export class Visor3d {
 	protected alEnfocar(evento: FocusEvent): void {
 		const interno = (evento.currentTarget as HTMLElement).shadowRoot?.activeElement;
 		this.focoConTeclado.set(interno?.matches(':focus-visible') ?? false);
+	}
+
+	protected alternarPantallaCompleta(): void {
+		if (this.ampliado()) {
+			this.documento.exitFullscreen().catch(() => undefined);
+		} else {
+			// Si el navegador la rechaza, el visor queda como estaba (HU-16 RF-13)
+			this.marco()?.nativeElement.requestFullscreen().catch(() => undefined);
+		}
+	}
+
+	protected alCambiarPantallaCompleta(): void {
+		this.ampliado.set(this.documento.fullscreenElement === this.marco()?.nativeElement);
 	}
 
 	// Con cada modelo, si el visor todavía no está: una descarga que falló se vuelve a intentar con el siguiente
