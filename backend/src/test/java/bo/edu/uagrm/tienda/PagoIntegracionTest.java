@@ -2,6 +2,7 @@ package bo.edu.uagrm.tienda;
 
 import static bo.edu.uagrm.tienda.IpsDePrueba.ipNueva;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -25,6 +26,7 @@ import java.util.concurrent.Future;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -48,6 +50,7 @@ import bo.edu.uagrm.tienda.entity.EstadoCobro;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.LineaCarrito;
 import bo.edu.uagrm.tienda.entity.TipoMovimiento;
+import bo.edu.uagrm.tienda.entity.UnidadVenta;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
 import bo.edu.uagrm.tienda.repository.CobroRepository;
@@ -59,6 +62,9 @@ import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import bo.edu.uagrm.tienda.service.AdministradorInicial;
 import bo.edu.uagrm.tienda.service.ConciliacionAutomaticaDePagos;
 import bo.edu.uagrm.tienda.service.ConciliacionDePagos;
+import bo.edu.uagrm.tienda.service.CorreoDelPedido;
+import bo.edu.uagrm.tienda.service.NotificadorCorreo;
+import bo.edu.uagrm.tienda.service.PedidoService;
 import bo.edu.uagrm.tienda.service.VencimientoPedidos;
 import bo.edu.uagrm.tienda.service.pago.EstadoDelCobro;
 import bo.edu.uagrm.tienda.service.pago.SimuladorDePago;
@@ -106,6 +112,13 @@ class PagoIntegracionTest {
 
 	@MockitoSpyBean
 	private SimuladorDePago simulador;
+
+	// HU-21: los correos del pedido; en las pruebas, el simulador de correo
+	@MockitoSpyBean
+	private NotificadorCorreo notificador;
+
+	@MockitoSpyBean
+	private PedidoService pedidoService;
 
 	@Autowired
 	private RelojDePrueba reloj;
@@ -789,6 +802,149 @@ class PagoIntegracionTest {
 		assertThat(post(PEDIDOS + "/abc/cobro", ana, "")).hasStatus(HttpStatus.NOT_FOUND);
 		assertThat(post(PEDIDOS + "/99999999999999999999/cobro/consulta", ana, "")).hasStatus(HttpStatus.NOT_FOUND);
 		assertThat(cobroRepository.count()).isZero();
+	}
+
+	// --- HU-21: los correos del pedido ---
+
+	private CorreoDelPedido pedidoPagadoEnviado() {
+		ArgumentCaptor<CorreoDelPedido> correo = ArgumentCaptor.forClass(CorreoDelPedido.class);
+		verify(notificador).enviarPedidoPagado(correo.capture());
+		return correo.getValue();
+	}
+
+	// HU-21 RF-1, RF-3: a la cuenta que hizo el pedido, con lo que guardó el pedido
+	@Test
+	void alPagarseElPedidoSeEnviaPedidoPagadoConSusDatos() throws Exception {
+		agregar(ana, martillo, "2");
+		agregar(ana, cable, "3.5");
+		Integer idPedido = confirmado(ana, "213");
+		elBancoPaga(conCobro(ana, idPedido));
+
+		assertThat(consultar(ana, idPedido)).bodyJson().extractingPath("$.estado").isEqualTo("PAGADO");
+
+		CorreoDelPedido correo = pedidoPagadoEnviado();
+		assertThat(correo.correo()).isEqualTo("ana.hu13@mail.com");
+		assertThat(correo.nombre()).isEqualTo("Ana");
+		assertThat(correo.numero()).isEqualTo(idPedido.longValue());
+		assertThat(correo.fechaPago()).isNotNull();
+		assertThat(correo.total()).isEqualByComparingTo("213");
+		assertThat(correo.nombreRetira()).isEqualTo("Ana Paz");
+		assertThat(correo.telefonoRetira()).isEqualTo("70000000");
+		assertThat(correo.lineas()).extracting(CorreoDelPedido.Linea::nombre).containsExactly("Martillo", "Cable");
+		CorreoDelPedido.Linea delCable = correo.lineas().get(1);
+		assertThat(delCable.unidad()).isEqualTo(UnidadVenta.METRO);
+		assertThat(delCable.cantidad()).isEqualByComparingTo("3.5");
+		assertThat(delCable.precio()).isEqualByComparingTo("12");
+		assertThat(delCable.subtotal()).isEqualByComparingTo("42");
+		verify(notificador, never()).enviarPagoADevolver(any());
+	}
+
+	// HU-21 RF-1: «Simular pago» pasa por la misma conciliación
+	@Test
+	void simularPagoTambienEnviaElCorreo() throws Exception {
+		Integer idPedido = pedidoDeMartillos(ana);
+		conCobro(ana, idPedido);
+
+		assertThat(simular(ana, idPedido, "PAGADO")).hasStatus(HttpStatus.NO_CONTENT);
+		consultar(ana, idPedido);
+
+		assertThat(pedidoPagadoEnviado().numero()).isEqualTo(idPedido.longValue());
+	}
+
+	// HU-21 RF-2
+	@Test
+	void unPagoTardioQueReviveEnviaPedidoPagado() throws Exception {
+		Integer idPedido = pedidoDeMartillos(ana);
+		Cobro cobro = conCobro(ana, idPedido);
+		assertThat(cancelar(ana, idPedido)).hasStatus(HttpStatus.OK);
+		elBancoPaga(cobro);
+
+		conciliacion.conciliar(cobro.getIdCobro());
+
+		assertThat(estado(idPedido)).isEqualTo(EstadoPedido.PAGADO);
+		assertThat(pedidoPagadoEnviado().numero()).isEqualTo(idPedido.longValue());
+		verify(notificador, never()).enviarPagoADevolver(any());
+	}
+
+	// HU-21 RF-4
+	@Test
+	void unPagoTardioSinStockEnviaPagoADevolverYNoPedidoPagado() throws Exception {
+		Integer idPedido = pedidoDeMartillos(ana);
+		Cobro cobro = conCobro(ana, idPedido);
+		assertThat(cancelar(ana, idPedido)).hasStatus(HttpStatus.OK);
+		assertThat(post("/api/inventario/{id}/ajustes", admin, "{\"contada\":1,\"motivo\":\"CONTEO\"}", martillo))
+				.hasStatus(HttpStatus.CREATED);
+		elBancoPaga(cobro);
+
+		conciliacion.conciliar(cobro.getIdCobro());
+
+		assertThat(estado(idPedido)).isEqualTo(EstadoPedido.PAGO_A_DEVOLVER);
+		ArgumentCaptor<CorreoDelPedido> correo = ArgumentCaptor.forClass(CorreoDelPedido.class);
+		verify(notificador).enviarPagoADevolver(correo.capture());
+		assertThat(correo.getValue().correo()).isEqualTo("ana.hu13@mail.com");
+		assertThat(correo.getValue().total()).isEqualByComparingTo("171");
+		assertThat(correo.getValue().telefonoRetira()).isEqualTo("70000000");
+		verify(notificador, never()).enviarPedidoPagado(any());
+	}
+
+	// HU-21 RF-5: el pago se aplica una sola vez, y el correo también; volver a consultar no manda otro
+	@Test
+	void dosConciliacionesALaVezEnvianUnSoloCorreo() throws Exception {
+		Integer idPedido = pedidoDeMartillos(ana);
+		Cobro cobro = conCobro(ana, idPedido);
+		elBancoPaga(cobro);
+
+		aLaVez(() -> conciliacion.conciliar(cobro.getIdCobro()), () -> conciliacion.conciliar(cobro.getIdCobro()));
+		consultar(ana, idPedido);
+		conciliacion.conciliar(cobro.getIdCobro());
+
+		verify(notificador, times(1)).enviarPedidoPagado(any());
+	}
+
+	// HU-21 RF-6: si la transacción del pago se deshace, no sale el correo
+	@Test
+	void siLaTransaccionDelPagoSeDeshaceNoSeEnviaElCorreo() throws Exception {
+		Integer idPedido = pedidoDeMartillos(ana);
+		Cobro cobro = conCobro(ana, idPedido);
+		assertThat(cancelar(ana, idPedido)).hasStatus(HttpStatus.OK);
+		elBancoPaga(cobro);
+		doThrow(new IllegalStateException("falla al revivir")).when(pedidoService).revivir(any(), any(), any());
+
+		assertThatThrownBy(() -> conciliacion.conciliar(cobro.getIdCobro())).hasMessageContaining("falla al revivir");
+
+		assertThat(estado(idPedido)).isEqualTo(EstadoPedido.CANCELADO);
+		assertThat(cobroPendiente(idPedido)).isNotNull();
+		verify(notificador, never()).enviarPedidoPagado(any());
+		verify(notificador, never()).enviarPagoADevolver(any());
+	}
+
+	// HU-21 RF-7: el envío no cambia el pago
+	@Test
+	void siElNotificadorFallaElPedidoQuedaPagado() throws Exception {
+		Integer idPedido = pedidoDeMartillos(ana);
+		elBancoPaga(conCobro(ana, idPedido));
+		doThrow(new IllegalStateException("correo caído")).when(notificador).enviarPedidoPagado(any());
+
+		assertThat(consultar(ana, idPedido)).bodyJson().extractingPath("$.estado").isEqualTo("PAGADO");
+		assertThat(estado(idPedido)).isEqualTo(EstadoPedido.PAGADO);
+		// Se intentó enviar: el fallo no deshizo el pago (/code-review, ronda 2)
+		verify(notificador).enviarPedidoPagado(any());
+	}
+
+	// HU-21 caso límite: el pago es de un pedido suyo, así que el correo sale aunque la cuenta esté desactivada
+	@Test
+	void conLaCuentaDesactivadaElCorreoSaleIgual() throws Exception {
+		Integer idPedido = pedidoDeMartillos(ana);
+		Cobro cobro = conCobro(ana, idPedido);
+		Usuario usuario = usuarioRepository.findByCorreo("ana.hu13@mail.com").orElseThrow();
+		usuario.desactivar();
+		usuarioRepository.save(usuario);
+		elBancoPaga(cobro);
+
+		conciliacion.conciliar(cobro.getIdCobro());
+
+		assertThat(estado(idPedido)).isEqualTo(EstadoPedido.PAGADO);
+		assertThat(pedidoPagadoEnviado().correo()).isEqualTo("ana.hu13@mail.com");
 	}
 
 	private static List<Object> aLaVez(Callable<?>... tareas) throws Exception {

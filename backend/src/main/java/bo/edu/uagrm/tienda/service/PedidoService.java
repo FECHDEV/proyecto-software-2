@@ -17,7 +17,6 @@ import java.util.TreeSet;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,7 +67,6 @@ import lombok.RequiredArgsConstructor;
 // del cliente fija la vista y no vería un cobro guardado mientras esperaba (HU-13 RF-7)
 @Service
 @RequiredArgsConstructor
-@EnableConfigurationProperties(RetiroProperties.class)
 public class PedidoService {
 
 	public static final Duration VIGENCIA = Duration.ofMinutes(30);

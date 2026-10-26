@@ -15,7 +15,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 - **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas)
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios)
-- **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio)
+- **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
 - **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Exportar reportes](#exportar-reportes) · [Catálogo de demostración](#catálogo-de-demostración)
 
@@ -396,6 +396,33 @@ los deja vacíos. La marca que firma los correos sale de `TIENDA_MARCA`.
 contenedores, buzones y configuración solo para entregar dentro del propio
 dominio. Gmail entrega a cualquier dirección real sin mantener nada. Gmail
 manda siempre desde la cuenta autenticada, así que el remitente es esa cuenta.
+
+### Correos del pedido
+
+*26/10/2026 (HU-21, pedido de Fabio).* La pasarela le manda al cliente el
+comprobante del cobro, pero no sabe qué compró ni cómo lo recibe. La tienda
+le escribe a la cuenta que hizo el pedido en dos momentos:
+
+- **«Pedido pagado»,** cuando el pago se confirma (también un pago tardío que
+  revive el pedido): el número, la fecha del pago, cada producto con su
+  cantidad, precio y subtotal, el total, quién retira, la dirección y el
+  horario de retiro si están configurados, y el enlace «Ver mi pedido».
+- **«Pago a devolver»,** cuando el pago llega y el pedido ya no se puede
+  reservar (HU-13 RF-9): el número y el monto, y que la tienda se comunicará
+  con él al teléfono del pedido para devolverle el dinero. La devolución se
+  sigue haciendo fuera del sistema.
+- **A la cuenta, esté activa o desactivada** (confirmado al cerrar): el
+  pedido es suyo y lo pagó.
+- **Uno por pedido y por estado:** sale con la confirmación del pago, que se
+  aplica una sola vez, después del commit (`TrasElCommit`). Si el envío
+  falla, solo queda en el log: el pedido ya está pagado.
+- Sin correos al crear, cancelar, vencer ni entregar el pedido, ni copia a la
+  tienda.
+
+**Motivo:** el comprobante de la pasarela es del dinero; el del pedido lo
+tiene solo la tienda. Con la devolución fuera del sistema, el teléfono que
+ya guarda el pedido alcanza para coordinarla, y el remitente no recibe
+respuestas.
 
 ---
 
