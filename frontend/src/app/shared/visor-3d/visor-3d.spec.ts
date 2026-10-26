@@ -237,4 +237,182 @@ describe('Visor3d', () => {
       ktx2TranscoderLocation: '/decodificadores/basis/',
     });
   });
+
+  // HU-16 RF-12 a RF-14: jsdom no tiene la pantalla completa; se simula la del navegador
+  describe('pantalla completa', () => {
+    let ampliado: Element | null = null;
+    let rechazar = false;
+
+    function simular(permitida: boolean) {
+      Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, value: permitida });
+      Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => ampliado });
+      HTMLElement.prototype.requestFullscreen = vi.fn(function (this: HTMLElement) {
+        if (rechazar) {
+          return Promise.reject(new TypeError('no permitida'));
+        }
+        ampliado = this;
+        document.dispatchEvent(new Event('fullscreenchange'));
+        return Promise.resolve();
+      });
+      document.exitFullscreen = vi.fn(() => {
+        ampliado = null;
+        document.dispatchEvent(new Event('fullscreenchange'));
+        return Promise.resolve();
+      });
+    }
+
+    afterEach(() => {
+      ampliado = null;
+      rechazar = false;
+      delete (document as unknown as Record<string, unknown>)['fullscreenEnabled'];
+      delete (document as unknown as Record<string, unknown>)['fullscreenElement'];
+      delete (document as unknown as Record<string, unknown>)['exitFullscreen'];
+      delete (HTMLElement.prototype as unknown as Record<string, unknown>)['requestFullscreen'];
+    });
+
+    async function cargarModelo(fixture: Awaited<ReturnType<typeof abrir>>) {
+      visor(fixture.nativeElement)!.dispatchEvent(new Event('load'));
+      await fixture.whenStable();
+    }
+
+    const boton = (elemento: HTMLElement) => elemento.querySelector<HTMLButtonElement>('button.ampliar');
+
+    // HU-16 RF-12
+    it('ofrece «Pantalla completa» si el navegador la permite', async () => {
+      simular(true);
+      const fixture = await abrir(() => Promise.resolve(true));
+      await cargarModelo(fixture);
+
+      expect(boton(fixture.nativeElement)?.getAttribute('aria-label')).toBe('Pantalla completa');
+      expect(boton(fixture.nativeElement)?.getAttribute('title')).toBe('Pantalla completa');
+    });
+
+    // HU-16 RF-12: Safari del iPhone no la da a los elementos
+    it('sin la pantalla completa del navegador (iPhone) no hay botón', async () => {
+      simular(false);
+      const fixture = await abrir(() => Promise.resolve(true));
+      await cargarModelo(fixture);
+
+      expect(visor(fixture.nativeElement)).not.toBeNull();
+      expect(boton(fixture.nativeElement)).toBeNull();
+    });
+
+    // HU-16 RF-12, caso límite: sin modelo que mostrar (RF-9) ni mientras se descarga el visor
+    it('sin modelo que mostrar no hay botón', async () => {
+      simular(true);
+      let listo!: (disponible: boolean) => void;
+      const fixture = await abrir(() => new Promise((resolver) => (listo = resolver)));
+      expect(boton(fixture.nativeElement)).toBeNull();
+
+      listo(true);
+      await fixture.whenStable();
+      // Mientras el modelo carga, tampoco (RF-12: «mientras se ve el modelo»; /code-review)
+      expect(boton(fixture.nativeElement)).toBeNull();
+      visor(fixture.nativeElement)!.dispatchEvent(new Event('error'));
+      await fixture.whenStable();
+      expect(boton(fixture.nativeElement)).toBeNull();
+    });
+
+    // HU-16 RF-13: se amplía el marco, con el modelo y el botón adentro
+    it('«Pantalla completa» amplía el marco del visor', async () => {
+      simular(true);
+      const fixture = await abrir(() => Promise.resolve(true));
+      const elemento = fixture.nativeElement as HTMLElement;
+      await cargarModelo(fixture);
+      expect(visor(elemento)!.getAttribute('touch-action')).toBe('pan-y');
+
+      boton(elemento)!.click();
+      await fixture.whenStable();
+
+      expect(ampliado).toBe(elemento.querySelector('.marco'));
+      expect(ampliado!.contains(visor(elemento))).toBe(true);
+      // Sin página que desplazar, el arrastre vertical también inclina el modelo (/code-review)
+      expect(visor(elemento)!.getAttribute('touch-action')).toBe('none');
+      expect(boton(elemento)!.getAttribute('aria-label')).toBe('Salir de pantalla completa');
+    });
+
+    // HU-16 RF-7, RF-13: con movimiento reducido, el texto de los gestos se sigue viendo en pantalla completa
+    it('en pantalla completa el texto de los gestos va dentro del marco', async () => {
+      simular(true);
+      const fixture = await abrir(() => Promise.resolve(true), { movimientoReducido: true });
+      const elemento = fixture.nativeElement as HTMLElement;
+      visor(elemento)!.dispatchEvent(new Event('load'));
+      await fixture.whenStable();
+      expect(elemento.querySelectorAll('.gestos')).toHaveLength(1);
+      expect(elemento.querySelector('.marco .gestos')).toBeNull();
+
+      boton(elemento)!.click();
+      await fixture.whenStable();
+
+      expect(elemento.querySelectorAll('.gestos')).toHaveLength(1);
+      expect(elemento.querySelector('.marco .gestos')?.textContent).toContain('Arrastre para girar el modelo');
+    });
+
+    // HU-16 RF-14: si el modelo cambia mientras está ampliado, el botón para salir sigue (/code-review, ronda 2)
+    it('con otro modelo en pantalla completa sigue el botón para salir', async () => {
+      simular(true);
+      const fixture = await abrir(() => Promise.resolve(true));
+      const elemento = fixture.nativeElement as HTMLElement;
+      await cargarModelo(fixture);
+      boton(elemento)!.click();
+      await fixture.whenStable();
+
+      fixture.componentInstance.src.set('/api/productos/7/modelo/b.glb');
+      await fixture.whenStable();
+
+      expect(boton(elemento)?.getAttribute('aria-label')).toBe('Salir de pantalla completa');
+    });
+
+    // HU-16 RF-13, caso límite: el navegador la rechaza
+    it('si el navegador la rechaza, el visor sigue igual', async () => {
+      simular(true);
+      rechazar = true;
+      const fixture = await abrir(() => Promise.resolve(true));
+      const elemento = fixture.nativeElement as HTMLElement;
+      await cargarModelo(fixture);
+
+      boton(elemento)!.click();
+      await fixture.whenStable();
+
+      expect(ampliado).toBeNull();
+      expect(visor(elemento)).not.toBeNull();
+      expect(boton(elemento)!.getAttribute('aria-label')).toBe('Pantalla completa');
+    });
+
+    // HU-16 RF-14
+    it('«Salir de pantalla completa» la cierra', async () => {
+      simular(true);
+      const fixture = await abrir(() => Promise.resolve(true));
+      const elemento = fixture.nativeElement as HTMLElement;
+      await cargarModelo(fixture);
+      boton(elemento)!.click();
+      await fixture.whenStable();
+
+      boton(elemento)!.click();
+      await fixture.whenStable();
+
+      expect(document.exitFullscreen).toHaveBeenCalledTimes(1);
+      expect(ampliado).toBeNull();
+      expect(boton(elemento)!.getAttribute('aria-label')).toBe('Pantalla completa');
+      // En su lugar, el arrastre vertical vuelve a desplazar la página
+      expect(visor(elemento)!.getAttribute('touch-action')).toBe('pan-y');
+    });
+
+    // HU-16 RF-14, caso límite: Esc, el gesto atrás o F11 los resuelve el navegador
+    it('al salir con Esc o el gesto atrás, el botón vuelve a «Pantalla completa»', async () => {
+      simular(true);
+      const fixture = await abrir(() => Promise.resolve(true));
+      const elemento = fixture.nativeElement as HTMLElement;
+      await cargarModelo(fixture);
+      boton(elemento)!.click();
+      await fixture.whenStable();
+
+      ampliado = null;
+      document.dispatchEvent(new Event('fullscreenchange'));
+      await fixture.whenStable();
+
+      expect(boton(elemento)!.getAttribute('aria-label')).toBe('Pantalla completa');
+      expect(document.exitFullscreen).not.toHaveBeenCalled();
+    });
+  });
 });
