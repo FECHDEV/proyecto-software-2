@@ -88,6 +88,18 @@ textarea {
 	caret-color: var(--app-ambar);
 }
 
+// El texto de ejemplo con el contraste del texto secundario: el del navegador quedaba en 3:1 (revisión total,
+// 26/10/2026). Las barras de búsqueda sobre la lona tienen el suyo
+::placeholder {
+	color: var(--app-texto-suave);
+	opacity: 1;
+}
+
+// Edge agrega su propio botón para ver la contraseña; la tienda ya tiene el suyo (VerContrasena)
+input::-ms-reveal {
+	display: none;
+}
+
 :focus-visible {
 	outline: var(--app-foco);
 	outline-offset: var(--app-foco-separacion);

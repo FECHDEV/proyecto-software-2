@@ -107,6 +107,12 @@ export class MisPedidosPage {
 	}
 
 	protected irAPagina(pagina: number, reemplazar = false): void {
+		// Mientras carga, o antes de la primera o después de la última, el toque se ignora: el botón no se
+		// deshabilita, para no perder el foco (revisión total)
+		const total = this.datos()?.pagina.totalPaginas ?? 0;
+		if (this.recurso.isLoading() || pagina < 0 || (pagina > 0 && pagina >= total)) {
+			return;
+		}
 		void this.router.navigate([], {
 			relativeTo: this.ruta,
 			queryParams: { pagina: pagina === 0 ? null : pagina },

@@ -48,6 +48,17 @@ describe('Visor3d', () => {
   const visor = (elemento: HTMLElement) => elemento.querySelector('model-viewer');
   const texto = (elemento: HTMLElement) => (elemento.textContent ?? '').replace(/\s+/g, ' ');
 
+  // Revisión total (26/10/2026): el lector de pantalla oye las indicaciones en español, no las de model-viewer
+  it('le pasa a model-viewer sus textos en español', async () => {
+    const fixture = await abrir(() => Promise.resolve(true));
+    const textos = JSON.parse(visor(fixture.nativeElement)!.getAttribute('a11y')!) as Record<string, string>;
+
+    expect(textos['interaction-prompt']).toBe('Use el mouse, los dedos o las flechas del teclado para moverlo.');
+    expect(textos['front']).toBe('Vista de frente');
+    expect(textos['upper-left']).toBe('Vista desde la izquierda, desde arriba');
+    expect(Object.keys(textos)).toHaveLength(13);
+  });
+
   // HU-15 RF-9: girar, acercar y mover son los controles de cámara de model-viewer
   it('carga el visor y muestra el modelo', async () => {
     const cargar = vi.fn(() => Promise.resolve(true));

@@ -165,10 +165,15 @@ describe('MisPedidosPage', () => {
     expect(pedidos.pagina!()).toBe(1);
     expect(texto()).toContain('Página 2 de 2');
     const [anterior, siguiente] = Array.from(pantalla().querySelectorAll<HTMLButtonElement>('.paginas button'));
-    expect(siguiente.disabled).toBe(true);
+    expect(siguiente.getAttribute('aria-disabled')).toBe('true');
 
-    // Mientras llega la página nueva, el recurso está cargando
+    anterior.click();
+    // Al cambiar la dirección, el recurso empieza a cargar la página nueva
     pedidos.recurso.isLoading.set(true);
+    await harness.fixture.whenStable();
+    expect(pedidos.pagina!()).toBe(0);
+    // Mientras llega, los botones no se deshabilitan (el foco no se pierde) e ignoran otro toque
+    expect(anterior.getAttribute('aria-disabled')).toBe('true');
     anterior.click();
     await harness.fixture.whenStable();
     expect(pedidos.pagina!()).toBe(0);

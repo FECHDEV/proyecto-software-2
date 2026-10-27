@@ -62,7 +62,15 @@
   </div>
 </div>
 
-@if (pagina(); as pagina) {
+<!-- El error primero: la página que quedó es de otra búsqueda y lo taparía (revisión total) -->
+@if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="listado.reload()">Reintentar</button>
+  </div>
+} @else if (pagina(); as pagina) {
+  <!-- Mientras carga otra página se ve la anterior: el lector se entera de que viene otra -->
+  <p class="solo-lectores" role="status">@if (listado.isLoading()) {Cargando productos…}</p>
   @if (pagina.contenido.length === 0 && pagina.pagina > 0 && pagina.totalElementos > 0) {
     <div class="vacio" role="status">
       <p>Esta página no existe.</p>
@@ -150,7 +158,7 @@
     <button
       type="button"
       class="secundario"
-      [disabled]="pagina.pagina === 0"
+      [attr.aria-disabled]="pagina.pagina === 0 || listado.isLoading() ? 'true' : null"
       (click)="irAPagina(pagina.pagina - 1)"
     >
       Anterior
@@ -162,17 +170,12 @@
     <button
       type="button"
       class="secundario"
-      [disabled]="pagina.pagina + 1 >= pagina.totalPaginas"
+      [attr.aria-disabled]="pagina.pagina + 1 >= pagina.totalPaginas || listado.isLoading() ? 'true' : null"
       (click)="irAPagina(pagina.pagina + 1)"
     >
       Siguiente
     </button>
   </nav>
-} @else if (errorDeCarga()) {
-  <div class="tarjeta-error">
-    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
-    <button type="button" class="secundario" (click)="listado.reload()">Reintentar</button>
-  </div>
 } @else {
   <p class="cargando" role="status">Cargando productos…</p>
 }

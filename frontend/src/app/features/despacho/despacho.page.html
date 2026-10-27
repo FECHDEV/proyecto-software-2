@@ -33,6 +33,8 @@
     <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
   </div>
 } @else if (pagina(); as pagina) {
+  <!-- Mientras carga otra página se ve la anterior: el lector se entera de que viene otra -->
+  <p class="solo-lectores" role="status">@if (recurso.isLoading()) {Cargando los pedidos…}</p>
   @if (pagina.contenido.length === 0) {
     <p class="vacio" role="status">No hay pedidos con ese filtro.</p>
   } @else {
@@ -56,7 +58,7 @@
       <button
         type="button"
         class="secundario"
-        [disabled]="pagina.pagina === 0 || recurso.isLoading()"
+        [attr.aria-disabled]="pagina.pagina === 0 || recurso.isLoading() ? 'true' : null"
         (click)="irAPagina(pagina.pagina - 1)"
       >
         Anterior
@@ -67,7 +69,7 @@
       <button
         type="button"
         class="secundario"
-        [disabled]="pagina.pagina + 1 >= pagina.totalPaginas || recurso.isLoading()"
+        [attr.aria-disabled]="pagina.pagina + 1 >= pagina.totalPaginas || recurso.isLoading() ? 'true' : null"
         (click)="irAPagina(pagina.pagina + 1)"
       >
         Siguiente

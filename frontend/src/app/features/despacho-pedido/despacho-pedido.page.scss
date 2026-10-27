@@ -156,6 +156,8 @@ h2 {
 }
 
 .total strong {
+	// La etiqueta va en mayúsculas; el monto no: «Bs», no «BS» (revisión total)
+	text-transform: none;
 	color: var(--app-sobre-lona);
 	font-size: clamp(32px, 4vw, 44px);
 	font-weight: 800;

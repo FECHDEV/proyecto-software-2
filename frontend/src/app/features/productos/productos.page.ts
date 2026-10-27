@@ -21,6 +21,7 @@ import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-c
 import { precio } from '../../shared/formato/precios';
 import { idDeLaUrl } from '../../shared/navegacion/id-de-la-url';
 import { paginaDeLaUrl } from '../../shared/navegacion/pagina-de-la-url';
+import { ultimoValor } from '../../shared/recursos/ultimo-valor';
 
 // Cuánto se espera después de la última tecla antes de buscar
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -44,7 +45,7 @@ export class ProductosPage {
 	protected readonly filtros = computed(() => leerFiltros(this.consulta()));
 
 	protected readonly listado = this.productos.listado(this.filtros);
-	protected readonly pagina = computed(() => (this.listado.hasValue() ? this.listado.value() : undefined));
+	protected readonly pagina = ultimoValor(this.listado);
 	protected readonly errorDeCarga = computed(() => {
 		const error = this.listado.error();
 		return error === undefined ? '' : mensajeDeError(comoErrorApi(error));
@@ -100,6 +101,12 @@ export class ProductosPage {
 	}
 
 	protected irAPagina(pagina: number): void {
+		// Mientras carga, o antes de la primera o después de la última, el toque se ignora: el botón no se
+		// deshabilita, para no perder el foco (revisión total)
+		const total = this.pagina()?.totalPaginas ?? 0;
+		if (this.listado.isLoading() || pagina < 0 || (pagina > 0 && pagina >= total)) {
+			return;
+		}
 		this.navegar({ ...this.filtros(), pagina });
 	}
 
@@ -145,7 +152,7 @@ export class ProductosPage {
 
 	// La fila se actualiza con lo que devolvió el backend, sin volver a pedir la lista
 	private actualizarFila(idProducto: number, activo: boolean): void {
-		this.listado.value.update((pagina) =>
+		this.pagina.update((pagina) =>
 				pagina === undefined
 					? pagina
 					: {

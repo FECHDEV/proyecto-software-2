@@ -195,11 +195,6 @@ select,
 	gap: var(--app-espacio-2);
 }
 
-::placeholder {
-	color: var(--app-texto-suave);
-	opacity: 1;
-}
-
 [aria-invalid='true'] {
 	border-color: var(--app-error);
 	box-shadow: inset 0 0 0 1px var(--app-error);

@@ -12,11 +12,11 @@ import {
 	PedidoEnDespacho,
 } from '../../core/modelos/despacho';
 import { comoErrorApi } from '../../core/modelos/error-api';
-import { Pagina } from '../../core/modelos/pagina';
 import { NOMBRES_DE_ESTADO, TONO_DE_ESTADO } from '../../core/modelos/pedido';
 import { fechaCorta } from '../../shared/formato/fechas';
 import { precio } from '../../shared/formato/precios';
 import { paginaDeLaUrl } from '../../shared/navegacion/pagina-de-la-url';
+import { ultimoValor } from '../../shared/recursos/ultimo-valor';
 
 // Cuánto se espera después de la última tecla antes de buscar
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -40,11 +40,7 @@ export class DespachoPage {
 	protected readonly filtros = computed(() => leerFiltros(this.consulta()), { equal: mismosFiltros });
 
 	protected readonly recurso = this.despacho.lista(this.filtros);
-	// Mientras carga otra página queda lo último que se mostró: la lista no parpadea
-	protected readonly pagina = linkedSignal<Pagina<PedidoEnDespacho> | undefined, Pagina<PedidoEnDespacho> | undefined>({
-		source: () => (this.recurso.hasValue() ? this.recurso.value() : undefined),
-		computation: (valor, previo) => valor ?? previo?.value,
-	});
+	protected readonly pagina = ultimoValor(this.recurso);
 	protected readonly errorDeCarga = computed(() => {
 		const error = this.recurso.error();
 		return error === undefined ? '' : mensajeDeError(comoErrorApi(error));
@@ -105,6 +101,12 @@ export class DespachoPage {
 	}
 
 	protected irAPagina(pagina: number): void {
+		// Mientras carga, o antes de la primera o después de la última, el toque se ignora: el botón no se
+		// deshabilita, para no perder el foco (revisión total)
+		const total = this.pagina()?.totalPaginas ?? 0;
+		if (this.recurso.isLoading() || pagina < 0 || (pagina > 0 && pagina >= total)) {
+			return;
+		}
 		this.navegar({ ...this.filtros(), pagina });
 	}
 

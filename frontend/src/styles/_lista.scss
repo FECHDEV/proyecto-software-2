@@ -215,6 +215,7 @@ div.vacio p {
 	tbody th::before,
 	tbody td::before {
 		content: attr(data-etiqueta);
+		flex-shrink: 0;
 		color: var(--app-texto-suave);
 		font-weight: 400;
 		text-align: left;

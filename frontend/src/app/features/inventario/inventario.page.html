@@ -52,7 +52,15 @@
   </label>
 </form>
 
-@if (pagina(); as pagina) {
+<!-- El error primero: la página que quedó es de otra búsqueda y lo taparía (revisión total) -->
+@if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="listado.reload()">Reintentar</button>
+  </div>
+} @else if (pagina(); as pagina) {
+  <!-- Mientras carga otra página se ve la anterior: el lector se entera de que viene otra -->
+  <p class="solo-lectores" role="status">@if (listado.isLoading()) {Cargando el inventario…}</p>
   @if (pagina.contenido.length === 0 && pagina.pagina > 0 && pagina.totalElementos > 0) {
     <div class="vacio" role="status">
       <p>Esta página no existe.</p>
@@ -77,7 +85,6 @@
         </thead>
         <tbody>
           @for (producto of pagina.contenido; track producto.idProducto) {
-            @let unidad = nombresDeUnidad[producto.unidad].toLowerCase();
             <tr [class.inactivo]="!producto.activo">
               <td data-etiqueta="Código" class="codigo">{{ producto.codigo }}</td>
               <th scope="row" data-etiqueta="Producto">
@@ -86,7 +93,7 @@
               <td data-etiqueta="Categoría">{{ producto.categoria }}</td>
               <td data-etiqueta="Disponible" class="numero">
                 <span>
-                  {{ cantidad(producto.stock) }} <span class="unidad">{{ unidad }}</span>
+                  {{ cantidad(producto.stock) }} <span class="unidad">{{ unidadPara(producto.unidad, producto.stock) }}</span>
                   @if (producto.stock === 0) {
                     <span class="bajo">
                       <svg lucideCircleSlash class="icono" aria-hidden="true"></svg>
@@ -102,7 +109,7 @@
               </td>
               <!-- HU-08 RF-16: en pedidos pendientes o pagados sin retirar -->
               <td data-etiqueta="Comprometido" class="numero" [class.sin-comprometer]="producto.comprometido === 0">
-                {{ cantidad(producto.comprometido) }} <span class="unidad">{{ unidad }}</span>
+                {{ cantidad(producto.comprometido) }} <span class="unidad">{{ unidadPara(producto.unidad, producto.comprometido) }}</span>
               </td>
               <td data-etiqueta="Mínimo" class="numero">
                 {{ producto.stockMinimo === null ? '—' : cantidad(producto.stockMinimo) }}
@@ -123,7 +130,7 @@
     <button
       type="button"
       class="secundario"
-      [disabled]="pagina.pagina === 0"
+      [attr.aria-disabled]="pagina.pagina === 0 || listado.isLoading() ? 'true' : null"
       (click)="irAPagina(pagina.pagina - 1)"
     >
       Anterior
@@ -135,17 +142,12 @@
     <button
       type="button"
       class="secundario"
-      [disabled]="pagina.pagina + 1 >= pagina.totalPaginas"
+      [attr.aria-disabled]="pagina.pagina + 1 >= pagina.totalPaginas || listado.isLoading() ? 'true' : null"
       (click)="irAPagina(pagina.pagina + 1)"
     >
       Siguiente
     </button>
   </nav>
-} @else if (errorDeCarga()) {
-  <div class="tarjeta-error">
-    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
-    <button type="button" class="secundario" (click)="listado.reload()">Reintentar</button>
-  </div>
 } @else {
   <p class="cargando" role="status">Cargando el inventario…</p>
 }

@@ -121,11 +121,13 @@
 	color: var(--app-sobre-lona-suave);
 }
 
+// Hasta tres líneas: en una ferretería la medida («de 20 cm», «de 5 m») distingue un producto de otro, y en el
+// celular dos líneas la cortaban (revisión total)
 .nombre {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 2;
-	line-clamp: 2;
+	-webkit-line-clamp: 3;
+	line-clamp: 3;
 	overflow: hidden;
 	font-size: 17px;
 	font-weight: 600;

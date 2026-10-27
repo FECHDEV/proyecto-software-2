@@ -37,7 +37,7 @@ import {
 	ProductoEnInventario,
 	STOCK_MAXIMO,
 } from '../../core/modelos/inventario';
-import { NOMBRES_DE_UNIDAD } from '../../core/modelos/producto';
+import { pluralDeUnidad, unidadPara } from '../../core/modelos/producto';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { leerCantidad, problemaDeCantidad, ReglasDeCantidad } from '../../shared/formato/cantidades';
 import { fechaCorta, horaCorta } from '../../shared/formato/fechas';
@@ -127,7 +127,7 @@ export class StockPage implements ConCambiosSinGuardar {
 		this.validarCantidad(ruta.contada, () => ({ decimales: this.decimales(), maximo: STOCK_MAXIMO, positiva: false }));
 		validate(ruta.nota, ({ value, valueOf }) =>
 			valueOf(ruta.motivo) === 'OTRO' && value().trim() === ''
-				? { kind: 'required', message: 'Con el motivo «Otro», explica qué pasó.' }
+				? { kind: 'required', message: 'Con el motivo «Otro», explique qué pasó.' }
 				: null,
 		);
 		maxLength(ruta.nota, 200, { message: 'La nota admite hasta 200 caracteres.' });
@@ -155,8 +155,14 @@ export class StockPage implements ConCambiosSinGuardar {
 	protected readonly fecha = fechaCorta;
 	protected readonly hora = (fechaHora: string) => horaCorta(fechaHora.slice(11));
 
-	protected unidad(producto: ProductoEnInventario): string {
-		return NOMBRES_DE_UNIDAD[producto.unidad].toLowerCase();
+	// Junto a una cantidad, en plural salvo con 1
+	protected unidad(producto: ProductoEnInventario, cantidad: number): string {
+		return unidadPara(producto.unidad, cantidad);
+	}
+
+	// En las etiquetas: «Cantidad (unidades)»
+	protected plural(producto: ProductoEnInventario): string {
+		return pluralDeUnidad(producto.unidad);
 	}
 
 	// «+10» o «−2», con el signo menos de verdad
