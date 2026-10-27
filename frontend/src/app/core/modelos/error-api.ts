@@ -21,6 +21,8 @@ export interface ErrorApi {
 	idPedido?: number;
 	lineas?: LineaRechazada[];
 	total?: number;
+	// el ajuste con menos de lo comprometido (HU-08 RF-18)
+	comprometido?: number;
 }
 
 export function esErrorApi(valor: unknown): valor is ErrorApi {

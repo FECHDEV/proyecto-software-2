@@ -16,9 +16,20 @@
   </div>
 
   <dl class="resumen">
+    <!-- HU-08 RF-16: el disponible se vende; lo comprometido sigue en el estante por pedidos abiertos -->
     <div class="dato">
-      <dt>Stock</dt>
+      <dt>Disponible</dt>
       <dd class="numero">{{ cantidad(producto.stock) }} <span class="unidad">{{ unidad(producto) }}</span></dd>
+    </div>
+    <div class="dato">
+      <dt>Comprometido</dt>
+      <dd class="numero">{{ cantidad(producto.comprometido) }} <span class="unidad">{{ unidad(producto) }}</span></dd>
+    </div>
+    <div class="dato">
+      <dt>En el estante</dt>
+      <dd class="numero">
+        {{ cantidad(producto.stock + producto.comprometido) }} <span class="unidad">{{ unidad(producto) }}</span>
+      </dd>
     </div>
     <div class="dato">
       <dt>Mínimo</dt>
@@ -53,7 +64,7 @@
     <div class="formularios">
       <form class="tarjeta" (submit)="registrarEntrada($event)" novalidate aria-labelledby="titulo-entrada">
         <h2 id="titulo-entrada">Entrada</h2>
-        <p class="ayuda">Mercadería que llegó: se suma al stock.</p>
+        <p class="ayuda">Mercadería que llegó: se suma a lo disponible.</p>
         <div role="alert">
           @if (errorDeEntrada()) {
             <p class="aviso">{{ errorDeEntrada() }}</p>
@@ -98,7 +109,15 @@
 
       <form class="tarjeta" (submit)="registrarAjuste($event)" novalidate aria-labelledby="titulo-ajuste">
         <h2 id="titulo-ajuste">Ajuste</h2>
-        <p class="ayuda">Escriba cuánto hay realmente; el sistema guarda la diferencia.</p>
+        <p class="ayuda">
+          @if (producto.comprometido > 0) {
+            Cuente todo lo que hay en el estante, incluido lo apartado para pedidos
+            ({{ cantidad(producto.comprometido) }} {{ unidad(producto) }}). El sistema lo descuenta y guarda la
+            diferencia en lo disponible.
+          } @else {
+            Escriba cuánto hay en el estante; el sistema guarda la diferencia.
+          }
+        </p>
         <div role="alert">
           @if (errorDeAjuste()) {
             <p class="aviso">{{ errorDeAjuste() }}</p>
@@ -106,7 +125,7 @@
         </div>
         <div class="campo">
           @let errorContada = mensaje(ajuste.contada());
-          <label for="ajuste-contada">Cantidad contada ({{ unidad(producto) }})</label>
+          <label for="ajuste-contada">En el estante ({{ unidad(producto) }})</label>
           <input
             id="ajuste-contada"
             type="text"
@@ -154,7 +173,7 @@
 
       <form class="tarjeta" (submit)="guardarMinimo($event)" novalidate aria-labelledby="titulo-minimo">
         <h2 id="titulo-minimo">Stock mínimo</h2>
-        <p class="ayuda">Con el stock en el mínimo o por debajo, el producto aparece en «Stock bajo».</p>
+        <p class="ayuda">Con lo disponible en el mínimo o por debajo, el producto aparece en «Stock bajo».</p>
         <div role="alert">
           @if (errorDeMinimo()) {
             <p class="aviso">{{ errorDeMinimo() }}</p>
@@ -202,7 +221,7 @@
                 <th scope="col">Fecha</th>
                 <th scope="col">Movimiento</th>
                 <th scope="col">Cantidad</th>
-                <th scope="col">Stock</th>
+                <th scope="col">Disponible</th>
                 <th scope="col">Registró</th>
                 <th scope="col">Nota</th>
               </tr>
@@ -213,7 +232,7 @@
                   <td data-etiqueta="Fecha" class="numero">{{ fecha(movimiento.fecha) }} {{ hora(movimiento.fecha) }}</td>
                   <th scope="row" data-etiqueta="Movimiento">{{ descripcion(movimiento) }}</th>
                   <td data-etiqueta="Cantidad" class="numero">{{ conSigno(movimiento) }}</td>
-                  <td data-etiqueta="Stock" class="numero">{{ cantidad(movimiento.stockResultante) }}</td>
+                  <td data-etiqueta="Disponible" class="numero">{{ cantidad(movimiento.stockResultante) }}</td>
                   <td data-etiqueta="Registró">{{ movimiento.usuario }}</td>
                   <td data-etiqueta="Nota" class="nota">{{ movimiento.nota ?? '—' }}</td>
                 </tr>

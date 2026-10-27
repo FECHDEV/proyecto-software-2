@@ -1,3 +1,4 @@
+import { cantidad } from '../../shared/formato/precios';
 import { ErrorApi, errorDelCampo } from '../modelos/error-api';
 
 // Único lugar donde los códigos del backend se vuelven frases para la persona,
@@ -35,8 +36,9 @@ const MENSAJES: Record<string, string> = {
 	PRODUCTO_LLENO_DE_IMAGENES: 'El producto ya tiene 5 fotos. Quite una antes de subir otra.',
 	FICHA_INVALIDA: 'La ficha técnica tiene dos datos con el mismo nombre.',
 	ORDEN_DE_IMAGENES_INVALIDO: 'Las fotos cambiaron mientras las ordenaba. Recargue la página.',
-	AJUSTE_SIN_CAMBIO: 'La cantidad contada es igual al stock: no hay nada que ajustar.',
-	STOCK_FUERA_DE_RANGO: 'Con esa entrada el stock pasaría de 9.999.999,99.',
+	AJUSTE_SIN_CAMBIO: 'La cantidad contada es igual a lo que hay en el estante: no hay nada que ajustar.',
+	CONTEO_MENOR_QUE_COMPROMETIDO: 'Contaron menos de lo que ya está vendido o reservado. Revise el conteo.',
+	STOCK_FUERA_DE_RANGO: 'Con esa entrada, lo que hay en el estante pasaría de 9.999.999,99.',
 	UNIDAD_INCOMPATIBLE_CON_STOCK:
 		'El stock o el mínimo de este producto tienen decimales y esa unidad no los admite. Ajuste el stock antes de cambiarla.',
 	IMAGEN_INVALIDA: 'Ese archivo no es una imagen JPG, PNG o WebP.',
@@ -65,6 +67,9 @@ const GENERICO = 'No pudimos completar la operación. Intente de nuevo.';
 export function mensajeDeError(error: ErrorApi | null): string {
 	if (error === null) {
 		return '';
+	}
+	if (error.codigo === 'CONTEO_MENOR_QUE_COMPROMETIDO' && error.comprometido !== undefined) {
+		return `Contaron menos de lo que ya está vendido o reservado (${cantidad(error.comprometido)}). Revise el conteo.`;
 	}
 	return error.codigo === undefined ? GENERICO : mensajeDelCodigo(error.codigo);
 }

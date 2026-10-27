@@ -65,6 +65,14 @@ public class MovimientoStock {
 	@Column(length = 200)
 	private String nota;
 
+	// Solo en los ajustes desde el 27/10/2026: lo contado en el estante y lo comprometido en pedidos abiertos en ese
+	// momento (HU-08 RF-17). Los ajustes anteriores no los tienen
+	@Column(precision = 9, scale = 2)
+	private BigDecimal contado;
+
+	@Column(precision = 9, scale = 2)
+	private BigDecimal comprometido;
+
 	// Solo en la reserva y la liberación de un pedido (HU-12 RF-14)
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "id_pedido")
@@ -77,9 +85,13 @@ public class MovimientoStock {
 	}
 
 	public static MovimientoStock ajuste(Producto producto, BigDecimal diferencia, BigDecimal stockResultante,
-			MotivoAjuste motivo, Usuario usuario, LocalDateTime fecha, String nota) {
-		return new MovimientoStock(producto, TipoMovimiento.AJUSTE, Objects.requireNonNull(motivo), diferencia,
-				stockResultante, usuario, fecha, nota);
+			BigDecimal contado, BigDecimal comprometido, MotivoAjuste motivo, Usuario usuario, LocalDateTime fecha,
+			String nota) {
+		MovimientoStock movimiento = new MovimientoStock(producto, TipoMovimiento.AJUSTE, Objects.requireNonNull(motivo),
+				diferencia, stockResultante, usuario, fecha, nota);
+		movimiento.contado = contado.setScale(2, RoundingMode.UNNECESSARY);
+		movimiento.comprometido = comprometido.setScale(2, RoundingMode.UNNECESSARY);
+		return movimiento;
 	}
 
 	// Resta lo que el pedido reserva, a nombre del cliente (HU-12 RF-2)

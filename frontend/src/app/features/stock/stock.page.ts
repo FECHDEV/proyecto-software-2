@@ -203,7 +203,7 @@ export class StockPage implements ConCambiosSinGuardar {
 		await this.enviar(this.entrada, this.registrandoEntrada, this.errorDeEntrada, 'entrada-cantidad', async (datos, id) => {
 			const producto = await this.inventario.registrarEntrada(id, leerCantidad(datos.cantidad)!, datos.nota);
 			this.entrada().reset({ ...SIN_ENTRADA });
-			return { producto, exito: `Entrada registrada. Stock: ${cantidad(producto.stock)}.` };
+			return { producto, exito: `Entrada registrada. Disponible: ${cantidad(producto.stock)}.` };
 		});
 	}
 
@@ -217,7 +217,7 @@ export class StockPage implements ConCambiosSinGuardar {
 				datos.nota,
 			);
 			this.ajuste().reset({ ...SIN_AJUSTE });
-			return { producto, exito: `Ajuste registrado. Stock: ${cantidad(producto.stock)}.` };
+			return { producto, exito: `Ajuste registrado. Disponible: ${cantidad(producto.stock)}.` };
 		});
 	}
 

@@ -4,6 +4,7 @@ import static bo.edu.uagrm.tienda.IpsDePrueba.ipNueva;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -27,8 +28,13 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
 import com.jayway.jsonpath.JsonPath;
 
+import bo.edu.uagrm.tienda.entity.EstadoPedido;
+import bo.edu.uagrm.tienda.entity.Pedido;
+import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
+import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
+import bo.edu.uagrm.tienda.repository.PedidoRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import bo.edu.uagrm.tienda.service.AdministradorInicial;
@@ -55,6 +61,12 @@ class InventarioIntegracionTest {
 
 	@Autowired
 	private ProductoRepository productoRepository;
+
+	@Autowired
+	private PedidoRepository pedidoRepository;
+
+	@Autowired
+	private LineaCarritoRepository lineaCarritoRepository;
 
 	@Autowired
 	private CategoriaRepository categoriaRepository;
@@ -85,6 +97,8 @@ class InventarioIntegracionTest {
 	@AfterEach
 	void limpiar() {
 		movimientoRepository.deleteAll();
+		lineaCarritoRepository.deleteAll();
+		pedidoRepository.deleteAll();
 		productoRepository.deleteAll();
 		categoriaRepository.deleteAll();
 		CORREOS.forEach(correo -> usuarioRepository.findByCorreo(correo).ifPresent(usuarioRepository::delete));
@@ -362,6 +376,184 @@ class InventarioIntegracionTest {
 		assertThat(get(INVENTARIO + "/abc", contador).getResponse().getStatus()).isBetween(400, 499);
 		assertThat(get(INVENTARIO + "?pagina=abc&categoria=x", contador).getResponse().getStatus())
 				.isBetween(400, 499);
+	}
+
+	// --- 27/10/2026: el ajuste cuenta el estante (RF-15 a RF-18) ---
+
+	// Un pedido del cliente con este producto, en el estado pedido. Sin mover el stock: solo importa lo comprometido
+	private void pedidoEn(EstadoPedido estado, Integer idProducto, String cantidad) {
+		Usuario usuario = usuarioRepository.findByCorreo("cli.hu08@mail.com").orElseThrow();
+		LocalDateTime ahora = LocalDateTime.now();
+		Pedido pedido = Pedido.confirmar(usuario, "Eva Paz", "70000000", null, ahora, ahora.plusMinutes(30));
+		pedido.agregarLinea(productoRepository.findById(idProducto.longValue()).orElseThrow(), new BigDecimal(cantidad));
+		switch (estado) {
+			case PENDIENTE_PAGO -> {
+			}
+			case PAGADO -> pedido.pagar(ahora);
+			case ENTREGADO -> {
+				pedido.pagar(ahora);
+				pedido.entregar(usuario, ahora);
+			}
+			case CANCELADO -> pedido.cancelar(ahora);
+			case VENCIDO -> pedido.vencer(ahora);
+			case PAGO_A_DEVOLVER -> {
+				pedido.cancelar(ahora);
+				pedido.marcarPagoADevolver(ahora);
+			}
+		}
+		pedidoRepository.save(pedido);
+	}
+
+	// El escenario de la historia: disponible 10, 3 en un pedido pendiente y 2 en uno pagado sin retirar
+	private Integer conPedidosAbiertos() throws Exception {
+		Integer taladro = producto("Taladro", herramientas, "UNIDAD");
+		entrada(empleado, taladro, "10");
+		pedidoEn(EstadoPedido.PENDIENTE_PAGO, taladro, "3");
+		pedidoEn(EstadoPedido.PAGADO, taladro, "2");
+		return taladro;
+	}
+
+	// HU-08 RF-15: los entregados, cancelados, vencidos y con el pago a devolver ya no están en el estante por un pedido
+	@Test
+	void loComprometidoSumaPendientesYPagadosSinEntregar() throws Exception {
+		Integer taladro = conPedidosAbiertos();
+		pedidoEn(EstadoPedido.ENTREGADO, taladro, "4");
+		pedidoEn(EstadoPedido.CANCELADO, taladro, "1");
+		pedidoEn(EstadoPedido.VENCIDO, taladro, "1");
+		pedidoEn(EstadoPedido.PAGO_A_DEVOLVER, taladro, "1");
+
+		MvcTestResult ficha = get(INVENTARIO + "/{id}", empleado, taladro);
+		assertThat(ficha).bodyJson().extractingPath("$.stock").isEqualTo(10.0);
+		assertThat(ficha).bodyJson().extractingPath("$.comprometido").isEqualTo(5.0);
+	}
+
+	// HU-08 RF-16
+	@Test
+	void laFichaYLaListaMuestranLoComprometido() throws Exception {
+		Integer taladro = conPedidosAbiertos();
+		producto("Azada", jardin, "UNIDAD");
+
+		MvcTestResult lista = get(INVENTARIO, contador);
+		assertThat(lista).bodyJson().extractingPath("$.contenido[*].nombre").asArray()
+				.containsExactly("Azada", "Taladro");
+		assertThat(lista).bodyJson().extractingPath("$.contenido[0].comprometido").isEqualTo(0.0);
+		assertThat(lista).bodyJson().extractingPath("$.contenido[1].comprometido").isEqualTo(5.0);
+		assertThat(get(INVENTARIO + "/{id}", contador, taladro)).bodyJson().extractingPath("$.comprometido")
+				.isEqualTo(5.0);
+	}
+
+	// HU-08 RF-17: en el estante hay 15; contar 14 deja 9 disponibles
+	@Test
+	void elAjusteDescuentaLoComprometidoDeLoContado() throws Exception {
+		Integer taladro = conPedidosAbiertos();
+
+		MvcTestResult ajustado = ajuste(empleado, taladro, "14", "CONTEO", null);
+
+		assertThat(ajustado).hasStatus(HttpStatus.CREATED);
+		assertThat(ajustado).bodyJson().extractingPath("$.stock").isEqualTo(9.0);
+		assertThat(ajustado).bodyJson().extractingPath("$.comprometido").isEqualTo(5.0);
+	}
+
+	// HU-08 RF-17
+	@Test
+	void elHistorialMuestraLoContadoYLoComprometido() throws Exception {
+		Integer taladro = conPedidosAbiertos();
+		ajuste(empleado, taladro, "14", "CONTEO", null);
+
+		MvcTestResult historial = get(INVENTARIO + "/{id}/movimientos", contador, taladro);
+		assertThat(historial).bodyJson().extractingPath("$.contenido[0].cantidad").isEqualTo(-1.0);
+		assertThat(historial).bodyJson().extractingPath("$.contenido[0].stockResultante").isEqualTo(9.0);
+		assertThat(historial).bodyJson().extractingPath("$.contenido[0].contado").isEqualTo(14.0);
+		assertThat(historial).bodyJson().extractingPath("$.contenido[0].comprometido").isEqualTo(5.0);
+		// Una entrada no lleva conteo
+		assertThat(historial).bodyJson().extractingPath("$.contenido[1].contado").isNull();
+	}
+
+	// HU-08 RF-18
+	@Test
+	void contarMenosDeLoComprometidoSeRechaza() throws Exception {
+		Integer taladro = conPedidosAbiertos();
+
+		MvcTestResult rechazado = ajuste(empleado, taladro, "4", "CONTEO", null);
+
+		assertThat(rechazado).hasStatus(HttpStatus.CONFLICT);
+		assertThat(rechazado).bodyJson().extractingPath("$.codigo").isEqualTo("CONTEO_MENOR_QUE_COMPROMETIDO");
+		assertThat(rechazado).bodyJson().extractingPath("$.comprometido").isEqualTo(5.0);
+		assertThat(stock(taladro)).isEqualByComparingTo("10");
+		assertThat(movimientoRepository.count()).isEqualTo(1);
+	}
+
+	// HU-08 RF-6: lo contado es lo que ya hay en el estante
+	@Test
+	void contarLoMismoQueHayEnElEstanteNoCambiaNada() throws Exception {
+		Integer taladro = conPedidosAbiertos();
+
+		MvcTestResult rechazado = ajuste(empleado, taladro, "15", "CONTEO", null);
+
+		assertThat(rechazado).hasStatus(HttpStatus.CONFLICT);
+		assertThat(rechazado).bodyJson().extractingPath("$.codigo").isEqualTo("AJUSTE_SIN_CAMBIO");
+		assertThat(stock(taladro)).isEqualByComparingTo("10");
+	}
+
+	// HU-08 RF-17, caso límite
+	@Test
+	void contarLoMismoQueLoComprometidoDejaElDisponibleEnCero() throws Exception {
+		Integer taladro = conPedidosAbiertos();
+
+		assertThat(ajuste(empleado, taladro, "5", "MERMA", null)).bodyJson().extractingPath("$.stock")
+				.isEqualTo(0.0);
+	}
+
+	// HU-08 RF-4, RF-15, caso límite: sin pedidos abiertos, lo contado es lo disponible
+	@Test
+	void sinPedidosAbiertosElAjusteEsComoAntes() throws Exception {
+		Integer taladro = producto("Taladro", herramientas, "UNIDAD");
+		entrada(empleado, taladro, "10");
+
+		MvcTestResult ajustado = ajuste(empleado, taladro, "7", "CONTEO", null);
+
+		assertThat(ajustado).bodyJson().extractingPath("$.stock").isEqualTo(7.0);
+		assertThat(ajustado).bodyJson().extractingPath("$.comprometido").isEqualTo(0.0);
+	}
+
+	// HU-08 RF-6 (/code-review): lo que hay en el estante tampoco pasa del máximo, así lo contado siempre se puede cargar
+	@Test
+	void unaEntradaNoDejaElEstantePorEncimaDelMaximo() throws Exception {
+		Integer taladro = producto("Taladro", herramientas, "UNIDAD");
+		entrada(empleado, taladro, "99999");
+		productoRepository.findById(taladro.longValue()).ifPresent(producto -> {
+			producto.aplicarMovimiento(new BigDecimal("9999989"));
+			productoRepository.save(producto);
+		});
+		pedidoEn(EstadoPedido.PENDIENTE_PAGO, taladro, "9");
+
+		MvcTestResult rechazada = entrada(empleado, taladro, "5");
+
+		assertThat(rechazada).hasStatus(HttpStatus.CONFLICT);
+		assertThat(rechazada).bodyJson().extractingPath("$.codigo").isEqualTo("STOCK_FUERA_DE_RANGO");
+		assertThat(entrada(empleado, taladro, "0.5").getResponse().getStatus()).isBetween(400, 499);
+		assertThat(entrada(empleado, taladro, "1")).hasStatus(HttpStatus.CREATED);
+	}
+
+	// HU-08 RF-17, caso límite: el ajuste y la confirmación bloquean el producto; en cualquier orden quedan 9
+	@Test
+	void unAjusteYUnaConfirmacionALaVezNoPierdenStock() throws Exception {
+		Integer taladro = producto("Taladro", herramientas, "UNIDAD");
+		entrada(empleado, taladro, "10");
+		Usuario usuario = usuarioRepository.findByCorreo("cli.hu08@mail.com").orElseThrow();
+		usuario.marcarCorreoVerificado();
+		usuarioRepository.save(usuario);
+		assertThat(post("/api/carrito/lineas", cliente, "{\"idProducto\":%d,\"cantidad\":3}".formatted(taladro)))
+				.hasStatus(HttpStatus.OK);
+
+		List<MvcTestResult> resultados = aLaVez(() -> ajuste(empleado, taladro, "12", "CONTEO", null),
+				() -> post("/api/pedidos", cliente,
+						"{\"nombreRetira\":\"Eva Paz\",\"telefonoRetira\":\"70000000\",\"nota\":null,\"totalEsperado\":30}"));
+
+		assertThat(resultados).allSatisfy(resultado -> assertThat(resultado).hasStatus(HttpStatus.CREATED));
+		assertThat(stock(taladro)).isEqualByComparingTo("9");
+		assertThat(get(INVENTARIO + "/{id}", empleado, taladro)).bodyJson().extractingPath("$.comprometido")
+				.isEqualTo(3.0);
 	}
 
 	// Dos peticiones que arrancan juntas

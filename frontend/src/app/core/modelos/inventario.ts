@@ -1,3 +1,4 @@
+import { cantidad } from '../../shared/formato/precios';
 import { UnidadVenta } from './producto';
 
 // Espejo de InventarioResponse, MovimientoResponse y de los pedidos de InventarioController (HU-08)
@@ -39,9 +40,12 @@ export interface ProductoEnInventario {
 	categoria: string;
 	unidad: UnidadVenta;
 	activo: boolean;
+	// El disponible para vender
 	stock: number;
 	stockMinimo: number | null;
 	stockBajo: boolean;
+	// Lo que sigue en el estante por pedidos pendientes o pagados sin retirar (HU-08 RF-15)
+	comprometido: number;
 }
 
 export interface Movimiento {
@@ -57,6 +61,9 @@ export interface Movimiento {
 	nota: string | null;
 	// Solo en la reserva y la liberación
 	idPedido: number | null;
+	// Solo en los ajustes desde el 27/10/2026: lo contado en el estante y lo comprometido (HU-08 RF-17)
+	contado: number | null;
+	comprometido: number | null;
 }
 
 // Cómo se nombra cada movimiento en el historial (HU-08 RF-11, HU-12 RF-14)
@@ -64,8 +71,12 @@ export function descripcionDeMovimiento(movimiento: Movimiento): string {
 	switch (movimiento.tipo) {
 		case 'ENTRADA':
 			return 'Entrada';
-		case 'AJUSTE':
-			return `Ajuste · ${movimiento.motivo === null ? '' : NOMBRES_DE_MOTIVO[movimiento.motivo]}`;
+		case 'AJUSTE': {
+			const motivo = `Ajuste · ${movimiento.motivo === null ? '' : NOMBRES_DE_MOTIVO[movimiento.motivo]}`;
+			return movimiento.contado === null || movimiento.comprometido === null
+				? motivo
+				: `${motivo} · en el estante ${cantidad(movimiento.contado)}, comprometido ${cantidad(movimiento.comprometido)}`;
+		}
 		case 'RESERVA':
 			return `Reserva por pedido N.º ${movimiento.idPedido}`;
 		case 'LIBERACION':

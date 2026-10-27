@@ -65,8 +65,14 @@ h2 {
 	margin: 0;
 }
 
+// En el celular, las cuatro cifras en dos filas parejas (HU-08 RF-16; revisión de interfaz)
+@media (max-width: 640px) {
+	.dato {
+		flex: 1 0 40%;
+	}
+}
+
 .dato dt {
-	font-family: var(--app-familia-texto);
 	font-size: 12px;
 	font-weight: 600;
 	letter-spacing: 0.06em;
@@ -82,7 +88,7 @@ h2 {
 }
 
 .unidad {
-	font-family: var(--app-familia-texto, inherit);
+	font-family: var(--app-familia-texto);
 	font-size: 15px;
 	font-weight: 400;
 	color: var(--app-texto-suave);
@@ -93,7 +99,6 @@ h2 {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--app-espacio-2);
-	margin: 0;
 	font-family: inherit;
 	font-size: 15px;
 	padding: var(--app-espacio-2) var(--app-espacio-3);
