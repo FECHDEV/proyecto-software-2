@@ -31,9 +31,16 @@ final class Busquedas {
 		return "%" + literal + "%";
 	}
 
-	// Igual que el Pageable de Spring Data: una página negativa es la primera y un tamaño inválido, el por defecto
+	// Igual que el Pageable de Spring Data: una página negativa es la primera y un tamaño inválido, el por defecto. Una
+	// página gigante, la última posible: más allá, el desplazamiento no entra en un int y la consulta fallaba (revisión
+	// total, como en el catálogo)
 	static PageRequest pagina(int pagina, int tamano, Sort orden) {
-		return PageRequest.of(Math.max(pagina, 0), tamano < 1 ? TAMANO_POR_DEFECTO : Math.min(tamano, TAMANO_MAXIMO),
-				orden);
+		int tamanoValido = tamano < 1 ? TAMANO_POR_DEFECTO : Math.min(tamano, TAMANO_MAXIMO);
+		return PageRequest.of(paginaValida(pagina, tamanoValido), tamanoValido, orden);
+	}
+
+	// Entre la primera y la última cuyo desplazamiento entra en un int; también para los listados de tamaño fijo
+	static int paginaValida(int pagina, int tamano) {
+		return Math.clamp(pagina, 0, Integer.MAX_VALUE / tamano - 1);
 	}
 }

@@ -114,14 +114,20 @@ export class CatalogoPage {
 	protected readonly busquedaMaxima = BUSQUEDA_MAXIMA;
 	protected readonly cantidad = cantidad;
 
-	protected readonly numeros = computed(() => {
+	// Las cercanas a la actual y, siempre, la primera y la última; null es un salto («…») (revisión total)
+	protected readonly numeros = computed((): (number | null)[] => {
 		const pagina = this.pagina();
 		if (pagina === undefined || pagina.totalPaginas <= 1) {
 			return [];
 		}
+		const ultima = pagina.totalPaginas - 1;
 		const desde = Math.max(0, Math.min(pagina.pagina - 2, pagina.totalPaginas - PAGINAS_VISIBLES));
 		const hasta = Math.min(pagina.totalPaginas, desde + PAGINAS_VISIBLES);
-		return Array.from({ length: hasta - desde }, (_, i) => desde + i);
+		const cercanas = Array.from({ length: hasta - desde }, (_, i) => desde + i);
+		// Un «…» que escondería una sola página la muestra: ocupa lo mismo
+		const antes = desde === 0 ? [] : desde === 1 ? [0] : desde === 2 ? [0, 1] : [0, null];
+		const despues = hasta > ultima ? [] : hasta === ultima ? [ultima] : hasta === ultima - 1 ? [hasta, ultima] : [null, ultima];
+		return [...antes, ...cercanas, ...despues];
 	});
 
 	constructor() {

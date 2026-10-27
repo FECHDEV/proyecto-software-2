@@ -20,7 +20,9 @@ services:
     volumes:
       - datos-mysql:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      # Sin contraseña: ping responde que el servidor está vivo aunque niegue el acceso, así que no hace falta
+      # ponerla en la línea de comandos (revisión total)
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -54,6 +56,8 @@ services:
       TIENDA_CORREO_PROVEEDOR: ${TIENDA_CORREO_PROVEEDOR:-smtp}
       TIENDA_CORREO_USUARIO: ${TIENDA_CORREO_USUARIO:-}
       TIENDA_CORREO_CONTRASENA: ${TIENDA_CORREO_CONTRASENA:-}
+      TIENDA_CORREO_HOST: ${TIENDA_CORREO_HOST:-smtp.gmail.com}
+      TIENDA_CORREO_PUERTO: ${TIENDA_CORREO_PUERTO:-587}
       TIENDA_CORREO_REMITENTE: ${TIENDA_MARCA:-Tienda Montero} <${TIENDA_CORREO_USUARIO:-no-responder@localhost}>
       TIENDA_SITIO_URL: ${TIENDA_SITIO_URL:-http://localhost}
       # Catálogo de demostración (issue #25): con la carpeta del .env, la API la ve en /datos/demo y la carga si

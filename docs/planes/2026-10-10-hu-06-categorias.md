@@ -198,7 +198,7 @@ archivos, endpoint público nuevo y frontend).
 10/10/2026, Fabio, con Docker: pasaron los escenarios (crear, nombre repetido
 sin tildes, imagen válida y PDF rechazado, editar, ocultar y ver que no sale en
 `/api/categorias`, borrar con confirmación, un cliente no ve la gestión).
-Verificación cruzada de David pendiente para el PR.
+Verificación cruzada de David pendiente para el PR. *27/10/2026:* no se hizo; David se retiró del proyecto el 21/10/2026.
 
 ### Distinto de lo planeado
 

@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.entity.VerificacionCorreo;
 import bo.edu.uagrm.tienda.exception.CorreoYaVerificadoException;
-import bo.edu.uagrm.tienda.exception.CuentaDesactivadaException;
+import bo.edu.uagrm.tienda.exception.SesionSinCuentaActivaException;
 import bo.edu.uagrm.tienda.exception.TokenVerificacionInvalidoException;
 import bo.edu.uagrm.tienda.exception.UsuarioNoEncontradoException;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
@@ -51,7 +51,7 @@ public class VerificacionCorreoService {
 		Usuario usuario = usuarioRepository.findConBloqueoByIdUsuario(idUsuario)
 				.orElseThrow(UsuarioNoEncontradoException::new);
 		if (!usuario.estaActiva()) {
-			throw new CuentaDesactivadaException();
+			throw new SesionSinCuentaActivaException();
 		}
 		if (usuario.isCorreoVerificado()) {
 			throw new CorreoYaVerificadoException();
@@ -63,7 +63,9 @@ public class VerificacionCorreoService {
 
 	// El id de la cuenta se lee sin bloqueo y sin cargar el enlace, que se trae recién con la cuenta bloqueada: una
 	// entidad ya leída no se vuelve a leer al bloquearla. Dos verificaciones del mismo enlace se esperan en la cuenta
-	// y la segunda lo encuentra usado
+	// y la segunda lo encuentra usado: si no venció y el correo ya está verificado, responde igual que la primera, sin
+	// cambiar nada (RF-17: se perdió la respuesta y se reintentó). Vale también para un enlace reemplazado de la misma
+	// cuenta: «usado» no distingue uno del otro, y decir que el correo está verificado es cierto con cualquiera
 	@Transactional
 	public void verificar(String token) {
 		String hash = TokenRecuperacion.hash(token);
@@ -73,9 +75,13 @@ public class VerificacionCorreoService {
 				.filter(Usuario::estaActiva) // RF-5: el enlace de una cuenta desactivada no sirve
 				.orElseThrow(TokenVerificacionInvalidoException::new);
 		LocalDateTime ahora = LocalDateTime.now(clock);
-		verificacionRepository.findByHashToken(hash)
-				.filter(registro -> registro.estaVigente(ahora))
+		VerificacionCorreo registro = verificacionRepository.findByHashToken(hash)
+				.filter(enlace -> enlace.estaVigente(ahora)
+						|| (usuario.isCorreoVerificado() && ahora.isBefore(enlace.getFechaExpiracion())))
 				.orElseThrow(TokenVerificacionInvalidoException::new);
+		if (!registro.estaVigente(ahora)) {
+			return;
+		}
 		usuario.marcarCorreoVerificado();
 		invalidarPendientes(usuario);
 	}

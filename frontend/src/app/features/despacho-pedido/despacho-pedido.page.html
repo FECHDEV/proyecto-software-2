@@ -11,7 +11,7 @@
 } @else if (ficha(); as ficha) {
   <a class="salida" routerLink="/pedidos">Pedidos</a>
   <div class="cabecera">
-    <h1>Pedido N.º {{ ficha.idPedido }}</h1>
+    <h1>Pedido N.º&nbsp;{{ ficha.idPedido }}</h1>
     <p [class]="'estado ' + tono[ficha.estado]">{{ nombresDeEstado[ficha.estado] }}</p>
   </div>
 

@@ -11,7 +11,9 @@
   @if (errorDeCarga()) {
     <div class="tarjeta-error">
       <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
-      <button type="button" class="boton secundario" (click)="recurso.reload()">Reintentar</button>
+      @if (!noExiste()) {
+        <button type="button" class="boton secundario" (click)="recurso.reload()">Reintentar</button>
+      }
     </div>
   } @else {
     <p class="cargando" role="status">Cargando el producto…</p>
@@ -325,3 +327,4 @@
 }
 
 <app-dialogo-confirmacion #confirmacion />
+<app-dialogo-confirmacion #salida />

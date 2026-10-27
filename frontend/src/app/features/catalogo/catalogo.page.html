@@ -150,14 +150,18 @@
             >
               <svg lucideChevronLeft aria-hidden="true"></svg>
             </button>
-            @for (numero of numeros(); track numero) {
-              <button
-                type="button"
-                [attr.aria-current]="numero === resultado.pagina ? 'page' : null"
-                (click)="irAPagina(numero)"
-              >
-                {{ numero + 1 }}
-              </button>
+            @for (numero of numeros(); track $index) {
+              @if (numero === null) {
+                <span class="salto" aria-hidden="true">…</span>
+              } @else {
+                <button
+                  type="button"
+                  [attr.aria-current]="numero === resultado.pagina ? 'page' : null"
+                  (click)="irAPagina(numero)"
+                >
+                  {{ numero + 1 }}
+                </button>
+              }
             }
             <button
               type="button"

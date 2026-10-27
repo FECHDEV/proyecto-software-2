@@ -264,7 +264,10 @@
         }
       }
     } @else if (historial.error()) {
-      <p class="aviso" role="alert">No pudimos cargar el historial.</p>
+      <div class="tarjeta-error">
+        <p class="aviso" role="alert">No pudimos cargar el historial.</p>
+        <button type="button" class="secundario" (click)="historial.reload()">Reintentar</button>
+      </div>
     } @else {
       <p class="cargando" role="status">Cargando el historial…</p>
     }
@@ -273,9 +276,13 @@
   <h1>Stock</h1>
   <div class="tarjeta-error">
     <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
-    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+    @if (!noExiste()) {
+      <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+    }
   </div>
 } @else {
   <h1>Stock</h1>
   <p class="cargando" role="status">Cargando el producto…</p>
 }
+
+<app-dialogo-confirmacion />

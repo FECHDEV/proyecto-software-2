@@ -73,26 +73,56 @@
         </div>
 
         <div class="botones">
-          <button type="button" class="boton secundario" (click)="editar(categoria)">Editar</button>
+          <!-- Cada botón dice de qué categoría es: en la lista hay muchos «Editar» (revisión total) -->
+          <button
+            type="button"
+            class="boton secundario"
+            [attr.aria-label]="'Editar ' + categoria.nombre"
+            (click)="editar(categoria)"
+          >
+            Editar
+          </button>
           <input
             class="archivo"
             type="file"
             accept="image/jpeg,image/png,image/webp"
             [id]="'imagen-' + categoria.idCategoria"
             [attr.aria-label]="'Imagen de ' + categoria.nombre"
-            [ocupado]="subiendoImagen() === categoria.idCategoria"
+            [ocupado]="subiendoImagen() === categoria.idCategoria || ocupada(categoria)"
             (change)="elegirImagen(categoria, $event)"
           />
           <label class="boton secundario" [attr.for]="'imagen-' + categoria.idCategoria">
             {{ subiendoImagen() === categoria.idCategoria ? 'Subiendo…' : 'Imagen' }}
           </label>
           @if (categoria.tieneImagen) {
-            <button type="button" class="boton secundario" (click)="quitarImagen(categoria)">Quitar imagen</button>
+            <button
+              type="button"
+              class="boton secundario"
+              [attr.aria-label]="'Quitar la imagen de ' + categoria.nombre"
+              [attr.aria-disabled]="ocupada(categoria) ? 'true' : null"
+              (click)="quitarImagen(categoria)"
+            >
+              Quitar imagen
+            </button>
           }
-          <button type="button" class="boton secundario" (click)="cambiarVisibilidad(categoria)">
+          <button
+            type="button"
+            class="boton secundario"
+            [attr.aria-label]="(categoria.visible ? 'Ocultar ' : 'Mostrar ') + categoria.nombre"
+            [attr.aria-disabled]="ocupada(categoria) ? 'true' : null"
+            (click)="cambiarVisibilidad(categoria)"
+          >
             {{ categoria.visible ? 'Ocultar' : 'Mostrar' }}
           </button>
-          <button type="button" class="boton secundario peligro" (click)="borrar(categoria)">Borrar</button>
+          <button
+            type="button"
+            class="boton secundario peligro"
+            [attr.aria-label]="'Borrar ' + categoria.nombre"
+            [attr.aria-disabled]="ocupada(categoria) ? 'true' : null"
+            (click)="borrar(categoria)"
+          >
+            Borrar
+          </button>
         </div>
       </li>
     }

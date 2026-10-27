@@ -40,7 +40,7 @@ const MENSAJES: Record<string, string> = {
 	CONTEO_MENOR_QUE_COMPROMETIDO: 'Contaron menos de lo que ya está vendido o reservado. Revise el conteo.',
 	STOCK_FUERA_DE_RANGO: 'Con esa entrada, lo que hay en el estante pasaría de 9.999.999,99.',
 	UNIDAD_INCOMPATIBLE_CON_STOCK:
-		'El stock o el mínimo de este producto tienen decimales y esa unidad no los admite. Ajuste el stock antes de cambiarla.',
+		'El stock, el mínimo o un pedido abierto de este producto tienen decimales y esa unidad no los admite. Ajuste el stock o espere a que se entregue el pedido.',
 	IMAGEN_INVALIDA: 'Ese archivo no es una imagen JPG, PNG o WebP.',
 	IMAGEN_DEMASIADO_GRANDE: 'La imagen pesa más de 2 MB. Elija una más liviana.',
 	MODELO_INVALIDO: 'Ese archivo no es un modelo 3D .glb.',

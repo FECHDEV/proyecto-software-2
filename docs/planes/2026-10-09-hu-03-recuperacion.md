@@ -110,7 +110,7 @@ Cada RF de RF-1 a RF-13 tiene al menos una prueba que lo cita.
 aplicación): **el correo real llegó** con los colores de la marca, el enlace
 cambió la contraseña y no sirvió por segunda vez; correo inexistente, token
 inválido y contraseña corta respondieron como dice la historia (también
-probados por la API). Verificación cruzada de David pendiente para el PR.
+probados por la API). Verificación cruzada de David pendiente para el PR. *27/10/2026:* no se hizo; David se retiró del proyecto el 21/10/2026.
 
 ### Distinto de lo planeado
 

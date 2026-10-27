@@ -24,21 +24,22 @@ import {
 
 import { CarritoService } from './core/api/carrito.service';
 import { MARCA } from './core/marca';
-import { nombreCompleto, Rol } from './core/modelos/usuario';
+import { nombreCompleto } from './core/modelos/usuario';
+import { Modulo, puedeEntrar } from './core/sesion/modulos';
 import { SesionService } from './core/sesion/sesion.service';
 import { TemaService } from './core/tema/tema.service';
 import { centrarEnLaFila } from './shared/navegacion/centrar-en-la-fila';
 
 // Los módulos del encabezado, además de Inicio (la tienda) y Catálogo, que los
 // ven todos. Ocultarlos según el rol es usabilidad: quien autoriza es el backend
-const MODULOS: readonly { ruta: string; nombre: string; roles: readonly Rol[] }[] = [
-  { ruta: '/panel', nombre: 'Panel', roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
-  { ruta: '/usuarios', nombre: 'Usuarios', roles: ['ADMINISTRADOR'] },
-  { ruta: '/categorias', nombre: 'Categorías', roles: ['ADMINISTRADOR'] },
-  { ruta: '/productos', nombre: 'Productos', roles: ['ADMINISTRADOR'] },
-  { ruta: '/inventario', nombre: 'Inventario', roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
-  { ruta: '/pedidos', nombre: 'Pedidos', roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
-  { ruta: '/reportes', nombre: 'Reportes', roles: ['ADMINISTRADOR', 'CONTADOR'] },
+const MODULOS: readonly { ruta: string; nombre: string; modulo: Modulo }[] = [
+  { ruta: '/panel', nombre: 'Panel', modulo: 'panel' },
+  { ruta: '/usuarios', nombre: 'Usuarios', modulo: 'usuarios' },
+  { ruta: '/categorias', nombre: 'Categorías', modulo: 'categorias' },
+  { ruta: '/productos', nombre: 'Productos', modulo: 'productos' },
+  { ruta: '/inventario', nombre: 'Inventario', modulo: 'inventario' },
+  { ruta: '/pedidos', nombre: 'Pedidos', modulo: 'pedidos' },
+  { ruta: '/reportes', nombre: 'Reportes', modulo: 'reportes' },
 ];
 
 @Component({
@@ -68,7 +69,7 @@ export class AppComponent {
   protected readonly autenticado = this.sesion.autenticado;
   protected readonly modulos = computed(() => {
     const rol = this.sesion.rol();
-    return rol === null ? [] : MODULOS.filter((modulo) => modulo.roles.includes(rol));
+    return MODULOS.filter((modulo) => puedeEntrar(rol, modulo.modulo));
   });
   protected readonly nombre = computed(() => {
     const usuario = this.sesion.usuario();

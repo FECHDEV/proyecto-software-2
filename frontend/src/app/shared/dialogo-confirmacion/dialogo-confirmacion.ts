@@ -37,7 +37,12 @@ export class DialogoConfirmacion {
 		this.pedido.set(pedido);
 		this.confirmado = false;
 		this.origen = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-		this.dialogo().nativeElement.showModal();
+		// Ya abierto (otra pregunta, como salir dos veces seguidas con «Atrás»): la anterior responde que no y esta
+		// toma su lugar; showModal() sobre uno abierto falla en algunos navegadores
+		const dialogo = this.dialogo().nativeElement;
+		if (!dialogo.open) {
+			dialogo.showModal();
+		}
 		return new Promise((resolver) => (this.resolver = resolver));
 	}
 

@@ -178,6 +178,8 @@ describe('CategoriasPage', () => {
     await guardar();
     expect(texto()).toContain('60 caracteres');
     expect(categorias.creadas).toEqual([]);
+    // Revisión total: el foco va al campo que falló
+    expect(document.activeElement?.id).toBe('nombre');
   });
 
   // HU-06 RF-4: el motivo va junto al campo del nombre
@@ -188,6 +190,7 @@ describe('CategoriasPage', () => {
     await guardar();
 
     expect(pantalla().querySelector('#error-nombre')?.textContent).toContain('Ya existe una categoría con ese nombre.');
+    expect(document.activeElement?.id).toBe('nombre');
   });
 
   // HU-06 RF-5
@@ -213,6 +216,23 @@ describe('CategoriasPage', () => {
       { id: 4, visible: false },
       { id: 5, visible: true },
     ]);
+  });
+
+  // Revisión total: un segundo toque mientras guarda no manda otro cambio, y cada botón dice de qué categoría es
+  it('ocultar dos veces seguidas manda un solo cambio', async () => {
+    let responder!: () => void;
+    categorias.respuesta = new Promise<CategoriaGestion>((listo) => (responder = () => listo(JARDIN)));
+    const ocultar = botonDeFila('Jardín', 'Ocultar');
+    expect(ocultar.getAttribute('aria-label')).toBe('Ocultar Jardín');
+
+    ocultar.click();
+    await asentar();
+    expect(ocultar.getAttribute('aria-disabled')).toBe('true');
+    ocultar.click();
+    responder();
+    await asentar();
+
+    expect(categorias.visibilidades).toEqual([{ id: 4, visible: false }]);
   });
 
   // HU-06 RF-9, RF-14: confirma nombrándola antes de borrar

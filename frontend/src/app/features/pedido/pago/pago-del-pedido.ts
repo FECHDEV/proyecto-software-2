@@ -55,6 +55,8 @@ export class PagoDelPedido {
 
 	protected readonly generando = signal(false);
 	protected readonly consultando = signal(false);
+	// «Ya pagué» espera una respuesta, la de su consulta o la automática que ya estaba en curso (revisión total)
+	protected readonly esperaElCliente = signal(false);
 	protected readonly simulando = signal(false);
 	protected readonly precio = precio;
 	// Cada respuesta trae un pedido nuevo: el intervalo solo se rehace cuando el QR aparece o se va
@@ -135,23 +137,32 @@ export class PagoDelPedido {
 	}
 
 	// Una consulta a la vez. Las automáticas no muestran un error de red: se
-	// vuelve a preguntar en la próxima vuelta
+	// vuelve a preguntar en la próxima vuelta. «Ya pagué» durante una automática
+	// espera a que termine y pregunta otra vez: la que corría salió quizá antes
+	// de que el Cliente pagara (revisión total)
 	private async consultar(pedidaPorElCliente: boolean): Promise<void> {
+		if (pedidaPorElCliente) {
+			if (this.esperaElCliente()) {
+				return;
+			}
+			this.esperaElCliente.set(true);
+			this.errorDelPago.set(null);
+			this.estadoDelPago.set(null);
+		}
 		if (this.consultando()) {
 			return;
 		}
 		const anterior = this.pedido();
 		const id = anterior.idPedido;
-		if (pedidaPorElCliente) {
-			this.errorDelPago.set(null);
-			this.estadoDelPago.set(null);
-		}
 		this.consultando.set(true);
+		// Si sigue esperando el pago al terminar: solo entonces hay algo que volver a preguntar
+		let sigue = false;
 		try {
 			const pedido = await this.pedidos.consultarPago(id);
 			if (this.pedido().idPedido !== id) {
 				return;
 			}
+			sigue = pedido.estado === 'PENDIENTE_PAGO' && pedido.cobro !== null;
 			// RF-6: el sistema de pago informó un error y el cobro se descartó
 			if (pedido.estado === 'PENDIENTE_PAGO' && pedido.cobro === null && anterior.cobro !== null) {
 				this.errorDelPago.set({ idPedido: id, texto: PAGO_FALLIDO });
@@ -160,11 +171,17 @@ export class PagoDelPedido {
 			}
 			this.cambio.emit(pedido);
 		} catch (rechazo: unknown) {
-			if (pedidaPorElCliente || comoError(rechazo).codigo === 'PEDIDO_NO_PENDIENTE') {
+			sigue = comoError(rechazo).codigo !== 'PEDIDO_NO_PENDIENTE';
+			if (pedidaPorElCliente || !sigue) {
 				this.rechazado(id, rechazo);
 			}
 		} finally {
 			this.consultando.set(false);
+			const alguienEspera = !pedidaPorElCliente && this.esperaElCliente();
+			this.esperaElCliente.set(false);
+			if (alguienEspera && sigue) {
+				void this.consultar(true);
+			}
 		}
 	}
 

@@ -11,6 +11,7 @@
 	// «Letrero de ruta» (16/10/2026, HU-09; DESIGN.md): lona verde botella como
 	// fondo, amarillo cromo solo para las leyendas y la acción principal, y lona
 	// clara para el texto corrido y las placas
+	// Copiado en index.html y en core/tema/tema.service.ts (la barra del celular, antes de que cargue el CSS)
 	--app-fondo: #0c3326;
 	--app-superficie: #114032;
 	--app-superficie-alta: #164d3c;
@@ -127,6 +128,7 @@
 :root[data-tema='claro'] {
 	color-scheme: light;
 
+	// Copiado en index.html y en core/tema/tema.service.ts (la barra del celular, antes de que cargue el CSS)
 	--app-fondo: #f2efe6;
 	--app-superficie: #fbfaf6;
 	--app-superficie-alta: #e7e2d4;

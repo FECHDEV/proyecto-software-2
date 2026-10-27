@@ -27,7 +27,7 @@ import { LucideArrowLeft, LucidePlus, LucideTrash2 } from '@lucide/angular';
 import { CategoriasService } from '../../core/api/categorias.service';
 import { EstadoDelCampo, mensajeDeError, mensajeDelCampo, primerMensaje } from '../../core/api/mensajes-error';
 import { ProductosService } from '../../core/api/productos.service';
-import { ConCambiosSinGuardar } from '../../core/guards/cambios-sin-guardar.guard';
+import { ConCambiosSinGuardar, SALIR_SIN_GUARDAR } from '../../core/guards/cambios-sin-guardar.guard';
 import { comoError, comoErrorApi, ErrorApi } from '../../core/modelos/error-api';
 import {
 	DatosDeProducto,
@@ -128,6 +128,8 @@ export class ProductoPage implements ConCambiosSinGuardar {
 	private readonly elemento = inject(ElementRef<HTMLElement>);
 	private readonly injector = inject(Injector);
 	private readonly dialogo = viewChild.required(DialogoConfirmacion);
+	// Aparte: salir con «Atrás» mientras otra confirmación está abierta (quitar una foto) no la responde ni la pisa
+	private readonly dialogoDeSalida = viewChild.required<DialogoConfirmacion>('salida');
 
 	private readonly parametros = toSignal(inject(ActivatedRoute).paramMap, { requireSync: true });
 	protected readonly esNuevo = computed(() => this.parametros().get('id') === 'nuevo');
@@ -138,7 +140,15 @@ export class ProductoPage implements ConCambiosSinGuardar {
 	protected readonly recurso = this.productos.producto(this.idProducto);
 	protected readonly errorDeCarga = computed(() => {
 		const error = this.recurso.error();
-		return error === undefined ? '' : mensajeDeError(comoErrorApi(error));
+		if (error === undefined) {
+			return '';
+		}
+		return this.noExiste() ? 'Ese producto no existe.' : mensajeDeError(comoErrorApi(error));
+	});
+	// Un producto que no existe no aparece reintentando (revisión total)
+	protected readonly noExiste = computed(() => {
+		const error = this.recurso.error();
+		return error !== undefined && comoErrorApi(error).status === 404;
 	});
 
 	// El producto como lo dejó el backend la última vez: al cargar, al guardar y
@@ -203,6 +213,10 @@ export class ProductoPage implements ConCambiosSinGuardar {
 	// Lo consulta cambiosSinGuardarGuard antes de navegar a otra pantalla
 	tieneCambiosSinGuardar(): boolean {
 		return !this.trasCrear && this.hayCambios();
+	}
+
+	confirmarSalida(): Promise<boolean> {
+		return this.dialogoDeSalida().abrir(SALIR_SIN_GUARDAR);
 	}
 
 	// Cerrar la pestaña o recargar: el navegador muestra su propio aviso

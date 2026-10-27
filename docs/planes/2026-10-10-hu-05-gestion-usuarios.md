@@ -135,7 +135,7 @@ Cada RF de RF-1 a RF-13 tiene al menos una prueba que lo cita.
 punto 5 falló porque el contenedor del backend era del día anterior (Docker
 Desktop estaba cerrado y no se recompiló); recompilado, la sesión abierta antes
 de desactivar y reactivar quedó cerrada con el aviso, y una sesión nueva
-funcionó. Verificación cruzada de David pendiente para el PR.
+funcionó. Verificación cruzada de David pendiente para el PR. *27/10/2026:* no se hizo; David se retiró del proyecto el 21/10/2026.
 
 ### Distinto de lo planeado
 

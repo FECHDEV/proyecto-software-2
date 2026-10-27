@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, linkedSignal, signal, viewChildren } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	computed,
+	ElementRef,
+	inject,
+	linkedSignal,
+	signal,
+	viewChild,
+	viewChildren,
+} from '@angular/core';
 import {
 	form,
 	FormField,
@@ -15,8 +25,10 @@ import { EstadoDelCampo, mensajeDeError, mensajeDelCampo } from '../../core/api/
 import { CambioDeContrasena, DatosPersonales } from '../../core/modelos/cuenta';
 import { comoError, ErrorApi } from '../../core/modelos/error-api';
 import { EstadoCuenta, NOMBRES_DE_ESTADO, NOMBRES_DE_ROL, Rol, Usuario } from '../../core/modelos/usuario';
-import { ConCambiosSinGuardar } from '../../core/guards/cambios-sin-guardar.guard';
+import { ConCambiosSinGuardar, SALIR_SIN_GUARDAR } from '../../core/guards/cambios-sin-guardar.guard';
 import { SesionService } from '../../core/sesion/sesion.service';
+import { reenvioDeVerificacion } from '../../core/sesion/reenvio-de-verificacion';
+import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
 import { VerContrasena } from '../../shared/formularios/ver-contrasena';
 import { iguales } from '../../shared/formularios/iguales';
 import {
@@ -72,7 +84,7 @@ const esquemaDeContrasena = schema<CambioDeContrasena>((ruta) => {
 // del token, así que acá no hay ningún id.
 @Component({
 	selector: 'app-mis-datos',
-	imports: [FormField, VerContrasena],
+	imports: [FormField, VerContrasena, DialogoConfirmacion],
 	templateUrl: './mis-datos.page.html',
 	styleUrl: './mis-datos.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,6 +92,7 @@ const esquemaDeContrasena = schema<CambioDeContrasena>((ruta) => {
 })
 export class MisDatosPage implements ConCambiosSinGuardar {
 	private readonly cuenta = inject(CuentaService);
+	private readonly dialogo = viewChild.required(DialogoConfirmacion);
 	private readonly sesion = inject(SesionService);
 	private readonly elemento = inject(ElementRef<HTMLElement>);
 
@@ -89,8 +102,7 @@ export class MisDatosPage implements ConCambiosSinGuardar {
 	// de la lectura se ofrece reintentar
 	protected readonly cargaFallida = computed(() => this.recurso.error() !== undefined);
 	// «Reenviar el correo» de la verificación (HU-20 RF-8, RF-9)
-	protected readonly enviandoCorreo = signal(false);
-	protected readonly resultadoDelReenvio = signal('');
+	protected readonly reenvio = reenvioDeVerificacion(() => this.verificadoEnOtraPestana.set(true));
 	// Verificado en otra pestaña (RF-11). No se pide la cuenta otra vez: el formulario de datos sale de ella, y se
 	// reiniciaría perdiendo lo que no se guardó
 	private readonly verificadoEnOtraPestana = signal(false);
@@ -164,30 +176,15 @@ export class MisDatosPage implements ConCambiosSinGuardar {
 		return this.hayCambios();
 	}
 
+	confirmarSalida(): Promise<boolean> {
+		return this.dialogo().abrir(SALIR_SIN_GUARDAR);
+	}
+
 	// Cerrar la pestaña o recargar: el navegador muestra su propio aviso
 	protected alCerrarLaPestana(evento: BeforeUnloadEvent): void {
 		if (this.hayCambios()) {
 			evento.preventDefault();
 		}
-	}
-
-	// Como en el carrito: mientras envía, un segundo toque no manda otro correo
-	protected async reenviarCorreo(): Promise<void> {
-		if (this.enviandoCorreo()) {
-			return;
-		}
-		this.enviandoCorreo.set(true);
-		this.resultadoDelReenvio.set('');
-		try {
-			this.resultadoDelReenvio.set(await this.cuenta.reenviarVerificacion());
-		} catch (error: unknown) {
-			const problema = comoError(error);
-			this.resultadoDelReenvio.set(mensajeDeError(problema));
-			if (problema.codigo === 'CORREO_YA_VERIFICADO') {
-				this.verificadoEnOtraPestana.set(true);
-			}
-		}
-		this.enviandoCorreo.set(false);
 	}
 
 	protected nombreDeRol(rol: Rol): string {

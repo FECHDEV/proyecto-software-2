@@ -8,6 +8,10 @@ on:
   push:
     branches: [main]
 
+# Solo lee el código: el token de la corrida no puede escribir en el repositorio (revisión total)
+permissions:
+  contents: read
+
 # Un push nuevo a la misma rama cancela la corrida anterior
 concurrency:
   group: pruebas-${{ github.ref }}

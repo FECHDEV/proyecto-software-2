@@ -366,6 +366,24 @@ class InventarioIntegracionTest {
 		assertThat(put("/api/gestion/productos/{id}", admin, comoUnidad, manguera)).hasStatus(HttpStatus.OK);
 	}
 
+	// HU-08 RF-19: un pedido abierto con 2,5 m quedaría en «2,5 unidades»; uno entregado ya no cuenta
+	@Test
+	void cambiarAUnidadSinDecimalesConUnPedidoAbiertoDecimalSeRechaza() throws Exception {
+		Integer manguera = producto("Manguera", jardin, "METRO");
+		entrada(empleado, manguera, "12");
+		pedidoEn(EstadoPedido.PAGADO, manguera, "2.5");
+		String comoUnidad = """
+				{"nombre":"Manguera","idCategoria":%d,"unidad":"UNIDAD","precio":10}""".formatted(jardin);
+
+		MvcTestResult rechazado = put("/api/gestion/productos/{id}", admin, comoUnidad, manguera);
+		assertThat(rechazado).hasStatus(HttpStatus.CONFLICT);
+		assertThat(rechazado).bodyJson().extractingPath("$.codigo").isEqualTo("UNIDAD_INCOMPATIBLE_CON_STOCK");
+
+		pedidoRepository.deleteAll();
+		pedidoEn(EstadoPedido.ENTREGADO, manguera, "2.5");
+		assertThat(put("/api/gestion/productos/{id}", admin, comoUnidad, manguera)).hasStatus(HttpStatus.OK);
+	}
+
 	// HU-08 RF-14
 	@Test
 	void productoInexistenteYDatosBasura() {

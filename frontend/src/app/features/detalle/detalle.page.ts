@@ -18,11 +18,12 @@ import { comoErrorApi } from '../../core/modelos/error-api';
 import { CatalogoService } from '../../core/api/catalogo.service';
 import { mensajeDeError } from '../../core/api/mensajes-error';
 import { MARCA } from '../../core/marca';
-import { aTarjeta, idDeProducto, urlDeImagen, urlDeModelo } from '../../core/modelos/catalogo';
+import { aTarjeta, urlDeImagen, urlDeModelo } from '../../core/modelos/catalogo';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { Carrusel } from '../../shared/carrusel/carrusel';
 import { precio } from '../../shared/formato/precios';
 import { Galeria } from '../../shared/galeria/galeria';
+import { idDeLaUrl } from '../../shared/navegacion/id-de-la-url';
 import { TarjetaProducto } from '../../shared/tarjeta-producto/tarjeta-producto';
 import { AgregarAlCarrito } from './agregar-al-carrito';
 
@@ -52,7 +53,7 @@ export class DetallePage {
 	private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');
 
 	// null si la dirección no trae un número de producto: no se consulta (RF-9)
-	protected readonly id = computed(() => idDeProducto(this.parametros().get('id')));
+	protected readonly id = computed(() => idDeLaUrl(this.parametros().get('id')));
 	protected readonly recurso = inject(CatalogoService).detalle(this.id);
 
 	protected readonly producto = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));

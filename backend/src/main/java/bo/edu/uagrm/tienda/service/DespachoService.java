@@ -33,8 +33,6 @@ public class DespachoService {
 	static final int POR_PAGINA = 10;
 	static final String TODOS = "TODOS";
 	private static final int LARGO_BUSQUEDA = 100;
-	// Que el desplazamiento de la página entre en un int (HU-14, revisión)
-	private static final int PAGINA_MAXIMA = Integer.MAX_VALUE / POR_PAGINA - 1;
 
 	private final PedidoRepository pedidoRepository;
 	private final UsuarioRepository usuarioRepository;
@@ -56,7 +54,7 @@ public class DespachoService {
 		Sort orden = filtro == EstadoPedido.PAGADO ? Sort.by("pagado", "idPedido")
 				: Sort.by(Sort.Direction.DESC, "confirmado", "idPedido");
 		Page<FilaDeDespacho> filas = pedidoRepository.despacho(filtro, patron, numero,
-				PageRequest.of(Math.clamp(pagina, 0, PAGINA_MAXIMA), POR_PAGINA, orden));
+				PageRequest.of(Busquedas.paginaValida(pagina, POR_PAGINA), POR_PAGINA, orden));
 		if (filas.isEmpty() && filas.getTotalPages() > 0) { // después de la última, la última
 			filas = pedidoRepository.despacho(filtro, patron, numero,
 					PageRequest.of(filas.getTotalPages() - 1, POR_PAGINA, orden));

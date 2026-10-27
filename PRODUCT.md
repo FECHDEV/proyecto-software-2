@@ -41,16 +41,18 @@ verdad, de obra) con toques modernos.
 - Catálogo de 15 a 25 productos de demostración en 4 a 6 categorías, en
   bolivianos; productos con unidad de venta (unidad, metro, kilo, litro, caja,
   par, rollo).
-- Compra con pago en línea (simulador por ahora) y envío; el despacho lo
-  prepara el personal.
+- Compra con pago en línea por QR (Libélula; el simulador solo para probar
+  en la PC) y retiro en la tienda, sin envío; el personal prepara y entrega
+  el pedido.
 - Se muestra en reuniones de revisión y en la defensa del proyecto.
 
 ## Capabilities and Constraints
 
-- Hecho y en curso: cuentas y roles, categorías, productos con hasta cinco
-  fotos, inventario, catálogo público (portada con carruseles y `/catalogo`).
-- Planificado: detalle del producto, carrito, pedidos, pago, visor 3D y
-  realidad aumentada, reportes.
+- Hecho: cuentas y roles, categorías, productos con hasta cinco fotos,
+  inventario, catálogo público (portada con carruseles y `/catalogo`),
+  detalle del producto, visor 3D y realidad aumentada, carrito, pedidos,
+  pago, despacho, reportes y los correos (verificación, recuperación y
+  avisos del pedido).
 - Angular 22 en el frontend; estilos por tokens; iconos Lucide.
 - **Pendiente de datos reales:** nombre comercial definitivo, dirección,
   horarios y contacto del local. No se inventan.

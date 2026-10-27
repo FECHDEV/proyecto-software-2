@@ -25,6 +25,17 @@
 	cursor: zoom-in;
 }
 
+// Sin fotos no hay nada que mostrar sobre blanco: la llave va sobre la superficie, sin el recuadro blanco que en el
+// modo oscuro encandilaba (revisión total)
+.foto-sola {
+	background: var(--app-superficie);
+	border: 1px solid var(--app-borde);
+}
+
+.foto-sola .icono-foto {
+	color: var(--app-texto-suave);
+}
+
 // «Ver en 3D» / «Ver fotos» (HU-16), bajo la foto o las miniaturas
 .vista {
 	display: inline-flex;

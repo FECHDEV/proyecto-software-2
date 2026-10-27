@@ -86,15 +86,6 @@ export interface ProductoEnDetalle {
 	relacionados: ProductoEnTienda[];
 }
 
-// El número de producto de la dirección (HU-10 RF-9): solo cifras, mayor que
-// 0 y que entre en un Long sin perder precisión; si no, null
-export function idDeProducto(texto: string | null): number | null {
-	if (texto === null || !/^[1-9]\d*$/.test(texto)) {
-		return null;
-	}
-	const id = Number(texto);
-	return Number.isSafeInteger(id) ? id : null;
-}
 
 // La única regla para la dirección de una foto: la usan la tienda y la gestión
 export function urlDeImagen(idProducto: number, imagen: string): string {

@@ -11,7 +11,6 @@ import {
 } from '@lucide/angular';
 
 import { CarritoService } from '../../core/api/carrito.service';
-import { CuentaService } from '../../core/api/cuenta.service';
 import { mensajeDeError, mensajeDelRechazo } from '../../core/api/mensajes-error';
 import {
 	AVISOS_DE_LINEA,
@@ -20,8 +19,9 @@ import {
 	LineaDeCarrito,
 } from '../../core/modelos/carrito';
 import { urlDeImagen } from '../../core/modelos/catalogo';
-import { comoError, comoErrorApi, ErrorApi } from '../../core/modelos/error-api';
+import { comoErrorApi, ErrorApi } from '../../core/modelos/error-api';
 import { DECIMALES_DE_UNIDAD } from '../../core/modelos/inventario';
+import { reenvioDeVerificacion } from '../../core/sesion/reenvio-de-verificacion';
 import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
 import { leerCantidad, problemaDeCantidad } from '../../shared/formato/cantidades';
 import { cantidad, precio } from '../../shared/formato/precios';
@@ -51,7 +51,6 @@ import { PasoDeCantidad } from '../../shared/paso-de-cantidad/paso-de-cantidad';
 })
 export class CarritoPage {
 	private readonly servicio = inject(CarritoService);
-	private readonly cuenta = inject(CuentaService);
 	private readonly dialogo = viewChild.required(DialogoConfirmacion);
 	private readonly titulo = viewChild.required<ElementRef<HTMLElement>>('titulo');
 
@@ -72,8 +71,8 @@ export class CarritoPage {
 	// Lo que se quitó o se vació, para los lectores de pantalla
 	protected readonly anuncio = signal('');
 	// «Reenviar el correo» de la verificación (HU-20 RF-7, RF-9)
-	protected readonly enviandoCorreo = signal(false);
-	protected readonly resultadoDelReenvio = signal('');
+	// Ya verificado en otra pestaña: el carrito pedido de nuevo ofrece confirmar (RF-11)
+	protected readonly reenvio = reenvioDeVerificacion(() => this.recurso.reload());
 
 	// La última cantidad pedida por línea que todavía no volvió de la API, con su turno
 	private readonly pendientes = signal<Readonly<Record<number, { cantidad: number; turno: number }>>>({});
@@ -87,27 +86,6 @@ export class CarritoPage {
 		// El carrito se cargó al entrar: al abrir la página se pide de nuevo, con el precio y la
 		// disponibilidad de hoy y lo agregado desde otro dispositivo (RF-8, RF-9, RF-13)
 		this.recurso.reload();
-	}
-
-	// Mientras envía, el botón no se deshabilita (no pierde el foco): un segundo
-	// toque no manda otro correo
-	protected async reenviarCorreo(): Promise<void> {
-		if (this.enviandoCorreo()) {
-			return;
-		}
-		this.enviandoCorreo.set(true);
-		this.resultadoDelReenvio.set('');
-		try {
-			this.resultadoDelReenvio.set(await this.cuenta.reenviarVerificacion());
-		} catch (error: unknown) {
-			const problema = comoError(error);
-			this.resultadoDelReenvio.set(mensajeDeError(problema));
-			// Ya se verificó en otra pestaña: el carrito pedido de nuevo ofrece confirmar (RF-11)
-			if (problema.codigo === 'CORREO_YA_VERIFICADO') {
-				this.recurso.reload();
-			}
-		}
-		this.enviandoCorreo.set(false);
 	}
 
 	protected foto(linea: LineaDeCarrito): string | null {

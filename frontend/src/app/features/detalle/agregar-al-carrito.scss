@@ -1,6 +1,9 @@
 // La cantidad y el botón principal de la tienda en una fila, bajo la
 // disponibilidad (DESIGN.md → Buttons, Inputs)
 :host {
+	// Mide su columna: con container-type y sin estirarse, en la columna del detalle (flex-start) quedaba en 0 px
+	align-self: stretch;
+	container-type: inline-size;
 	display: flex;
 	flex-direction: column;
 	gap: var(--app-espacio-2);
@@ -31,8 +34,9 @@ app-paso-de-cantidad {
 	grid-area: 2 / 2;
 }
 
-// En el celular angosto el botón baja a su propia fila
-@media (max-width: 400px) {
+// Donde no entran en una fila, el botón baja a la suya: su texto no se parte en dos renglones (revisión total). Mide
+// la columna, no la pantalla: en el escritorio la columna del detalle es angosta
+@container (max-width: 480px) {
 	form {
 		grid-template-columns: minmax(0, 1fr);
 	}
@@ -99,6 +103,7 @@ input[aria-invalid='true'] {
 
 .principal span {
 	display: inline-flex;
+	white-space: nowrap;
 	align-items: center;
 	gap: var(--app-espacio-2);
 	transform: skewX(calc(var(--app-sesgo) * -1));

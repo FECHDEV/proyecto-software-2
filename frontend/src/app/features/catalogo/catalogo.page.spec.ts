@@ -204,6 +204,27 @@ describe('CatalogoPage', () => {
     expect(actual?.textContent?.trim()).toBe('1');
   });
 
+  // HU-09 RF-11 (revisión total): con muchas páginas, la primera y la última siempre están
+  it('con muchas páginas muestra la primera y la última', async () => {
+    await abrir('/catalogo?pagina=9', (falso) =>
+      falso.recurso.value.set(pagina([PALA], { pagina: 9, totalElementos: 480, totalPaginas: 20 })),
+    );
+
+    const numeros = Array.from(pantalla().querySelectorAll('.paginas > button:not(.paso), .paginas > .salto')).map(
+      (cada) => cada.textContent?.trim(),
+    );
+    expect(numeros).toEqual(['1', '…', '8', '9', '10', '11', '12', '…', '20']);
+
+    // Un «…» que escondería una sola página la muestra
+    await abrir('/catalogo?pagina=1', (falso) =>
+      falso.recurso.value.set(pagina([PALA], { pagina: 1, totalElementos: 168, totalPaginas: 7 })),
+    );
+    const siete = Array.from(pantalla().querySelectorAll('.paginas > button:not(.paso), .paginas > .salto')).map(
+      (cada) => cada.textContent?.trim(),
+    );
+    expect(siete).toEqual(['1', '2', '3', '4', '5', '6', '7']);
+  });
+
   // HU-09 RF-12
   it('sin resultados ofrece quitar los filtros', async () => {
     await abrir('/catalogo?q=xyz&marca=Truper', (falso) =>

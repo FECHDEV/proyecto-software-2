@@ -43,7 +43,7 @@ import com.jayway.jsonpath.JsonPath;
 
 import bo.edu.uagrm.tienda.entity.EstadoCuenta;
 import bo.edu.uagrm.tienda.entity.Rol;
-import bo.edu.uagrm.tienda.exception.CuentaDesactivadaException;
+import bo.edu.uagrm.tienda.exception.SesionSinCuentaActivaException;
 import bo.edu.uagrm.tienda.exception.TokenVerificacionInvalidoException;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import bo.edu.uagrm.tienda.service.AdministradorInicial;
@@ -163,7 +163,7 @@ class VerificacionCorreoIntegracionTest {
 				Integer.class)).isEqualTo(1);
 	}
 
-	// HU-20 RF-3, RF-4
+	// HU-20 RF-3, RF-4, RF-17
 	@Test
 	void elEnlaceVerificaLaCuentaYSirveUnaSolaVez() {
 		String token = ultimoEnlaceEnviadoA("ana@mail.com");
@@ -173,9 +173,17 @@ class VerificacionCorreoIntegracionTest {
 		assertThat(verificacion).bodyJson().extractingPath("$.mensaje").isEqualTo("Su correo quedó verificado.");
 		assertThat(verificado("ana@mail.com")).isTrue();
 
+		// RF-17 (revisión total): la respuesta se perdió y «Reintentar» lo abre otra vez; el correo ya está
+		// verificado, así que lo dice, sin cambiar nada
 		MvcTestResult otraVez = verificar(token);
-		assertThat(otraVez).hasStatus(HttpStatus.BAD_REQUEST);
-		assertThat(otraVez).bodyJson().extractingPath("$.codigo").isEqualTo("TOKEN_VERIFICACION_INVALIDO");
+		assertThat(otraVez).hasStatus(HttpStatus.OK);
+		assertThat(otraVez).bodyJson().extractingPath("$.mensaje").isEqualTo("Su correo quedó verificado.");
+
+		// Vencido, ya no
+		jdbc.update("UPDATE verificacion_correo SET fecha_expiracion = ?", Timestamp.valueOf("2000-01-01 00:00:00"));
+		MvcTestResult vencido = verificar(token);
+		assertThat(vencido).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(vencido).bodyJson().extractingPath("$.codigo").isEqualTo("TOKEN_VERIFICACION_INVALIDO");
 	}
 
 	// HU-20 RF-3
@@ -245,7 +253,8 @@ class VerificacionCorreoIntegracionTest {
 
 		verificacionCorreoService.iniciar(usuarioRepository.findByCorreo("ana@mail.com").orElseThrow());
 		assertThatThrownBy(() -> verificacionCorreoService.reenviar(idDe("ana@mail.com")))
-				.isInstanceOf(CuentaDesactivadaException.class);
+				.isInstanceOfSatisfying(SesionSinCuentaActivaException.class,
+						ex -> assertThat(ex.getEstadoHttp()).isEqualTo(HttpStatus.UNAUTHORIZED));
 		then(notificadorCorreo).should(times(1)).enviarVerificacion(eq("ana@mail.com"), anyString(), anyString());
 
 		// Como la recuperación (HU-03 RF-9): reactivar la cuenta no revive el enlace

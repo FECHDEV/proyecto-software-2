@@ -1,0 +1,69 @@
+// Como «Este producto no está disponible» del detalle
+:host {
+	display: block;
+}
+
+.no-encontrada {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--app-espacio-4);
+	max-width: 60ch;
+}
+
+h1 {
+	margin: 0;
+}
+
+p {
+	margin: 0;
+	color: var(--app-texto-suave);
+	font-size: 18px;
+}
+
+.acciones {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--app-espacio-4) var(--app-espacio-6);
+}
+
+// La acción principal de la tienda: amarilla, en sesgo, con el texto derecho
+.principal {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--app-area-tocable);
+	padding: 0 var(--app-espacio-6);
+	background: var(--app-ambar);
+	color: var(--app-sobre-ambar);
+	font-family: var(--app-familia-titulos);
+	font-size: 20px;
+	font-weight: 800;
+	text-decoration: none;
+	text-transform: uppercase;
+	transform: skewX(var(--app-sesgo));
+	transition:
+		background-color var(--app-transicion),
+		transform var(--app-duracion-rapida) var(--app-curva-salida);
+}
+
+.principal span {
+	transform: skewX(calc(var(--app-sesgo) * -1));
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.principal:hover {
+		background: var(--app-ambar-fuerte);
+	}
+}
+
+.principal:active {
+	transform: skewX(var(--app-sesgo)) scale(0.96);
+}
+
+.enlace {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--app-area-tocable);
+	color: var(--app-texto);
+}
