@@ -1,10 +1,12 @@
 import { Location } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, UrlTree, convertToParamMap, provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 
 import { AutenticacionService } from '../../core/api/autenticacion.service';
 import { ErrorApi } from '../../core/modelos/error-api';
 import { Sesion } from '../../core/modelos/sesion';
+import { CARGAR_PAGINA } from '../../core/navegacion/version-nueva';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { InicioSesionPage } from './inicio-sesion.page';
 
@@ -49,17 +51,22 @@ describe('InicioSesionPage', () => {
   let destino: string | null;
   let parametros: Record<string, string>;
 
+  let cargarPagina = vi.fn();
+
   async function preparar() {
     localStorage.clear();
     TestBed.resetTestingModule();
     autenticacion = new AutenticacionFalsa();
     navegaciones = [];
+    cargarPagina = vi.fn();
+    sessionStorage.clear();
 
     await TestBed.configureTestingModule({
       imports: [InicioSesionPage],
       providers: [
         provideRouter([]),
         { provide: AutenticacionService, useValue: autenticacion },
+        { provide: CARGAR_PAGINA, useValue: (url: string) => cargarPagina(url) },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -150,6 +157,24 @@ describe('InicioSesionPage', () => {
     expect(autenticacion.llamadas).toEqual([{ correo: 'ana@mail.com', contrasena: 'secreta12' }]);
     expect(sesion.autenticado()).toBe(true);
     expect(navegaciones).toEqual(['/']);
+  });
+
+  // Revisión total (26/10/2026): la sesión ya quedó iniciada; un fallo al
+  // navegar (una versión nueva publicada) no es un inicio de sesión fallido
+  it('si falla la navegación no dice que falló el inicio de sesión y abre el destino', async () => {
+    TestBed.inject(Router).navigateByUrl = () => Promise.reject(new Error('navegación interrumpida'));
+    escribir('correo', 'ana@mail.com');
+    escribir('contrasena', 'secreta12');
+
+    await enviar();
+    await new Promise((seguir) => setTimeout(seguir, 0));
+    await fijo.whenStable();
+    fijo.detectChanges();
+
+    expect(sesion.autenticado()).toBe(true);
+    expect(texto()).not.toContain('No pudimos conectar con el servidor.');
+    expect(cargarPagina).toHaveBeenCalledWith('/');
+    expect(fijo.nativeElement.querySelector('button[type="submit"]').getAttribute('aria-disabled')).toBeNull();
   });
 
   // HU-09 RF-16: el personal entra a su panel; el cliente vuelve a la tienda

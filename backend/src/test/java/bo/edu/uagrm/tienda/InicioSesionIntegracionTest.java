@@ -85,6 +85,18 @@ class InicioSesionIntegracionTest {
 		assertThat(pedirRutaProtegida(token(sesion))).hasStatus(HttpStatus.NOT_FOUND);
 	}
 
+	// Revisión total (26/10/2026): un correo o una contraseña enormes se rechazan antes de llegar al límite de intentos
+	@Test
+	void correoOContrasenaDeMasSeRechazanSinCompararlos() {
+		MvcTestResult correoLargo = iniciarSesion("a".repeat(5000) + "@mail.com", "Secreta12");
+		MvcTestResult contrasenaLarga = iniciarSesion("ana@mail.com", "x".repeat(5000));
+
+		assertThat(correoLargo).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(correoLargo).bodyJson().extractingPath("$.codigo").isEqualTo("DATOS_INVALIDOS");
+		assertThat(contrasenaLarga).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(contrasenaLarga).bodyJson().extractingPath("$.codigo").isEqualTo("DATOS_INVALIDOS");
+	}
+
 	// HU-02 RF-3
 	@Test
 	void contrasenaIncorrectaDevuelveCredencialesIncorrectas() {

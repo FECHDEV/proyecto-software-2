@@ -9,12 +9,14 @@ import java.util.List;
 import java.util.Locale;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import bo.edu.uagrm.tienda.config.CorreoProperties;
+import bo.edu.uagrm.tienda.config.CredencialesSmtp;
 import bo.edu.uagrm.tienda.config.RetiroProperties;
 import bo.edu.uagrm.tienda.entity.UnidadVenta;
 import jakarta.mail.MessagingException;
@@ -28,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @ConditionalOnProperty(name = "tienda.correo.proveedor", havingValue = "smtp")
+// Registra y valida la cuenta de Gmail: sin ella la API no arranca con este proveedor
+@EnableConfigurationProperties(CredencialesSmtp.class)
 @RequiredArgsConstructor
 public class NotificadorCorreoSmtp implements NotificadorCorreo {
 

@@ -3,6 +3,8 @@ package bo.edu.uagrm.tienda.service;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -44,6 +46,8 @@ public class PagoService {
 	// READ_COMMITTED: «Pagar» en dos pestañas se serializa con el bloqueo del cliente, y la segunda tiene que ver el
 	// cobro que guardó la primera aunque algo se haya leído antes de bloquear (RF-2)
 	private final TransactionTemplate transaccion;
+	// Los cobros que la página o el aviso están consultando ahora (revisión total, 26/10/2026)
+	private final Set<Long> enConsulta = ConcurrentHashMap.newKeySet();
 
 	public PagoService(PedidoService pedidoService, PedidoRepository pedidoRepository, CobroRepository cobroRepository,
 			ConciliacionDePagos conciliacionDePagos, IPago iPago, Clock clock,
@@ -81,7 +85,7 @@ public class PagoService {
 	// consulta dijo que no se pagó (RF-7)
 	public PedidoResponse consultar(Long idUsuario, Long idPedido) {
 		exigirDueño(idUsuario, idPedido);
-		pedidoService.cobroPendiente(idPedido).map(Cobro::getIdCobro).ifPresent(conciliacionDePagos::conciliar);
+		pedidoService.cobroPendiente(idPedido).map(Cobro::getIdCobro).ifPresent(this::conciliarSiNadieLoHace);
 		return pedidoService.ver(idUsuario, idPedido);
 	}
 
@@ -91,7 +95,23 @@ public class PagoService {
 		if (referencia == null || referencia.isBlank() || referencia.length() > LARGO_DE_LA_REFERENCIA) {
 			return;
 		}
+		// Siempre, aunque la página esté consultando: esa consulta pudo leer el cobro antes del pago (/code-review)
 		cobroRepository.idPorReferencia(referencia).ifPresent(conciliacionDePagos::conciliar);
+	}
+
+	// Una sola consulta en curso por cobro: cada una llama al sistema de pago y ocupa un hilo hasta 15 s, y muchas a la
+	// vez del mismo cobro podían agotar los del servidor. La que llega mientras otra espera no vuelve a llamar: devuelve
+	// el pedido como está. Una consulta que ya terminó no frena a la siguiente («Ya pagué»), y el aviso, la tarea de
+	// cada minuto y el vencimiento consultan siempre (revisión total, 26/10/2026)
+	private void conciliarSiNadieLoHace(Long idCobro) {
+		if (!enConsulta.add(idCobro)) {
+			return;
+		}
+		try {
+			conciliacionDePagos.conciliar(idCobro);
+		} finally {
+			enConsulta.remove(idCobro);
+		}
 	}
 
 	// Solo el dueño simula el pago de su cobro pendiente (RF-12, RF-14)

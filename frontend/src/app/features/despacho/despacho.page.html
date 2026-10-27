@@ -26,7 +26,13 @@
   </div>
 </form>
 
-@if (pagina(); as pagina) {
+<!-- El error primero: la página que quedó es de otro filtro y lo taparía (revisión total, 26/10/2026) -->
+@if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+  </div>
+} @else if (pagina(); as pagina) {
   @if (pagina.contenido.length === 0) {
     <p class="vacio" role="status">No hay pedidos con ese filtro.</p>
   } @else {
@@ -68,11 +74,6 @@
       </button>
     </nav>
   }
-} @else if (errorDeCarga()) {
-  <div class="tarjeta-error">
-    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
-    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
-  </div>
 } @else {
   <p class="cargando" role="status">Cargando los pedidos…</p>
 }

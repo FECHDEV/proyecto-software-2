@@ -20,6 +20,15 @@ referencias/
 application-local.properties
 application-local.yml
 .env
+# Cualquier copia del .env (los scripts crean .env.tmp con todos los secretos) y llaves (revisión total,
+# 26/10/2026); el ejemplo sí se versiona
+.env.*
+*.env
+!.env.example
+*.pem
+*.key
+id_rsa*
+id_ed25519*
 
 # Logs
 *.log
