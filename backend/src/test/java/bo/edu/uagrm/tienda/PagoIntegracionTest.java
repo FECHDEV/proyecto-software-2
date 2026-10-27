@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -64,6 +65,7 @@ import bo.edu.uagrm.tienda.service.ConciliacionAutomaticaDePagos;
 import bo.edu.uagrm.tienda.service.ConciliacionDePagos;
 import bo.edu.uagrm.tienda.service.CorreoDelPedido;
 import bo.edu.uagrm.tienda.service.NotificadorCorreo;
+import bo.edu.uagrm.tienda.service.PagoService;
 import bo.edu.uagrm.tienda.service.PedidoService;
 import bo.edu.uagrm.tienda.service.VencimientoPedidos;
 import bo.edu.uagrm.tienda.service.pago.EstadoDelCobro;
@@ -106,6 +108,9 @@ class PagoIntegracionTest {
 
 	@Autowired
 	private ConciliacionDePagos conciliacion;
+
+	@Autowired
+	private PagoService pagoService;
 
 	@Autowired
 	private ConciliacionAutomaticaDePagos conciliacionAutomatica;
@@ -409,6 +414,40 @@ class PagoIntegracionTest {
 		assertThat(pedido).bodyJson().extractingPath("$.segundosParaPagar").isEqualTo(0);
 		assertThat(stock(martillo)).isEqualTo(8.0);
 		assertThat(reservas()).isEqualTo(1);
+	}
+
+	// Revisión total (26/10/2026): mientras una consulta del cobro espera al sistema de pago, otra a la vez desde la
+	// página no vuelve a llamarlo (el aviso sí: pudo llegar después del pago); una vez terminada, la siguiente consulta
+	@Test
+	void unaSolaConsultaALaVezPorCobro() throws Exception {
+		Integer idPedido = pedidoDeMartillos(ana);
+		Cobro cobro = conCobro(ana, idPedido);
+		CountDownLatch adentro = new CountDownLatch(1);
+		CountDownLatch seguir = new CountDownLatch(1);
+		doAnswer(invocacion -> {
+			adentro.countDown();
+			seguir.await();
+			return invocacion.callRealMethod();
+		}).when(simulador).consultar(cobro.getReferencia());
+		ExecutorService hilo = Executors.newSingleThreadExecutor();
+		try {
+			Future<MvcTestResult> primera = hilo.submit(() -> consultar(ana, idPedido));
+			adentro.await();
+
+			assertThat(consultar(ana, idPedido)).hasStatus(HttpStatus.OK);
+			verify(simulador, times(1)).consultar(cobro.getReferencia());
+
+			seguir.countDown();
+			assertThat(primera.get()).hasStatus(HttpStatus.OK);
+		} finally {
+			seguir.countDown();
+			hilo.shutdown();
+		}
+		doCallRealMethod().when(simulador).consultar(any());
+
+		consultar(ana, idPedido);
+		pagoService.procesarAviso(cobro.getReferencia());
+		verify(simulador, times(3)).consultar(cobro.getReferencia());
 	}
 
 	// HU-13 RF-4: el pago nunca se da por hecho sin el sistema de pago

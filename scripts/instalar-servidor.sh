@@ -9,19 +9,22 @@
 #   bash scripts/instalar-servidor.sh             las dos
 # Variable opcional: TIENDA_DOMINIO (por defecto, la IP en sslip.io). El correo, el nombre y el apellido del
 # Administrador los pide la parte completar. Se puede volver a correr. Las credenciales de Gmail y de Libélula no las pide: se
-# ponen en el .env a mano o desde la PC con scripts/copiar-env-al-servidor.sh. Mientras falten las de Gmail, los
-# correos van al simulador.
+# ponen en el .env a mano o desde la PC con scripts/copiar-env-al-servidor.sh. Sin ellas, completar no levanta la
+# tienda.
 set -euo pipefail
+# Todo lo que crea el script (el .env y su .env.tmp, con los secretos) nace solo para root
+umask 077
 cd "$(dirname "$0")/.."
 
 PARTE=${1:-todo}
 paso() { printf '\n\033[1;33m== %s\033[0m\n' "$1"; }
 poner() { grep -v "^$1=" .env > .env.tmp || true; printf "%s='%s'\n" "$1" "$2" >> .env.tmp; mv .env.tmp .env; }
-valor() { grep "^$1=" .env | cut -d= -f2- | tr -d "'"; }
+valor() { grep "^$1=" .env | cut -d= -f2- | tr -d "'\""; }
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.nube.yml)
 # Una consulta a la base de la aplicación; sin salida si la base o la tabla todavía no están
 consulta() {
-  "${COMPOSE[@]}" exec -T base sh -c "mysql -N -u root -p\"\$MYSQL_ROOT_PASSWORD\" tienda_db -e \"$1\"" \
+  # Con MYSQL_PWD y no -p: la contraseña no queda a la vista en la lista de procesos del contenedor
+  "${COMPOSE[@]}" exec -T base sh -c "MYSQL_PWD=\"\$MYSQL_ROOT_PASSWORD\" mysql -N -u root tienda_db -e \"$1\"" \
     2>/dev/null || true
 }
 
@@ -46,18 +49,21 @@ preparar() {
   ufw --force enable >/dev/null && ufw status | head -8
 
   paso "Configuración (.env)"
-  if [ ! -f .env ]; then
-    cp .env.example .env
-    IP=$(curl -fsS https://api.ipify.org)
-    poner TIENDA_DB_PASSWORD "$(openssl rand -hex 24)"
-    poner MYSQL_ROOT_PASSWORD "$(openssl rand -hex 24)"
-    poner TIENDA_JWT_SECRETO "$(openssl rand -base64 48 | tr -d '\n')"
-    poner TIENDA_DOMINIO "${TIENDA_DOMINIO:-${IP//./-}.sslip.io}"
-    chmod 600 .env
-    echo "Listo: .env creado con claves nuevas. Faltan los datos del Administrador (parte completar)."
-  else
-    echo ".env ya existe: se deja como está."
+  [ -f .env ] || cp .env.example .env
+  # Solo lo que falta: si una corrida anterior se cortó a la mitad (sin red para pedir la IP), la siguiente completa
+  # sin cambiar las claves ya puestas, que la base ya usa (revisión total, 26/10/2026)
+  [ -n "$(valor TIENDA_DB_PASSWORD)" ] || poner TIENDA_DB_PASSWORD "$(openssl rand -hex 24)"
+  [ -n "$(valor MYSQL_ROOT_PASSWORD)" ] || poner MYSQL_ROOT_PASSWORD "$(openssl rand -hex 24)"
+  [ -n "$(valor TIENDA_JWT_SECRETO)" ] || poner TIENDA_JWT_SECRETO "$(openssl rand -base64 48 | tr -d '\n')"
+  if [ -z "$(valor TIENDA_DOMINIO)" ]; then
+    if [ -z "${TIENDA_DOMINIO:-}" ]; then
+      IP=$(curl -fsS https://api.ipify.org)
+      TIENDA_DOMINIO="${IP//./-}.sslip.io"
+    fi
+    poner TIENDA_DOMINIO "$TIENDA_DOMINIO"
   fi
+  chmod 600 .env
+  echo "Listo: .env con sus claves. Faltan los datos del Administrador (parte completar)."
 
   paso "Imágenes (la primera vez tarda 10-15 minutos: compila el backend y el frontend)"
   # docker-compose.yml exige el correo y la contraseña del Administrador hasta para compilar. Todavía no
@@ -107,6 +113,15 @@ completar() {
     exit 1
   fi
 
+  # Con Gmail (el correo por defecto) y sin su usuario o su contraseña, la API tampoco arranca
+  if [ "$(valor TIENDA_CORREO_PROVEEDOR)" != simulador ] && \
+    { [ -z "$(valor TIENDA_CORREO_USUARIO)" ] || [ -z "$(valor TIENDA_CORREO_CONTRASENA)" ]; }; then
+    echo "Faltan TIENDA_CORREO_USUARIO o TIENDA_CORREO_CONTRASENA en el .env: completarlos y volver a correr"
+    echo "'$0 completar'. Solo para probar: TIENDA_CORREO_PROVEEDOR=simulador (escribe en el log los enlaces de"
+    echo "recuperación: nunca en un servidor público)."
+    exit 1
+  fi
+
   paso "Contenedores"
   "${COMPOSE[@]}" up -d --build
 
@@ -129,7 +144,7 @@ completar() {
   paso "Listo"
   echo "Sitio:   https://$(valor TIENDA_DOMINIO)"
   echo "El certificado HTTPS se pide la primera vez que se abre la dirección (unos segundos)."
-  [ "$(valor TIENDA_CORREO_PROVEEDOR)" = smtp ] || echo "Correo: simulador. Para Gmail, completar TIENDA_CORREO_* en el .env y volver a levantar."
+  [ "$(valor TIENDA_CORREO_PROVEEDOR)" != simulador ] || echo "Correo: SIMULADOR. Los enlaces de recuperación quedan en el log: solo para pruebas."
   [ "$(valor TIENDA_PAGO_PROVEEDOR)" != simulador ] || echo "Pago: SIMULADOR. Cualquier cliente puede marcar pagado su pedido: solo para pruebas."
 }
 

@@ -24,7 +24,7 @@ Integral del Norte, Montero, Santa Cruz, Bolivia. Metodología **Scrum**.
 | Frontend | Angular 22 (Signal Forms, Vitest sobre jsdom) |
 | Backend | Java 21 / Spring Boot 4.1.1 |
 | Base de datos | MySQL 8.4 LTS (*20/10/2026*, antes 8.0, sin soporte desde abril de 2026); H2 en las pruebas |
-| Correo | Gmail por SMTP con una cuenta del proyecto y una contraseña de aplicación en `.env`; simulador por defecto en desarrollo y pruebas |
+| Correo | Gmail por SMTP con una cuenta del proyecto y una contraseña de aplicación en `.env`: por defecto en Docker (*26/10/2026*), y sin usuario ni contraseña la API no arranca; simulador en desarrollo y pruebas |
 | Pago | Detrás de la interfaz propia `IPago`: Libélula por defecto en Docker, simulador en desarrollo y pruebas |
 | Contenedores | Docker Compose; Caddy con HTTPS en la nube |
 | CI | GitHub Actions (`.github/workflows/pruebas.yml`) en cada PR y en cada push a `main` |

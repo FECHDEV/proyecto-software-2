@@ -18,6 +18,7 @@ import { EstadoDelCampo, mensajeDeError, mensajeDelCampo, mensajeDelRechazo } fr
 import { PedidosService } from '../../core/api/pedidos.service';
 import { LineaDeCarrito } from '../../core/modelos/carrito';
 import { comoError, comoErrorApi, ErrorApi } from '../../core/modelos/error-api';
+import { VersionPublicada } from '../../core/navegacion/version-nueva';
 import { AVISOS_DE_RECHAZO, MotivoDeRechazo } from '../../core/modelos/pedido';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { cantidad, precio } from '../../shared/formato/precios';
@@ -68,6 +69,7 @@ export class ConfirmacionPage {
 	private readonly servicioCarrito = inject(CarritoService);
 	private readonly pedidos = inject(PedidosService);
 	private readonly router = inject(Router);
+	private readonly version = inject(VersionPublicada);
 	private readonly elemento = inject(ElementRef<HTMLElement>);
 	private readonly injector = inject(Injector);
 	private readonly avisoDeRechazo = viewChild<ElementRef<HTMLElement>>('rechazo');
@@ -158,11 +160,22 @@ export class ConfirmacionPage {
 		this.confirmando.set(true);
 		await submit(this.formulario, {
 			action: async (campos) => {
+				let idPedido: number;
 				try {
-					const pedido = await this.pedidos.confirmar({ ...campos().value(), totalEsperado: carrito.total });
-					await this.router.navigate(['/mis-pedidos', pedido.idPedido]);
+					idPedido = (await this.pedidos.confirmar({ ...campos().value(), totalEsperado: carrito.total }))
+						.idPedido;
 				} catch (error: unknown) {
 					this.rechazar(comoError(error));
+					return undefined;
+				}
+				// Fuera del try, como en el registro: el pedido ya está confirmado, y un problema al navegar no puede
+				// mostrarse como «No pudimos conectar» (revisión total, 26/10/2026)
+				try {
+					await this.router.navigate(['/mis-pedidos', idPedido]);
+				} catch {
+					// Si navegar falla igual, el pedido se abre como página entera: quedarse acá con «Confirmar» haría
+					// creer que no se confirmó (/code-review)
+					this.version.cargar(`/mis-pedidos/${idPedido}`);
 				}
 				return undefined;
 			},

@@ -6,6 +6,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AutenticacionService } from '../../core/api/autenticacion.service';
 import { mensajeDeError, primerMensaje } from '../../core/api/mensajes-error';
 import { comoError } from '../../core/modelos/error-api';
+import { VersionPublicada } from '../../core/navegacion/version-nueva';
 import { inicioDe } from '../../core/sesion/inicio';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { enfocarCampo, primerCampoConError } from '../../shared/formularios/primer-campo-con-error';
@@ -46,6 +47,7 @@ export class InicioSesionPage {
 	private readonly autenticacion = inject(AutenticacionService);
 	private readonly sesion = inject(SesionService);
 	private readonly router = inject(Router);
+	private readonly version = inject(VersionPublicada);
 	private readonly ruta = inject(ActivatedRoute);
 	private readonly elemento = inject(ElementRef<HTMLElement>);
 	private readonly ubicacion = inject(Location);
@@ -94,11 +96,20 @@ export class InicioSesionPage {
 				const { correo, contrasena } = formulario().value();
 				try {
 					this.sesion.iniciar(await this.autenticacion.iniciarSesion(correo, contrasena));
-					// Por URL y no por segmentos: el destino puede traer sus propios
-					// parámetros, y como segmento el ? se codificaría como %3F
-					await this.router.navigateByUrl(this.destino());
 				} catch (error: unknown) {
 					this.avisoDeError.set(mensajeDeError(comoError(error)));
+					return undefined;
+				}
+				// Fuera del try, como en el registro: la sesión ya está iniciada, y un
+				// problema al navegar no es un inicio de sesión fallido (revisión
+				// total, 26/10/2026). Por URL y no por segmentos: el destino puede
+				// traer sus propios parámetros, y como segmento el ? se codificaría
+				try {
+					await this.router.navigateByUrl(this.destino());
+				} catch {
+					// Si navegar falla igual, el destino se abre como página entera, con la sesión ya guardada:
+					// quedarse en el formulario haría creer que no entró (/code-review)
+					this.version.cargar(this.destino());
 				}
 				return undefined;
 			},

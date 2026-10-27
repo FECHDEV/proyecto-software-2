@@ -8,6 +8,7 @@ import { CarritoService } from '../../core/api/carrito.service';
 import { PedidosService } from '../../core/api/pedidos.service';
 import { Carrito, LineaDeCarrito } from '../../core/modelos/carrito';
 import { ErrorApi } from '../../core/modelos/error-api';
+import { CARGAR_PAGINA } from '../../core/navegacion/version-nueva';
 import { DatosDeConfirmacion, Pedido, Retiro } from '../../core/modelos/pedido';
 import { Usuario } from '../../core/modelos/usuario';
 import { SesionService } from '../../core/sesion/sesion.service';
@@ -87,6 +88,7 @@ describe('ConfirmacionPage', () => {
   let carrito: CarritoFalso;
   let pedidos: PedidosFalso;
   let sesionUsuario: Usuario = ANA;
+  let cargarPagina = vi.fn();
 
   beforeEach(() => (sesionUsuario = ANA));
 
@@ -96,6 +98,8 @@ describe('ConfirmacionPage', () => {
     carrito.carrito.value.set(contenido);
     pedidos = new PedidosFalso();
     pedidos.datosDeRetiro.set(retiro);
+    cargarPagina = vi.fn();
+    sessionStorage.clear();
     TestBed.configureTestingModule({
       providers: [
         provideRouter([
@@ -106,6 +110,7 @@ describe('ConfirmacionPage', () => {
         { provide: CarritoService, useValue: carrito },
         { provide: PedidosService, useValue: pedidos },
         { provide: SesionService, useValue: { usuario: signal(sesionUsuario), rol: () => 'CLIENTE' } },
+        { provide: CARGAR_PAGINA, useValue: (url: string) => cargarPagina(url) },
       ],
     });
     harness = await RouterTestingHarness.create();
@@ -178,6 +183,19 @@ describe('ConfirmacionPage', () => {
       totalEsperado: 201,
     });
     expect(TestBed.inject(Router).url).toBe('/mis-pedidos/12');
+  });
+
+  // Revisión total (26/10/2026): el pedido ya quedó confirmado; un fallo al
+  // navegar (una versión nueva publicada) no puede decir «No pudimos conectar»
+  it('si falla la navegación no dice que falló la confirmación y abre el pedido', async () => {
+    await abrir();
+    TestBed.inject(Router).navigate = () => Promise.reject(new Error('navegación interrumpida'));
+
+    await confirmar();
+
+    expect(pedidos.confirmar).toHaveBeenCalledTimes(1);
+    expect(texto()).not.toContain('No pudimos conectar');
+    expect(cargarPagina).toHaveBeenCalledWith('/mis-pedidos/12');
   });
 
   // HU-12 RF-3

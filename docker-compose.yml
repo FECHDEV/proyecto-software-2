@@ -49,8 +49,9 @@ services:
       TIENDA_PAGO_LIBELULA_APPKEY: ${TIENDA_PAGO_LIBELULA_APPKEY:-}
       TIENDA_PAGO_LIBELULA_EMAIL: ${TIENDA_PAGO_LIBELULA_EMAIL:-}
       TIENDA_MARCA: ${TIENDA_MARCA:-Tienda Montero}
-      # Correo: simulador por defecto; smtp con Gmail (decisiones.md → Notificaciones)
-      TIENDA_CORREO_PROVEEDOR: ${TIENDA_CORREO_PROVEEDOR:-simulador}
+      # Correo: Gmail por defecto, y sin usuario ni contraseña la API no arranca; simulador solo para probar en la
+      # PC: escribe en el log los enlaces de recuperación (decisiones.md → Notificaciones, 26/10/2026)
+      TIENDA_CORREO_PROVEEDOR: ${TIENDA_CORREO_PROVEEDOR:-smtp}
       TIENDA_CORREO_USUARIO: ${TIENDA_CORREO_USUARIO:-}
       TIENDA_CORREO_CONTRASENA: ${TIENDA_CORREO_CONTRASENA:-}
       TIENDA_CORREO_REMITENTE: ${TIENDA_MARCA:-Tienda Montero} <${TIENDA_CORREO_USUARIO:-no-responder@localhost}>

@@ -367,6 +367,16 @@ producción**) y un **adaptador SMTP**. Se elige con
 `tienda.correo.proveedor`: `simulador` (por defecto, y siempre en las
 pruebas) o `smtp`.
 
+*26/10/2026 (revisión total).* **En Docker, Gmail por defecto**
+(`application-prod.properties` y `docker-compose.yml`), como el pago el
+23/10: con el simulador por defecto, un servidor sin `TIENDA_CORREO_PROVEEDOR`
+dejaba en el log los enlaces de recuperación, y quien leyera los logs podía
+entrar a cualquier cuenta. Sin `TIENDA_CORREO_USUARIO` o
+`TIENDA_CORREO_CONTRASENA` la API no arranca (`CredencialesSmtp`), y
+`instalar-servidor.sh` lo avisa antes de levantar. `copiar-env-al-servidor.sh`
+no deja ningún simulador (de pago ni de correo) en el servidor. El simulador
+sigue por defecto fuera de Docker y en las pruebas.
+
 **El envío no puede cambiar la respuesta de quien lo pide.** La recuperación
 responde igual exista o no la cuenta, pero el correo solo sale si existe: si el
 envío tardara o fallara dentro de la petición, la demora o un 500 revelarían

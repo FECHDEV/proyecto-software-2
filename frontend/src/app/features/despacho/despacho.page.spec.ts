@@ -183,6 +183,20 @@ describe('DespachoPage', () => {
     expect(url()).toBe('/pedidos?pagina=1');
   });
 
+  // Revisión total (26/10/2026): si falla otro filtro, el error no queda tapado
+  // por la lista del filtro anterior
+  it('un error con una lista ya mostrada se ve en lugar de esa lista', async () => {
+    await abrir(pagina([fila({ idPedido: 7, nombreRetira: 'Ana Paz' })]));
+    expect(texto()).toContain('Ana Paz');
+
+    despacho.recurso.value.set(undefined);
+    despacho.recurso.error.set({ status: 0 });
+    await harness.fixture.whenStable();
+
+    expect(pantalla().querySelector('[role="alert"]')).not.toBeNull();
+    expect(texto()).not.toContain('Ana Paz');
+  });
+
   // Caso borde: el error de carga deja reintentar
   it('un error de carga deja reintentar', async () => {
     await abrir(undefined);
