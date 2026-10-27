@@ -71,8 +71,6 @@ public class PedidoService {
 
 	public static final Duration VIGENCIA = Duration.ofMinutes(30);
 	static final int POR_PAGINA = 10;
-	// Más allá, el desplazamiento de la página no entra en un int y la consulta falla (RF-8)
-	private static final int PAGINA_MAXIMA = Integer.MAX_VALUE / POR_PAGINA - 1;
 
 	private final PedidoRepository pedidoRepository;
 	private final LineaCarritoRepository lineaCarritoRepository;
@@ -200,7 +198,7 @@ public class PedidoService {
 		vencerSiCorresponde(idUsuario);
 		LocalDateTime ahora = LocalDateTime.now(clock);
 		Page<FilaDePedido> filas = pedidoRepository.misPedidos(idUsuario,
-				PageRequest.of(Math.clamp(pagina, 0, PAGINA_MAXIMA), POR_PAGINA));
+				PageRequest.of(Busquedas.paginaValida(pagina, POR_PAGINA), POR_PAGINA));
 		if (filas.isEmpty() && filas.getTotalPages() > 0) {
 			filas = pedidoRepository.misPedidos(idUsuario, PageRequest.of(filas.getTotalPages() - 1, POR_PAGINA));
 		}
@@ -360,11 +358,12 @@ public class PedidoService {
 			if (existente != null) {
 				BigDecimal antes = existente.getCantidad();
 				existente.cambiar(antes.add(linea.getCantidad()).min(CarritoService.MAXIMO_CANTIDAD));
-				linea.volvioAlCarrito(existente.getCantidad().subtract(antes));
+				linea.volvioAlCarrito(existente.getCantidad().subtract(antes), existente.getIdLinea());
 			} else if (carrito.size() < CarritoService.MAXIMO_LINEAS) {
-				carrito.put(linea.getIdProducto(), lineaCarritoRepository.save(
-						LineaCarrito.crear(pedido.getUsuario(), linea.getProducto(), linea.getCantidad(), ahora)));
-				linea.volvioAlCarrito(linea.getCantidad());
+				LineaCarrito nueva = lineaCarritoRepository.save(
+						LineaCarrito.crear(pedido.getUsuario(), linea.getProducto(), linea.getCantidad(), ahora));
+				carrito.put(linea.getIdProducto(), nueva);
+				linea.volvioAlCarrito(linea.getCantidad(), nueva.getIdLinea());
 			} else {
 				noVolvieron++;
 			}
@@ -373,8 +372,9 @@ public class PedidoService {
 	}
 
 	// A cada línea del carrito se le resta lo que el pedido devolvió al cancelar o vencer (no más: lo que no entró por
-	// los topes no volvió); en cero o menos, se quita. Lo que el Cliente agregó aparte se queda (HU-13 RF-9). Con el
-	// cliente bloqueado, nadie más cambia el carrito
+	// los topes no volvió); en cero o menos, se quita. Lo que el Cliente agregó aparte se queda (HU-13 RF-9), también
+	// una línea que no es la que recibió lo devuelto: esa ya se quitó (revisión total). Con el cliente bloqueado, nadie
+	// más cambia el carrito
 	private void restarDelCarrito(Pedido pedido) {
 		Map<Long, LineaCarrito> carrito = new HashMap<>();
 		lineaCarritoRepository.findByUsuario_IdUsuarioOrderByFechaAgregadaAscIdLineaAsc(
@@ -382,7 +382,8 @@ public class PedidoService {
 				.forEach(linea -> carrito.put(linea.getProducto().getIdProducto(), linea));
 		for (LineaPedido linea : pedido.getLineas()) {
 			LineaCarrito existente = carrito.get(linea.getIdProducto());
-			if (existente == null || linea.getCantidadDevuelta() == null) {
+			if (existente == null || linea.getCantidadDevuelta() == null
+					|| (linea.getIdLineaCarrito() != null && !linea.getIdLineaCarrito().equals(existente.getIdLinea()))) {
 				continue;
 			}
 			BigDecimal queda = existente.getCantidad().subtract(linea.getCantidadDevuelta());

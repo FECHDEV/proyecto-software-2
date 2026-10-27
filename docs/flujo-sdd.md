@@ -54,6 +54,7 @@ documenta con Claude Code. Por eso Scrum se usa adaptado:
 | 2 | Catálogo | HU-06 a HU-10, spike 3D, datos de demostración |
 | 3 | Compra | HU-11 a HU-14, HU-20 |
 | 4 | Operación y 3D | HU-15 a HU-19 |
+| 5 | Cierre | HU-21, ampliaciones de HU-08 y HU-16, revisión total (`docs/planes/2026-10-26-cierre-revision-total.md`), pruebas de extremo a extremo |
 
 **Motivo:** con poca gente y horarios variables, un sprint de fecha fija
 cierra a medias o queda vacío. El objetivo por sprint conserva lo que importa

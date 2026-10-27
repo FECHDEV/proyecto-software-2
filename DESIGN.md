@@ -244,7 +244,8 @@ los colores de estado a un lado.
 - **Texto** (`texto`, `texto-suave`), **bordes** (`borde` para divisiones,
   `borde-control` para el contorno de campos y botones secundarios).
 - **Blanco de foto** (`foto`): detrás de cada foto de producto, en los dos
-  modos, como el fondo de las fotos de catálogo.
+  modos, como el fondo de las fotos de catálogo. *27/10/2026:* el detalle de
+  un producto sin fotos muestra la llave sobre `superficie`, no sobre blanco.
 - **Velo** (`velo`): oscurece la página detrás de un diálogo.
 - **QR** (`qr-claro`, `qr-oscuro`): oscuro sobre claro en cualquier tema.
 

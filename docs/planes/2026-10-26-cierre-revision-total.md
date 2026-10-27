@@ -233,3 +233,70 @@ reportes (el selector del celular pesaba más que `.numero`), la etiqueta
 llegar a la última página. Consola sin errores.
 
 **Prueba manual de Fabio:** aprobada.
+
+### PR 4 — `fix/cierre-limpieza` (27/10/2026)
+
+**Hecho (grupo C):**
+
+- **HU-20:** «Reintentar» tras un corte ya no dice que el enlace no sirve:
+  un enlace usado o reemplazado de un correo ya verificado responde
+  «verificado» mientras no venza (RF-17, decisión de Fabio); el reenvío con
+  la cuenta recién desactivada responde 401 y la app cierra la sesión; el
+  reenvío del carrito y de «Mis datos» es una sola función
+  (`reenvioDeVerificacion`).
+- **Backend:** una página gigante ya no da 500 (`Busquedas.paginaValida`,
+  la misma para todos los listados); el cambio de unidad mira los pedidos
+  abiertos (HU-08 RF-19, decisión de Fabio); el pago tardío solo resta de la
+  línea del carrito que recibió lo devuelto (`id_linea_carrito`).
+- **Frontend:** página «Esta página no existe»; un producto inexistente no
+  ofrece «Reintentar» y el historial de stock sí; «Ya pagué» durante la
+  consulta automática vuelve a preguntar al terminar; «Categorías» con el
+  nombre en cada botón, sin doble toque y con el foco en el campo con error;
+  los roles de cada módulo en `core/sesion/modulos.ts`; un solo validador de
+  id (`idDeLaUrl`); el diálogo de la app en lugar de `window.confirm`; la
+  paginación del catálogo con la primera y la última; el producto sin fotos
+  sin recuadro blanco; «Agregar al carrito» en un renglón (container query);
+  el número del pedido no se parte.
+- **Docs:** `PRODUCT.md`, README (MySQL 8.4, estructura, correo),
+  `decisiones.md` (cuenta de Libélula, el simulador dicho una vez),
+  `flujo-sdd.md` (sprint 5, «Cierre»), Draco y KTX2 resueltos en el plan de
+  HU-15, la verificación de David anotada en los planes de HU-01 a HU-08.
+- **Infraestructura:** `permissions: contents: read` en el CI; el
+  healthcheck de MySQL sin contraseña; `TIENDA_CORREO_HOST` y
+  `TIENDA_CORREO_PUERTO` documentados y pasados por `docker-compose.yml`.
+
+**Sin cambios, con motivo:** la imagen de una categoría oculta se sigue
+sirviendo (como las fotos de un producto inactivo, y «Categorías» la muestra
+con esa URL); los servicios que devuelven entidades no leen nada perezoso
+fuera de la transacción; los colores del tema no se pueden unificar
+(`index.html` los necesita antes del CSS: aviso junto al token);
+`X-Forwarded-Proto`, la caché de `/texturas/` y las comillas de `copiar-env`
+ya estaban en el PR 1; «estilo cruzado» y «comentarios viejos» no se
+pudieron precisar.
+
+**Suites:** backend 742 pruebas, 0 fallas, 1 omitida; frontend 74 archivos,
+874 pruebas; `ng build` sin avisos. Docker: la base queda *healthy* con el
+healthcheck nuevo.
+
+**`/code-review` medium, ronda 1 (8 hallazgos):** corregidos 7: la consulta
+de pedidos abiertos en cada guardado, la hora como señal de la línea del
+carrito, el tope de página en cuatro lugares, el comentario de los roles del
+panel, el diálogo de salida que pisaba otra confirmación, un «…» que escondía
+una sola página y RF-17 más amplio que su texto. Descartado 1: `idDeLaUrl`
+acepta 15 dígitos en vez de 16.
+
+**`/code-review` medium, ronda 2 (la última, 9 hallazgos):** corregidos 6:
+«Ya pagué» mostraba la respuesta de una consulta anterior, la imagen de una
+categoría ocupada, el diálogo que se abría dos veces, el código del 401 en
+dos lugares, `MYSQL_PWD` (obsoleto) en el healthcheck y el orden de los
+imports. Descartados 3: RF-17 con un enlace viejo dice algo cierto y no
+cambia nada; la línea agregada otra vez por el Cliente es suya; los estados
+abiertos repetidos en dos consultas, con pocos pedidos por producto.
+
+**Revisión en el navegador** (`playwright-cli`, Edge, escritorio e
+«iPhone 15», claro y oscuro): 9 de 10 bien; «Agregar al carrito» medía 0 px
+con el container query (corregido con `align-self: stretch` y verificado de
+nuevo). Queda de antes: a 320 px, con un nombre largo, «Cerrar sesión» se
+sale 22 px de la cabecera.
+
+**Prueba manual de Fabio:** aprobada.

@@ -23,20 +23,21 @@ historia por historia, con Scrum y el flujo SDD de `docs/flujo-sdd.md`.
 ```
 .
 ├── AGENTS.md  CLAUDE.md  README.md  .env.example
+├── DESIGN.md  PRODUCT.md   el sistema visual y a quién le habla la tienda
 ├── .github/   workflows/pruebas.yml  CODEOWNERS  pull_request_template.md
-├── .claude/commands/sdd/   historia.md  analizar.md  cerrar.md
+├── .claude/commands/   sdd/ (historia, analizar, cerrar)  proyecto/ (acta, requisitos)
 ├── docs/      flujo-sdd.md  decisiones.md  historias/  planes/  proyecto/
 ├── backend/   Spring Boot: JWT, roles, ManejadorErrores, correo SMTP, IPago (simulador y Libélula)
 ├── frontend/  Angular: features/core/shared, interceptores, guards, tema claro/oscuro, tokens
 ├── docker-compose.yml  docker-compose.nube.yml  nube/Caddyfile
-└── scripts/instalar-servidor.sh
+└── scripts/   instalar-servidor.sh  copiar-env-al-servidor.sh
 ```
 
 ## Requisitos
 
 - JDK 21
 - Node.js 22 y npm
-- MySQL Server 8.0 en `localhost:3306` (solo para levantar la API en local; las
+- MySQL Server 8.4 en `localhost:3306` (solo para levantar la API en local; las
   pruebas no lo necesitan)
 
 Maven no hace falta: el backend usa el wrapper `mvnw` incluido.
@@ -103,15 +104,21 @@ corren en GitHub Actions en cada PR (`.github/workflows/pruebas.yml`).
 
 ## Correo
 
-Por defecto, `TIENDA_CORREO_PROVEEDOR=simulador`: los correos (el de
-recuperación de contraseña, con su enlace) solo se escriben en los registros de
-la API. Para enviarlos de verdad, con Gmail:
+Con Docker, los correos (verificación, recuperación de contraseña y avisos del
+pedido) salen por Gmail (`TIENDA_CORREO_PROVEEDOR=smtp`); sin usuario ni
+contraseña la API no arranca. Hace falta:
 
 1. Una cuenta de Gmail del proyecto, con la verificación en dos pasos activa.
 2. Una **contraseña de aplicación** en
    <https://myaccount.google.com/apppasswords> (16 letras).
-3. En el `.env`: `TIENDA_CORREO_PROVEEDOR=smtp`, `TIENDA_CORREO_USUARIO`
-   (la cuenta) y `TIENDA_CORREO_CONTRASENA` (la contraseña de aplicación).
+3. En el `.env`: `TIENDA_CORREO_USUARIO` (la cuenta) y
+   `TIENDA_CORREO_CONTRASENA` (la contraseña de aplicación). Otro servidor
+   SMTP: `TIENDA_CORREO_HOST` y `TIENDA_CORREO_PUERTO`.
+
+Para probar en la PC sin enviar nada, `TIENDA_CORREO_PROVEEDOR=simulador`: los
+correos, con sus enlaces, solo se escriben en los registros de la API (nunca en
+un servidor público). Fuera de Docker y en las pruebas, el simulador es el que
+va por defecto.
 
 Las credenciales van **solo en el `.env`**, que no se versiona.
 

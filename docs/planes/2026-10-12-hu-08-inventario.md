@@ -219,7 +219,7 @@ Contador: pasaron todos los escenarios (entrada, ajuste con motivo y sin
 cambio, «Otro» con nota, decimales por unidad y cambio de unidad rechazado,
 mínimo y stock bajo, filtros con categoría oculta e inactivos, Contador solo
 lectura, Cliente sin acceso, cambios sin guardar, vista de celular).
-Verificación cruzada de David pendiente para el PR.
+Verificación cruzada de David pendiente para el PR. *27/10/2026:* no se hizo; David se retiró del proyecto el 21/10/2026.
 
 ### Distinto de lo planeado
 

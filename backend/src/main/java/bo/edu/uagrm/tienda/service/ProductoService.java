@@ -31,6 +31,7 @@ import bo.edu.uagrm.tienda.exception.ProductoLlenoDeImagenesException;
 import bo.edu.uagrm.tienda.exception.ProductoNoEncontradoException;
 import bo.edu.uagrm.tienda.exception.UnidadIncompatibleConStockException;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
+import bo.edu.uagrm.tienda.repository.PedidoRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -46,6 +47,7 @@ public class ProductoService {
 
 	private final ProductoRepository productoRepository;
 	private final CategoriaRepository categoriaRepository;
+	private final PedidoRepository pedidoRepository;
 	private final AlmacenImagenes almacen;
 	private final Clock clock;
 
@@ -79,10 +81,14 @@ public class ProductoService {
 	@Transactional
 	public ProductoResponse editar(Long idProducto, ProductoRequest solicitud) {
 		Producto producto = bloquear(idProducto);
-		// 12,5 m no se pueden volver unidades (HU-08 RF-13)
+		// 12,5 m no se pueden volver unidades (HU-08 RF-13), tampoco los de un pedido abierto (RF-19). Con el producto
+		// bloqueado, nadie confirma un pedido nuevo con él mientras tanto
 		if (!InventarioService.admiteDecimales(solicitud.unidad(), producto.getStock())
 				|| (producto.getStockMinimo() != null
-						&& !InventarioService.admiteDecimales(solicitud.unidad(), producto.getStockMinimo()))) {
+						&& !InventarioService.admiteDecimales(solicitud.unidad(), producto.getStockMinimo()))
+				|| (solicitud.unidad().decimales() < producto.getUnidad().decimales()
+						&& pedidoRepository.cantidadesAbiertas(idProducto).stream()
+								.anyMatch(cantidad -> !InventarioService.admiteDecimales(solicitud.unidad(), cantidad)))) {
 			throw new UnidadIncompatibleConStockException();
 		}
 		producto.editar(solicitud.nombre(), solicitud.marca(), solicitud.descripcion(), solicitud.precio(),

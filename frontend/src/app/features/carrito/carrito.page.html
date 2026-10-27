@@ -109,11 +109,11 @@
           <p class="pendiente">
             <svg lucideMail aria-hidden="true"></svg>
             <span>Verifique su correo para confirmar el pedido.</span>
-            <button type="button" [attr.aria-disabled]="enviandoCorreo() ? 'true' : null" (click)="reenviarCorreo()">
-              {{ enviandoCorreo() ? 'Enviando…' : 'Reenviar el correo' }}
+            <button type="button" [attr.aria-disabled]="reenvio.enviando() ? 'true' : null" (click)="reenvio.reenviar()">
+              {{ reenvio.enviando() ? 'Enviando…' : 'Reenviar el correo' }}
             </button>
           </p>
-          <p class="nota" aria-live="polite">{{ resultadoDelReenvio() }}</p>
+          <p class="nota" aria-live="polite">{{ reenvio.resultado() }}</p>
         </div>
       } @else if (todoComprable()) {
         <a class="principal" routerLink="/confirmar-pedido"><span>Confirmar pedido</span></a>

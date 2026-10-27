@@ -11,7 +11,7 @@
       <button
         type="button"
         class="secundario ya-pague"
-        [attr.aria-disabled]="consultando() ? 'true' : null"
+        [attr.aria-disabled]="esperaElCliente() ? 'true' : null"
         (click)="yaPague()"
       >
         Ya pagué

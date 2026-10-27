@@ -41,6 +41,7 @@ import bo.edu.uagrm.tienda.exception.ProductoLlenoDeImagenesException;
 import bo.edu.uagrm.tienda.exception.ProductoNoEncontradoException;
 import bo.edu.uagrm.tienda.exception.UnidadIncompatibleConStockException;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
+import bo.edu.uagrm.tienda.repository.PedidoRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 
 // HU-07: productos
@@ -59,13 +60,17 @@ class ProductoServiceTest {
 	private CategoriaRepository categoriaRepository;
 
 	@Mock
+	private PedidoRepository pedidoRepository;
+
+	@Mock
 	private AlmacenImagenes almacen;
 
 	private ProductoService servicio;
 
 	@BeforeEach
 	void crearServicio() {
-		servicio = new ProductoService(productoRepository, categoriaRepository, almacen, Clock.fixed(AHORA, ZONA));
+		servicio = new ProductoService(productoRepository, categoriaRepository, pedidoRepository, almacen,
+				Clock.fixed(AHORA, ZONA));
 	}
 
 	private Categoria categoria(long id, String nombre) {

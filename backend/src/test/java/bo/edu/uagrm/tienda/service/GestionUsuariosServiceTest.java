@@ -91,6 +91,17 @@ class GestionUsuariosServiceTest {
 		then(usuarioRepository).should().buscar(null, null, null, null, PageRequest.of(0, 20, ORDEN));
 	}
 
+	// Revisión total: más allá, el desplazamiento no entra en un int y la consulta daba 500
+	@Test
+	void unaPaginaGiganteSeQuedaEnLaUltimaPosible() {
+		listadoVacio();
+
+		servicio.listar(null, null, null, null, Integer.MAX_VALUE, 100);
+
+		then(usuarioRepository).should()
+			.buscar(null, null, null, null, PageRequest.of(Integer.MAX_VALUE / 100 - 1, 100, ORDEN));
+	}
+
 	// HU-05 RF-3
 	@Test
 	void textoSeBuscaRecortadoEnMinusculasYConLosComodinesEscapados() {

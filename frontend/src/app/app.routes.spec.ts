@@ -56,6 +56,7 @@ describe('rutas', () => {
     await import('./features/stock/stock.page');
     await import('./features/despacho/despacho.page');
     await import('./features/despacho-pedido/despacho-pedido.page');
+    await import('./features/no-encontrada/no-encontrada.page');
   }, 60_000);
 
   afterEach(() => localStorage.clear());
@@ -195,7 +196,8 @@ describe('rutas', () => {
     expect(await navegarComo('CLIENTE', '/verificacion')).toBe('/verificacion');
   });
 
-  it('una ruta desconocida vuelve a la portada', async () => {
-    expect(await navegarComo('CLIENTE', '/no-existe')).toBe('/');
+  // Revisión total: dice que no existe, sin cambiar la dirección
+  it('una ruta desconocida muestra «Esta página no existe»', async () => {
+    expect(await navegarComo('CLIENTE', '/no-existe')).toBe('/no-existe');
   });
 });

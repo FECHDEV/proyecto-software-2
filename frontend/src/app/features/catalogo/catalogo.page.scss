@@ -259,6 +259,13 @@ select,
 	color: var(--app-sobre-ambar);
 }
 
+.paginas .salto {
+	align-self: center;
+	color: var(--app-texto-suave);
+	font-family: var(--app-familia-titulos);
+	font-size: 20px;
+}
+
 .paginas button[aria-disabled='true'] {
 	border-style: dashed;
 	opacity: 0.4;

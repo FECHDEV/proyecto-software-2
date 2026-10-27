@@ -11,7 +11,7 @@
 } @else if (pedido(); as pedido) {
   <a class="salida" routerLink="/mis-pedidos">Mis pedidos</a>
   <div class="cabecera">
-    <h1>Pedido N.º {{ pedido.idPedido }}</h1>
+    <h1>Pedido N.º&nbsp;{{ pedido.idPedido }}</h1>
     <p
       class="estado"
       [class.pendiente]="pedido.estado === 'PENDIENTE_PAGO' || pedido.estado === 'PAGO_A_DEVOLVER'"

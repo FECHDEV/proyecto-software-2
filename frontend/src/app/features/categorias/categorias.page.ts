@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { form, FormField, maxLength, required, schema, submit } from '@angular/forms/signals';
 import { LucideTag } from '@lucide/angular';
 
@@ -8,6 +8,7 @@ import { CategoriaGestion, DatosDeCategoria } from '../../core/modelos/categoria
 import { comoError, ErrorApi } from '../../core/modelos/error-api';
 import { ArchivoOcupado } from '../../shared/archivo/archivo-ocupado';
 import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
+import { enfocarCampo, primerCampoConError } from '../../shared/formularios/primer-campo-con-error';
 import { sinEspaciosSolos } from '../../shared/formularios/reglas-de-campo';
 
 const VACIO: DatosDeCategoria = { nombre: '', descripcion: '' };
@@ -32,6 +33,7 @@ const esquema = schema<DatosDeCategoria>((ruta) => {
 export class CategoriasPage {
 	private readonly categorias = inject(CategoriasService);
 	private readonly dialogo = viewChild.required(DialogoConfirmacion);
+	private readonly elemento = inject<ElementRef<HTMLElement>>(ElementRef);
 
 	protected readonly recurso = this.categorias.gestion();
 	protected readonly lista = computed(() => (this.recurso.hasValue() ? (this.recurso.value() ?? []) : []));
@@ -47,6 +49,9 @@ export class CategoriasPage {
 	protected readonly versionDeImagen = signal(Date.now());
 	// La categoría cuya imagen se está subiendo
 	protected readonly subiendoImagen = signal<number | null>(null);
+	// Las categorías con una operación en curso: un segundo toque no manda otra (revisión total). El botón no se
+	// deshabilita, para no perder el foco
+	private readonly enCurso = signal<ReadonlySet<number>>(new Set());
 
 	protected urlDeImagen(categoria: CategoriaGestion): string {
 		return `${this.categorias.urlDeImagen(categoria.idCategoria)}?v=${this.versionDeImagen()}`;
@@ -98,10 +103,24 @@ export class CategoriasPage {
 			},
 		});
 		this.guardando.set(false);
+		// Como en los demás formularios: el foco va al primer campo con error (revisión total)
+		if (this.formulario().invalid()) {
+			enfocarCampo(
+				this.elemento.nativeElement,
+				primerCampoConError(['nombre', 'descripcion'] as const, {
+					nombre: this.formulario.nombre().invalid(),
+					descripcion: this.formulario.descripcion().invalid(),
+				}),
+			);
+		}
+	}
+
+	protected ocupada(categoria: CategoriaGestion): boolean {
+		return this.enCurso().has(categoria.idCategoria);
 	}
 
 	protected async cambiarVisibilidad(categoria: CategoriaGestion): Promise<void> {
-		await this.operar(() => this.categorias.cambiarVisibilidad(categoria.idCategoria, !categoria.visible));
+		await this.operar(categoria, () => this.categorias.cambiarVisibilidad(categoria.idCategoria, !categoria.visible));
 	}
 
 	// Mientras sube, el campo queda ocupado (ArchivoOcupado) y un change se ignora: dos subidas a la vez dejarían la
@@ -112,9 +131,14 @@ export class CategoriasPage {
 		if (archivo === undefined || this.subiendoImagen() === categoria.idCategoria) {
 			return;
 		}
+		// Otra operación de la categoría en curso: no se sube, y el campo queda para elegir de nuevo
+		if (this.ocupada(categoria)) {
+			entrada.value = '';
+			return;
+		}
 		this.subiendoImagen.set(categoria.idCategoria);
 		// Solo si se cambió: una subida rechazada no hace volver a pedir las imágenes
-		if (await this.operar(() => this.categorias.cambiarImagen(categoria.idCategoria, archivo))) {
+		if (await this.operar(categoria, () => this.categorias.cambiarImagen(categoria.idCategoria, archivo))) {
 			this.versionDeImagen.set(Date.now());
 		}
 		this.subiendoImagen.set(null);
@@ -123,12 +147,15 @@ export class CategoriasPage {
 	}
 
 	protected async quitarImagen(categoria: CategoriaGestion): Promise<void> {
-		await this.operar(() => this.categorias.quitarImagen(categoria.idCategoria));
+		await this.operar(categoria, () => this.categorias.quitarImagen(categoria.idCategoria));
 	}
 
 	// Una categoría con productos no se borra: se ofrece ocultarla (HU-07 RF-12, HU-06 RF-10). El conteo de la
 	// lista puede estar viejo, así que el rechazo del backend lleva al mismo ofrecimiento
 	protected async borrar(categoria: CategoriaGestion): Promise<void> {
+		if (this.ocupada(categoria)) {
+			return;
+		}
 		if (categoria.productos > 0) {
 			await this.ofrecerOcultar(categoria);
 			return;
@@ -142,6 +169,7 @@ export class CategoriasPage {
 			return;
 		}
 		this.aviso.set('');
+		this.marcar(categoria, true);
 		try {
 			await this.categorias.borrar(categoria.idCategoria);
 			this.recurso.reload();
@@ -149,7 +177,9 @@ export class CategoriasPage {
 			if (this.editando()?.idCategoria === categoria.idCategoria) {
 				this.cancelarEdicion();
 			}
+			this.marcar(categoria, false);
 		} catch (error: unknown) {
+			this.marcar(categoria, false);
 			const problema = comoError(error);
 			if (problema.codigo === 'CATEGORIA_CON_PRODUCTOS') {
 				this.recurso.reload();
@@ -173,14 +203,18 @@ export class CategoriasPage {
 			confirmar: 'Ocultar',
 		});
 		if (ocultar) {
-			await this.operar(() => this.categorias.cambiarVisibilidad(categoria.idCategoria, false));
+			await this.operar(categoria, () => this.categorias.cambiarVisibilidad(categoria.idCategoria, false));
 		}
 	}
 
-	// Una operación sobre una fila: si sale bien se vuelve a pedir la lista; si no, se dice por qué.
+	// Una operación sobre una fila, una a la vez: si sale bien se vuelve a pedir la lista; si no, se dice por qué.
 	// Responde si salió bien
-	private async operar(operacion: () => Promise<unknown>): Promise<boolean> {
+	private async operar(categoria: CategoriaGestion, operacion: () => Promise<unknown>): Promise<boolean> {
+		if (this.ocupada(categoria)) {
+			return false;
+		}
 		this.aviso.set('');
+		this.marcar(categoria, true);
 		try {
 			await operacion();
 			this.recurso.reload();
@@ -188,12 +222,27 @@ export class CategoriasPage {
 		} catch (error: unknown) {
 			this.aviso.set(mensajeDeError(comoError(error)));
 			return false;
+		} finally {
+			this.marcar(categoria, false);
 		}
+	}
+
+	private marcar(categoria: CategoriaGestion, ocupada: boolean): void {
+		this.enCurso.update((actual) => {
+			const nuevo = new Set(actual);
+			if (ocupada) {
+				nuevo.add(categoria.idCategoria);
+			} else {
+				nuevo.delete(categoria.idCategoria);
+			}
+			return nuevo;
+		});
 	}
 
 	private mostrarError(error: ErrorApi): void {
 		if (error.codigo === 'CATEGORIA_EXISTENTE') {
 			this.errorDelNombre.set(mensajeDeError(error));
+			enfocarCampo(this.elemento.nativeElement, 'nombre');
 		} else {
 			this.aviso.set(mensajeDeError(error));
 		}

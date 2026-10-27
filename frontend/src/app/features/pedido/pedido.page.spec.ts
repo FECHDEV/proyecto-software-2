@@ -370,6 +370,30 @@ describe('PedidoPage', () => {
     expect(texto()).toContain('Todavía no recibimos el pago');
   });
 
+  // HU-13 RF-4 (revisión total): tocado durante la consulta automática, no se pierde: esa consulta responde
+  it('Ya pagué durante la consulta automática dice el resultado', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+    await abrir('/mis-pedidos/12', (falso) => falso.recurso.value.set(CON_COBRO));
+    let responder!: (pedido: Pedido) => void;
+    pedidos.consultarPago.mockReturnValueOnce(new Promise((listo) => (responder = listo)));
+    vi.advanceTimersByTime(5000);
+    await harness.fixture.whenStable();
+    expect(boton('Ya pagué')?.getAttribute('aria-disabled')).toBeNull();
+
+    boton('Ya pagué')!.click();
+    await harness.fixture.whenStable();
+    expect(pedidos.consultarPago).toHaveBeenCalledTimes(1);
+    expect(boton('Ya pagué')?.getAttribute('aria-disabled')).toBe('true');
+
+    // La automática salió antes del toque: al terminar, pregunta otra vez y esa responde al Cliente
+    pedidos.consultarPago.mockResolvedValueOnce(CON_COBRO);
+    responder(CON_COBRO);
+    await harness.fixture.whenStable();
+    await harness.fixture.whenStable();
+    expect(pedidos.consultarPago).toHaveBeenCalledTimes(2);
+    expect(texto()).toContain('Todavía no recibimos el pago');
+  });
+
   // HU-13 RF-5, RF-15
   it('pagado muestra la fecha y dónde retirar, sin contador', async () => {
     await abrir('/mis-pedidos/12', (falso) =>

@@ -143,7 +143,7 @@ inexistente, ver la contraseña, «Iniciar sesión» con sesión lleva al inicio
 aviso al desactivar la cuenta con la sesión abierta, cerrar sesión sin aviso,
 bloqueo tras 5 intentos). La primera pasada falló en lo nuevo porque el
 contenedor del frontend no se había recompilado. Verificación cruzada de David
-pendiente para el PR.
+pendiente para el PR. *27/10/2026:* no se hizo; David se retiró del proyecto el 21/10/2026.
 
 ### Distinto de lo planeado
 

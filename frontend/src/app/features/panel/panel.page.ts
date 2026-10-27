@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { puedeEntrar } from '../../core/sesion/modulos';
 import { SesionService } from '../../core/sesion/sesion.service';
 
 // La bienvenida con los accesos de cada rol: es la portada con sesión. Cada
-// módulo nuevo suma su acceso acá y en el encabezado (app.component.ts).
+// módulo nuevo suma su acceso acá, en el encabezado (app.component.ts) y sus
+// roles en core/sesion/modulos.ts.
 @Component({
 	selector: 'app-panel',
 	imports: [RouterLink],
@@ -18,14 +20,7 @@ export class PanelPage {
 	protected readonly nombre = computed(() => this.sesion.usuario()?.nombre ?? '');
 	protected readonly esCliente = computed(() => this.sesion.rol() === 'CLIENTE');
 	protected readonly esAdministrador = computed(() => this.sesion.rol() === 'ADMINISTRADOR');
-	// HU-08, HU-17: el Contador ve el inventario y los pedidos sin poder registrar
-	protected readonly esPersonal = computed(() => {
-		const rol = this.sesion.rol();
-		return rol === 'ADMINISTRADOR' || rol === 'EMPLEADO' || rol === 'CONTADOR';
-	});
-	// HU-18 RF-1: los reportes, el Contador y el Administrador
-	protected readonly veReportes = computed(() => {
-		const rol = this.sesion.rol();
-		return rol === 'ADMINISTRADOR' || rol === 'CONTADOR';
-	});
+	// Los roles de cada módulo, en core/sesion/modulos.ts
+	protected readonly esPersonal = computed(() => puedeEntrar(this.sesion.rol(), 'inventario'));
+	protected readonly veReportes = computed(() => puedeEntrar(this.sesion.rol(), 'reportes'));
 }

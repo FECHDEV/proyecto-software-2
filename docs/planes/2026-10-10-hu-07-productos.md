@@ -191,7 +191,7 @@ sin cambiar el código, fotos —subir, principal, quinta, PDF rechazado,
 quitar—, desactivar y activar con y sin filtro, búsqueda por categoría y
 texto, categoría con productos que ofrece ocultarse, aviso de cambios sin
 guardar, cliente sin acceso) en la computadora y con vista de celular.
-Verificación cruzada de David pendiente para el PR.
+Verificación cruzada de David pendiente para el PR. *27/10/2026:* no se hizo; David se retiró del proyecto el 21/10/2026.
 
 ### Distinto de lo planeado
 

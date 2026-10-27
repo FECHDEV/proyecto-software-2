@@ -48,8 +48,8 @@ public class ManejadorErrores extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(AuthenticationException.class)
 	public ProblemDetail manejarNoAutenticado(AuthenticationException ex) {
 		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,
-				"Debe iniciar sesión para acceder a este recurso.");
-		problema.setProperty("codigo", "NO_AUTENTICADO");
+				SesionSinCuentaActivaException.MENSAJE);
+		problema.setProperty("codigo", SesionSinCuentaActivaException.CODIGO);
 		return problema;
 	}
 

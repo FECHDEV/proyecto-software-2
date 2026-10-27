@@ -5,6 +5,7 @@ import { rolGuard } from './core/guards/rol.guard';
 import { sesionGuard } from './core/guards/sesion.guard';
 import { visitanteGuard } from './core/guards/visitante.guard';
 import { MARCA } from './core/marca';
+import { ROLES_DE } from './core/sesion/modulos';
 
 // Cada pantalla se carga cuando hace falta, para que el paquete inicial no
 // arrastre las pantallas de administración.
@@ -110,21 +111,21 @@ export const routes: Routes = [
     path: 'usuarios',
     title: `Usuarios · ${MARCA.nombre}`,
     canActivate: [rolGuard],
-    data: { rol: 'ADMINISTRADOR' },
+    data: { roles: ROLES_DE.usuarios },
     loadComponent: () => import('./features/usuarios/usuarios.page').then((m) => m.UsuariosPage),
   },
   {
     path: 'categorias',
     title: `Categorías · ${MARCA.nombre}`,
     canActivate: [rolGuard],
-    data: { rol: 'ADMINISTRADOR' },
+    data: { roles: ROLES_DE.categorias },
     loadComponent: () => import('./features/categorias/categorias.page').then((m) => m.CategoriasPage),
   },
   {
     path: 'productos',
     title: `Productos · ${MARCA.nombre}`,
     canActivate: [rolGuard],
-    data: { rol: 'ADMINISTRADOR' },
+    data: { roles: ROLES_DE.productos },
     loadComponent: () => import('./features/productos/productos.page').then((m) => m.ProductosPage),
   },
   // «nuevo» o el número del producto: la misma pantalla, así al crear pasa a
@@ -134,14 +135,14 @@ export const routes: Routes = [
     title: `Producto · ${MARCA.nombre}`,
     canActivate: [rolGuard],
     canDeactivate: [cambiosSinGuardarGuard],
-    data: { rol: 'ADMINISTRADOR' },
+    data: { roles: ROLES_DE.productos },
     loadComponent: () => import('./features/producto/producto.page').then((m) => m.ProductoPage),
   },
   {
     path: 'inventario',
     title: `Inventario · ${MARCA.nombre}`,
     canActivate: [rolGuard],
-    data: { roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
+    data: { roles: ROLES_DE.inventario },
     loadComponent: () => import('./features/inventario/inventario.page').then((m) => m.InventarioPage),
   },
   {
@@ -149,21 +150,21 @@ export const routes: Routes = [
     title: `Stock · ${MARCA.nombre}`,
     canActivate: [rolGuard],
     canDeactivate: [cambiosSinGuardarGuard],
-    data: { roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
+    data: { roles: ROLES_DE.inventario },
     loadComponent: () => import('./features/stock/stock.page').then((m) => m.StockPage),
   },
   {
     path: 'pedidos',
     title: `Pedidos · ${MARCA.nombre}`,
     canActivate: [rolGuard],
-    data: { roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
+    data: { roles: ROLES_DE.pedidos },
     loadComponent: () => import('./features/despacho/despacho.page').then((m) => m.DespachoPage),
   },
   {
     path: 'pedidos/:id',
     title: `Pedido · ${MARCA.nombre}`,
     canActivate: [rolGuard],
-    data: { roles: ['ADMINISTRADOR', 'EMPLEADO', 'CONTADOR'] },
+    data: { roles: ROLES_DE.pedidos },
     loadComponent: () => import('./features/despacho-pedido/despacho-pedido.page').then((m) => m.DespachoPedidoPage),
   },
   // Los reportes: el Contador y el Administrador; el Empleado no (HU-18 RF-1)
@@ -171,8 +172,13 @@ export const routes: Routes = [
     path: 'reportes',
     title: `Reportes · ${MARCA.nombre}`,
     canActivate: [rolGuard],
-    data: { roles: ['ADMINISTRADOR', 'CONTADOR'] },
+    data: { roles: ROLES_DE.reportes },
     loadComponent: () => import('./features/reportes/reportes.page').then((m) => m.ReportesPage),
   },
-  { path: '**', redirectTo: '' },
+  // Una dirección que no existe lo dice, en vez de volver a la portada sin avisar (revisión total)
+  {
+    path: '**',
+    title: `Página no encontrada · ${MARCA.nombre}`,
+    loadComponent: () => import('./features/no-encontrada/no-encontrada.page').then((m) => m.NoEncontradaPage),
+  },
 ];

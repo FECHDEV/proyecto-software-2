@@ -297,6 +297,10 @@ acordada el 09/10/2026 en el issue #32):
   y una verificación a la vez se traban y uno responde 500.
 - *21/10/2026 (revisión de HU-20).* **Desactivar una cuenta invalida sus
   enlaces de verificación**, así no vuelven a servir si se la reactiva.
+- *27/10/2026 (revisión total, decisión de Fabio).* **Un enlace ya usado de
+  un correo ya verificado responde «verificado»** mientras no venza (HU-20
+  RF-17): si la respuesta se perdió, «Reintentar» decía que el enlace no
+  servía. No revela nada nuevo: solo quien tiene el enlace lo abre.
 
 **Motivo:** sin verificar, cualquiera podía comprar con un correo ajeno, y
 los avisos del pedido y la recuperación irían a otra persona. Pedirlo recién
@@ -547,6 +551,8 @@ El detalle de cada permiso se ajusta en las historias del backlog.
 
 *08/10/2026.* El proveedor real es **Libélula**, detrás de `IPago`; hasta que
 exista la cuenta se usa el simulador. Sin facturación electrónica del SIAT.
+*20/10/2026 (HU-13):* la cuenta existe y el adaptador está hecho; desde el
+23/10 es el proveedor por defecto en Docker (ver «Pagos»).
 
 **Motivo:** el pago real depende de una cuenta que todavía no hay, y la
 facturación SIAT queda fuera del alcance. El manual del proveedor y cualquier
@@ -806,6 +812,12 @@ la tienda podía cobrar productos que no tenía.
 comprometido es fácil de olvidar, y el sistema ya lo sabe. Reemplaza el caso
 límite de HU-12 «el ajuste usa la cantidad contada como siempre».
 
+*27/10/2026 (revisión total, decisión de Fabio).* **El cambio de unidad mira
+los pedidos abiertos** (HU-08 RF-19): como con el stock y el mínimo, pasar a
+una unidad sin decimales se rechaza si un pedido «Pendiente de pago» o
+«Pagado» tiene el producto con decimales. Los carritos no lo bloquean: su
+línea queda con «cantidad inválida» y el pedido no se confirma.
+
 ### Catálogo público
 
 *14/10/2026 (HU-09).* La tienda es la portada para todos, con o sin sesión.
@@ -983,16 +995,16 @@ mismo equipo.
   ellos la API no arranca y la appkey nunca sale en el registro. Su nombre
   queda en el adaptador y su configuración. Las pruebas usan un servidor
   falso.
-- **El simulador sigue por defecto,** y con él, bajo el QR, «Simular pago» y
-  «Simular error», marcados como herramienta de pruebas; con otro proveedor
-  ni los botones ni su endpoint existen.
+- **El simulador** (por defecto fuera de Docker y en las pruebas): bajo el
+  QR, «Simular pago» y «Simular error», marcados como herramienta de
+  pruebas; con otro proveedor ni los botones ni su endpoint existen.
 - *23/10/2026 (antes de publicar).* **En Docker, Libélula por defecto**
   (`application-prod.properties` y `docker-compose.yml`): con el simulador
   por defecto, un servidor sin `TIENDA_PAGO_PROVEEDOR` dejaba a cualquier
   cliente marcar pagado su pedido. Sin la appkey o el correo, la API no
-  arranca (`instalar-servidor.sh` lo avisa antes de levantar). El simulador
-  queda para probar en la PC, con `TIENDA_PAGO_PROVEEDOR=simulador` en el
-  `.env`, y sigue por defecto fuera de Docker y en las pruebas.
+  arranca (`instalar-servidor.sh` lo avisa antes de levantar). En Docker, el
+  simulador queda para probar en la PC, con `TIENDA_PAGO_PROVEEDOR=simulador`
+  en el `.env`.
 
 - *20/10/2026 (revisión de HU-13).* **Lo que puede vencer un pedido va con
   READ_COMMITTED** (`PedidoService` y `CarritoService.ver`, además de

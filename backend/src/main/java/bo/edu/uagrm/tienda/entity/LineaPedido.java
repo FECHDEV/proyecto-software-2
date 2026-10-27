@@ -67,6 +67,11 @@ public class LineaPedido {
 	@Column(name = "cantidad_devuelta", precision = 7, scale = 2)
 	private BigDecimal cantidadDevuelta;
 
+	// La línea del carrito que lo recibió: si el Cliente la quitó y agregó el producto otra vez, la nueva no tiene nada
+	// del pedido y el pago tardío no la toca (revisión total). Nulo en las líneas de antes
+	@Column(name = "id_linea_carrito")
+	private Long idLineaCarrito;
+
 	LineaPedido(Pedido pedido, Producto producto, BigDecimal cantidad) {
 		this.pedido = Objects.requireNonNull(pedido);
 		this.producto = Objects.requireNonNull(producto);
@@ -78,8 +83,10 @@ public class LineaPedido {
 		this.subtotal = precio.multiply(this.cantidad).setScale(2, RoundingMode.HALF_UP);
 	}
 
-	public void volvioAlCarrito(BigDecimal cantidadDevuelta) {
-		this.cantidadDevuelta = cantidadDevuelta.signum() > 0 ? cantidadDevuelta : null;
+	public void volvioAlCarrito(BigDecimal cantidadDevuelta, Long idLineaCarrito) {
+		boolean volvio = cantidadDevuelta.signum() > 0;
+		this.cantidadDevuelta = volvio ? cantidadDevuelta : null;
+		this.idLineaCarrito = volvio ? idLineaCarrito : null;
 	}
 
 	public Long getIdProducto() {

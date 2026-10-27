@@ -90,6 +90,15 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 	record Comprometido(Long idProducto, BigDecimal cantidad) {
 	}
 
+	// Las cantidades de un producto en pedidos abiertos, una por línea: al cambiar la unidad, cada una tiene que
+	// admitirla (HU-08 RF-19)
+	@Query("""
+			select l.cantidad from LineaPedido l
+			where l.pedido.estado in (bo.edu.uagrm.tienda.entity.EstadoPedido.PENDIENTE_PAGO,
+				bo.edu.uagrm.tienda.entity.EstadoPedido.PAGADO)
+			and l.producto.idProducto = :idProducto""")
+	List<BigDecimal> cantidadesAbiertas(@Param("idProducto") Long idProducto);
+
 	record FilaDeDespacho(Long idPedido, EstadoPedido estado, LocalDateTime confirmado, LocalDateTime pagado,
 			String nombreRetira, int cantidadProductos, BigDecimal total) {
 	}

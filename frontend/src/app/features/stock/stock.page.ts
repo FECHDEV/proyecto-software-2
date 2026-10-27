@@ -6,6 +6,7 @@ import {
 	inject,
 	linkedSignal,
 	signal,
+	viewChild,
 	WritableSignal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -24,7 +25,7 @@ import { LucideArrowLeft, LucideCircleSlash, LucideTriangleAlert } from '@lucide
 
 import { InventarioService } from '../../core/api/inventario.service';
 import { mensajeDeError, mensajeDelRechazo, primerMensaje } from '../../core/api/mensajes-error';
-import { ConCambiosSinGuardar } from '../../core/guards/cambios-sin-guardar.guard';
+import { ConCambiosSinGuardar, SALIR_SIN_GUARDAR } from '../../core/guards/cambios-sin-guardar.guard';
 import { comoError, comoErrorApi, ErrorApi } from '../../core/modelos/error-api';
 import {
 	DECIMALES_DE_UNIDAD,
@@ -39,6 +40,7 @@ import {
 } from '../../core/modelos/inventario';
 import { pluralDeUnidad, unidadPara } from '../../core/modelos/producto';
 import { SesionService } from '../../core/sesion/sesion.service';
+import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
 import { leerCantidad, problemaDeCantidad, ReglasDeCantidad } from '../../shared/formato/cantidades';
 import { fechaCorta, horaCorta } from '../../shared/formato/fechas';
 import { cantidad } from '../../shared/formato/precios';
@@ -68,7 +70,7 @@ const SIN_AJUSTE: DatosDeAjuste = { contada: '', motivo: 'CONTEO', nota: '' };
 // rechaza igual sus movimientos.
 @Component({
 	selector: 'app-stock',
-	imports: [FormField, RouterLink, LucideArrowLeft, LucideCircleSlash, LucideTriangleAlert],
+	imports: [FormField, RouterLink, LucideArrowLeft, LucideCircleSlash, LucideTriangleAlert, DialogoConfirmacion],
 	templateUrl: './stock.page.html',
 	styleUrl: './stock.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,6 +80,7 @@ export class StockPage implements ConCambiosSinGuardar {
 	private readonly inventario = inject(InventarioService);
 	private readonly sesion = inject(SesionService);
 	private readonly elemento = inject(ElementRef<HTMLElement>);
+	private readonly dialogo = viewChild.required(DialogoConfirmacion);
 
 	private readonly parametros = toSignal(inject(ActivatedRoute).paramMap, { requireSync: true });
 	protected readonly idProducto = computed(() => idDeLaUrl(this.parametros().get('id')));
@@ -86,7 +89,15 @@ export class StockPage implements ConCambiosSinGuardar {
 	protected readonly producto = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
 	protected readonly errorDeCarga = computed(() => {
 		const error = this.recurso.error();
-		return error === undefined ? '' : mensajeDeError(comoErrorApi(error));
+		if (error === undefined) {
+			return '';
+		}
+		return this.noExiste() ? 'Ese producto no existe.' : mensajeDeError(comoErrorApi(error));
+	});
+	// Un producto que no existe no aparece reintentando (revisión total)
+	protected readonly noExiste = computed(() => {
+		const error = this.recurso.error();
+		return error !== undefined && comoErrorApi(error).status === 404;
 	});
 
 	// Otro producto empieza su historial por la página más reciente
@@ -192,6 +203,10 @@ export class StockPage implements ConCambiosSinGuardar {
 	// Lo consulta cambiosSinGuardarGuard antes de navegar a otra pantalla
 	tieneCambiosSinGuardar(): boolean {
 		return this.hayCambios();
+	}
+
+	confirmarSalida(): Promise<boolean> {
+		return this.dialogo().abrir(SALIR_SIN_GUARDAR);
 	}
 
 	protected alCerrarLaPestana(evento: BeforeUnloadEvent): void {

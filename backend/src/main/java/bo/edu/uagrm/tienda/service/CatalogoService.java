@@ -32,8 +32,6 @@ public class CatalogoService {
 	static final int POR_PAGINA = 24;
 	static final int POR_CARRUSEL = 12;
 	static final int BUSQUEDA_MAXIMA = 100;
-	// La última página posible: más allá, el desplazamiento no entra en un int
-	private static final int PAGINA_MAXIMA = Integer.MAX_VALUE / POR_PAGINA - 1;
 	private static final BigDecimal PRECIO_MAXIMO = new BigDecimal("99999.99");
 
 	private final ProductoRepository productoRepository;
@@ -50,7 +48,7 @@ public class CatalogoService {
 				: filtros.marca().strip().toLowerCase(Locale.ROOT);
 		OrdenCatalogo orden = filtros.orden() == null ? OrdenCatalogo.RECIENTES : filtros.orden();
 		// Una página negativa es la primera, como en la gestión (HU-07); una enorme, una que llega vacía
-		PageRequest paginacion = PageRequest.of(Math.clamp(filtros.pagina(), 0, PAGINA_MAXIMA), POR_PAGINA,
+		PageRequest paginacion = PageRequest.of(Busquedas.paginaValida(filtros.pagina(), POR_PAGINA), POR_PAGINA,
 				orden.orden());
 		String patron = Busquedas.patron(filtros.texto(), Producto::textoDeBusqueda);
 		return PaginaResponse.from(productoRepository.catalogo(patron, filtros.idCategoria(),

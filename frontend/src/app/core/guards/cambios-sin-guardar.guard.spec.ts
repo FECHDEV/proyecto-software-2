@@ -23,8 +23,11 @@ const SESION: Sesion = {
   },
 };
 
+let respuestas: boolean[] = [];
+const preguntas = vi.fn(() => Promise.resolve(respuestas.shift() ?? false));
+
 function pantalla(conCambios: boolean): ConCambiosSinGuardar {
-  return { tieneCambiosSinGuardar: () => conCambios };
+  return { tieneCambiosSinGuardar: () => conCambios, confirmarSalida: preguntas };
 }
 
 function salir(componente: ConCambiosSinGuardar): unknown {
@@ -40,6 +43,8 @@ function salir(componente: ConCambiosSinGuardar): unknown {
 
 describe('cambiosSinGuardarGuard', () => {
   beforeEach(() => {
+    respuestas = [];
+    preguntas.mockClear();
     localStorage.clear();
     TestBed.resetTestingModule();
     TestBed.inject(SesionService).iniciar(SESION);
@@ -49,18 +54,18 @@ describe('cambiosSinGuardarGuard', () => {
 
   // HU-04 RF-9
   it('sin cambios deja salir sin preguntar', () => {
-    const confirmar = vi.spyOn(window, 'confirm');
-
     expect(salir(pantalla(false))).toBe(true);
-    expect(confirmar).not.toHaveBeenCalled();
+    expect(preguntas).not.toHaveBeenCalled();
   });
 
   // HU-04 RF-9
-  it('con cambios pregunta y respeta la respuesta', () => {
-    vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
+  // Revisión total: con el diálogo de la pantalla, no con window.confirm
+  it('con cambios pregunta y respeta la respuesta', async () => {
+    respuestas = [false, true];
 
-    expect(salir(pantalla(true))).toBe(false);
-    expect(salir(pantalla(true))).toBe(true);
+    await expect(salir(pantalla(true))).resolves.toBe(false);
+    await expect(salir(pantalla(true))).resolves.toBe(true);
+    expect(preguntas).toHaveBeenCalledTimes(2);
   });
 
   // Al cerrar sesión o al caer por un 401 no hay nada que guardar: preguntar
@@ -68,9 +73,8 @@ describe('cambiosSinGuardarGuard', () => {
   // HU-04 RF-9
   it('sin sesión deja salir sin preguntar', () => {
     TestBed.inject(SesionService).cerrar();
-    const confirmar = vi.spyOn(window, 'confirm');
 
     expect(salir(pantalla(true))).toBe(true);
-    expect(confirmar).not.toHaveBeenCalled();
+    expect(preguntas).not.toHaveBeenCalled();
   });
 });

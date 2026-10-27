@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { aTarjeta, idDeProducto, ProductoEnTienda, SIN_FILTROS, urlDeImagen, urlDeModelo } from '../modelos/catalogo';
+import { aTarjeta, ProductoEnTienda, SIN_FILTROS, urlDeImagen, urlDeModelo } from '../modelos/catalogo';
 import { CatalogoService } from './catalogo.service';
 
 const PAGINA = { contenido: [], pagina: 0, tamano: 24, totalElementos: 0, totalPaginas: 0 };
@@ -114,14 +114,6 @@ describe('CatalogoService', () => {
     TestBed.tick();
 
     http.expectNone(() => true);
-  });
-
-  // HU-10 RF-9
-  it('idDeProducto descarta lo que no es un número de producto', () => {
-    expect(idDeProducto('7')).toBe(7);
-    for (const basura of [null, '', 'abc', '-1', '0', '1.5', '7abc', ' 7', '1e3', '99999999999999999999']) {
-      expect(idDeProducto(basura)).toBeNull();
-    }
   });
 
   // HU-10 RF-5

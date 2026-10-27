@@ -669,6 +669,25 @@ class PagoIntegracionTest {
 		assertThat(get(CARRITO, ana)).bodyJson().extractingPath("$.lineas[0].cantidad").isEqualTo(998.0);
 	}
 
+	// HU-13 RF-9 (revisión total): si el Cliente quitó lo que volvió y después agregó el producto otra vez, esa línea
+	// es nueva y no tiene nada del pedido: el pago tardío no la toca
+	@Test
+	void pagoTardioNoRestaUnaLineaAgregadaDespues() throws Exception {
+		Integer idPedido = pedidoDeMartillos(ana);
+		Cobro cobro = conCobro(ana, idPedido);
+		assertThat(cancelar(ana, idPedido)).hasStatus(HttpStatus.OK);
+		assertThat(mvc.delete().uri(CARRITO + "/lineas/{id}", martillo)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ana).exchange()).hasStatus2xxSuccessful();
+		reloj.avanzar(Duration.ofMinutes(1));
+		agregar(ana, martillo, "1");
+		elBancoPaga(cobro);
+
+		conciliacion.conciliar(cobro.getIdCobro());
+
+		assertThat(estado(idPedido)).isEqualTo(EstadoPedido.PAGADO);
+		assertThat(get(CARRITO, ana)).bodyJson().extractingPath("$.lineas[0].cantidad").isEqualTo(1.0);
+	}
+
 	// HU-13 RF-7 (revisión de HU-13, /code-review ronda 2): un pago entre la conciliación y el vencimiento no se
 	// pierde, porque la tarea de vencimiento consulta otra vez
 	@Test
