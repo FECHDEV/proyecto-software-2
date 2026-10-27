@@ -24,6 +24,7 @@ const TALADRO: ProductoEnInventario = {
   stock: 3,
   stockMinimo: 5,
   stockBajo: true,
+  comprometido: 0,
 };
 
 const MANGUERA: ProductoEnInventario = { ...TALADRO, idProducto: 8, nombre: 'Manguera', unidad: 'METRO', stockMinimo: null, stockBajo: false };
@@ -39,6 +40,8 @@ const MOVIMIENTOS: Movimiento[] = [
     usuario: 'Eva Paz',
     nota: null,
     idPedido: null,
+    contado: null,
+    comprometido: null,
   },
   {
     idMovimiento: 1,
@@ -50,6 +53,8 @@ const MOVIMIENTOS: Movimiento[] = [
     usuario: 'Eva Paz',
     nota: 'Factura 123',
     idPedido: null,
+    contado: null,
+    comprometido: null,
   },
 ];
 
@@ -198,7 +203,7 @@ describe('StockPage', () => {
 
     expect(inventario.id!()).toBe(7);
     expect(texto()).toContain('Taladro percutor 750 W');
-    expect(texto()).toContain('Stock3 unidad');
+    expect(texto()).toContain('Disponible3 unidad');
     expect(texto()).toContain('Mínimo5');
     expect(texto()).toContain('Stock bajo');
     expect(texto()).toContain('Ajuste · Daño o merma');
@@ -238,8 +243,8 @@ describe('StockPage', () => {
     await pulsar('Registrar entrada');
 
     expect(inventario.entradas).toEqual([{ id: 7, cantidad: 10, nota: 'Factura 124' }]);
-    expect(texto()).toContain('Entrada registrada. Stock: 13.');
-    expect(texto()).toContain('Stock13 unidad');
+    expect(texto()).toContain('Entrada registrada. Disponible: 13.');
+    expect(texto()).toContain('Disponible13 unidad');
     expect(inventario.movimientos.reload).toHaveBeenCalled();
     expect((pantalla().querySelector('#entrada-cantidad') as HTMLInputElement).value).toBe('');
   });
@@ -293,7 +298,49 @@ describe('StockPage', () => {
 
     await pulsar('Registrar ajuste');
 
-    expect(texto()).toContain('La cantidad contada es igual al stock: no hay nada que ajustar.');
+    expect(texto()).toContain('La cantidad contada es igual a lo que hay en el estante: no hay nada que ajustar.');
+  });
+
+  // HU-08 RF-18: el rechazo dice cuánto está comprometido
+  it('explica un conteo menor que lo comprometido', async () => {
+    await abrir('/inventario/7', 'EMPLEADO', (falso) => {
+      falso.respuesta = Promise.reject({
+        status: 409,
+        detail: 'x',
+        codigo: 'CONTEO_MENOR_QUE_COMPROMETIDO',
+        comprometido: 5,
+      } as ErrorApi);
+    });
+    await escribir('ajuste-contada', '4');
+
+    await pulsar('Registrar ajuste');
+
+    expect(texto()).toContain('Contaron menos de lo que ya está vendido o reservado (5). Revise el conteo.');
+  });
+
+  // HU-08 RF-16, RF-17: disponible, comprometido y lo que hay en el estante; el ajuste lo explica
+  it('muestra lo comprometido y lo que hay en el estante', async () => {
+    await abrir('/inventario/7', 'EMPLEADO', (falso) => falso.producto.value.set({ ...TALADRO, stock: 10, comprometido: 5 }));
+
+    expect(texto()).toContain('Disponible10 unidad');
+    expect(texto()).toContain('Comprometido5 unidad');
+    expect(texto()).toContain('En el estante 15 unidad');
+    expect(texto()).toContain('incluido lo apartado para pedidos (5 unidad)');
+  });
+
+  // HU-08 RF-17: el historial de un ajuste dice lo contado y lo comprometido
+  it('el historial muestra lo contado y lo comprometido de un ajuste', async () => {
+    await abrir('/inventario/7', 'EMPLEADO', (falso) =>
+      falso.movimientos.value.set({
+        contenido: [{ ...MOVIMIENTOS[0], contado: 14, comprometido: 5 }],
+        pagina: 0,
+        tamano: 20,
+        totalElementos: 1,
+        totalPaginas: 1,
+      }),
+    );
+
+    expect(texto()).toContain('Ajuste · Daño o merma · en el estante 14, comprometido 5');
   });
 
   it('explica un dato que rechazó el backend con su campo', async () => {
@@ -343,7 +390,7 @@ describe('StockPage', () => {
   it('el contador ve el stock y el historial, sin los formularios', async () => {
     await abrir('/inventario/7', 'CONTADOR');
 
-    expect(texto()).toContain('Stock3 unidad');
+    expect(texto()).toContain('Disponible3 unidad');
     expect(texto()).toContain('Factura 123');
     expect(pantalla().querySelector('form')).toBeNull();
   });

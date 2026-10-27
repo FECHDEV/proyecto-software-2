@@ -69,7 +69,8 @@
             <th scope="col">Código</th>
             <th scope="col">Producto</th>
             <th scope="col">Categoría</th>
-            <th scope="col">Stock</th>
+            <th scope="col">Disponible</th>
+            <th scope="col">Comprometido</th>
             <th scope="col">Mínimo</th>
             <th scope="col">Estado</th>
           </tr>
@@ -83,7 +84,7 @@
                 <a [routerLink]="['/inventario', producto.idProducto]">{{ producto.nombre }}</a>
               </th>
               <td data-etiqueta="Categoría">{{ producto.categoria }}</td>
-              <td data-etiqueta="Stock" class="numero">
+              <td data-etiqueta="Disponible" class="numero">
                 <span>
                   {{ cantidad(producto.stock) }} <span class="unidad">{{ unidad }}</span>
                   @if (producto.stock === 0) {
@@ -98,6 +99,10 @@
                     </span>
                   }
                 </span>
+              </td>
+              <!-- HU-08 RF-16: en pedidos pendientes o pagados sin retirar -->
+              <td data-etiqueta="Comprometido" class="numero" [class.sin-comprometer]="producto.comprometido === 0">
+                {{ cantidad(producto.comprometido) }} <span class="unidad">{{ unidad }}</span>
               </td>
               <td data-etiqueta="Mínimo" class="numero">
                 {{ producto.stockMinimo === null ? '—' : cantidad(producto.stockMinimo) }}

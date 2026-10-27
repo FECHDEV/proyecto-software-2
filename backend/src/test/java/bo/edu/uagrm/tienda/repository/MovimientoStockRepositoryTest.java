@@ -75,8 +75,8 @@ class MovimientoStockRepositoryTest {
 	@Test
 	void historialDelMasRecienteAlMasAntiguo() {
 		em.persist(MovimientoStock.entrada(manguera, BigDecimal.TEN, BigDecimal.TEN, empleado, AHORA, null));
-		em.persist(MovimientoStock.ajuste(manguera, new BigDecimal("-2"), new BigDecimal("8"), MotivoAjuste.MERMA,
-				empleado, AHORA.plusHours(1), null));
+		em.persist(MovimientoStock.ajuste(manguera, new BigDecimal("-2"), new BigDecimal("8"), new BigDecimal("8"),
+				BigDecimal.ZERO, MotivoAjuste.MERMA, empleado, AHORA.plusHours(1), null));
 		em.flush();
 		em.clear();
 

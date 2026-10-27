@@ -2,6 +2,7 @@ package bo.edu.uagrm.tienda.repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -74,6 +75,20 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
 	// Los pedidos de antes de HU-17, para BusquedaAlArrancar
 	List<Pedido> findByBusquedaRetiraIsNull();
+
+	// Lo que de cada producto sigue en el estante por un pedido: reservado (pendiente de pago) o pagado sin entregar
+	// (HU-08 RF-15). Los productos sin pedidos abiertos no vienen
+	@Query("""
+			select new bo.edu.uagrm.tienda.repository.PedidoRepository$Comprometido(l.producto.idProducto, sum(l.cantidad))
+			from LineaPedido l
+			where l.pedido.estado in (bo.edu.uagrm.tienda.entity.EstadoPedido.PENDIENTE_PAGO,
+				bo.edu.uagrm.tienda.entity.EstadoPedido.PAGADO)
+			and l.producto.idProducto in :idsProductos
+			group by l.producto.idProducto""")
+	List<Comprometido> comprometidos(@Param("idsProductos") Collection<Long> idsProductos);
+
+	record Comprometido(Long idProducto, BigDecimal cantidad) {
+	}
 
 	record FilaDeDespacho(Long idPedido, EstadoPedido estado, LocalDateTime confirmado, LocalDateTime pagado,
 			String nombreRetira, int cantidadProductos, BigDecimal total) {

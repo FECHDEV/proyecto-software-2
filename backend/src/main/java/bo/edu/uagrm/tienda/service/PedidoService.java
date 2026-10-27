@@ -323,9 +323,9 @@ public class PedidoService {
 	}
 
 	// Devuelve el stock con los productos bloqueados por id ascendente, cierra el pedido y devuelve las líneas al
-	// carrito (RF-9, RF-10, RF-11). Si las entradas de mientras tanto dejaron el stock cerca del máximo, queda en el
-	// máximo: pasarlo haría fallar el guardado y el pedido no se cerraría nunca. Cuenta las líneas que no volvieron
-	// (RF-16)
+	// carrito (RF-9, RF-10, RF-11). Desde el 27/10/2026 una entrada no deja el estante (disponible y comprometido) por
+	// encima del máximo, así que lo devuelto siempre entra; el tope queda para el stock cargado antes de esa regla:
+	// pasarlo haría fallar el guardado y el pedido no se cerraría nunca. Cuenta las líneas que no volvieron (RF-16)
 	private int liberar(Pedido pedido, EstadoPedido estadoFinal, LocalDateTime ahora) {
 		for (LineaPedido linea : pedido.lineasPorProducto()) {
 			Producto producto = bloquearProducto(linea.getIdProducto());

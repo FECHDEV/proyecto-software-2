@@ -66,6 +66,11 @@ tbody th a:hover {
 	font-size: 12.5px;
 }
 
+// Sin nada en pedidos, en segundo plano: así se notan los que sí tienen (revisión de interfaz)
+.sin-comprometer {
+	color: var(--app-texto-suave);
+}
+
 // Stock bajo: ícono y texto, no solo color
 .bajo {
 	display: inline-flex;

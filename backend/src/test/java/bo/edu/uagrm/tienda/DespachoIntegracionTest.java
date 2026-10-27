@@ -273,7 +273,11 @@ class DespachoIntegracionTest {
 		var cobro = cobroRepository.findAll().stream()
 				.filter(c -> c.getPedido().getIdPedido().equals(Long.valueOf(aDevolver))).findFirst().orElseThrow();
 		assertThat(post(PEDIDOS + "/{id}/cancelacion", beto, "", aDevolver)).hasStatus(HttpStatus.OK);
-		assertThat(post("/api/inventario/{id}/ajustes", admin, "{\"contada\":0,\"motivo\":\"CONTEO\"}", martillo))
+		// Sin disponibles: en el estante solo queda lo comprometido por el pedido pendiente (HU-08 RF-17)
+		Object comprometido = JsonPath.read(get("/api/inventario/{id}", admin, martillo).getResponse()
+				.getContentAsString(), "$.comprometido");
+		assertThat(post("/api/inventario/{id}/ajustes", admin,
+				"{\"contada\":%s,\"motivo\":\"CONTEO\"}".formatted(comprometido), martillo))
 				.hasStatus(HttpStatus.CREATED);
 		simulador.forzar(cobro.getReferencia(), EstadoDelCobro.PAGADO);
 		conciliacion.conciliar(cobro.getIdCobro());

@@ -596,16 +596,18 @@ class PedidoIntegracionTest {
 		assertThat(stock(martillo)).isEqualTo(10.0);
 	}
 
-	// Caso límite: un ajuste con el pedido pendiente escribe lo contado; la reserva ya se restó
+	// Caso límite (27/10/2026, HU-08 RF-17): lo contado es el estante, con los 2 del pedido; disponibles quedan 3, y al
+	// cancelar vuelven a ser los 5 del estante
 	@Test
-	void unAjusteConPedidoPendienteUsaLoContado() throws Exception {
+	void unAjusteConPedidoPendienteDescuentaLoComprometido() throws Exception {
 		agregar(ana, martillo, "2");
 		Integer idPedido = confirmado(ana, "171");
 		ajustarStock(martillo, "5");
+		assertThat(stock(martillo)).isEqualTo(3.0);
 
 		cancelar(ana, idPedido);
 
-		assertThat(stock(martillo)).isEqualTo(7.0);
+		assertThat(stock(martillo)).isEqualTo(5.0);
 	}
 
 	// HU-12 RF-10

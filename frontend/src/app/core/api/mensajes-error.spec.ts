@@ -6,6 +6,16 @@ function error(codigo: string | undefined, detail = 'detalle técnico del backen
 }
 
 describe('mensajeDeError', () => {
+  // HU-08 RF-18: con lo comprometido, si vino; sin él, el mensaje general del código
+  it('dice cuánto está comprometido en un conteo menor', () => {
+    const rechazo: ErrorApi = { status: 409, detail: 'x', codigo: 'CONTEO_MENOR_QUE_COMPROMETIDO', comprometido: 12.5 };
+
+    expect(mensajeDeError(rechazo)).toBe('Contaron menos de lo que ya está vendido o reservado (12,5). Revise el conteo.');
+    expect(mensajeDeError({ ...rechazo, comprometido: undefined })).toBe(
+      'Contaron menos de lo que ya está vendido o reservado. Revise el conteo.',
+    );
+  });
+
   // HU-11 RF-4, RF-5, RF-14: el carrito explica por qué no agregó, sin decir cuánto stock hay
   it.each([
     ['PRODUCTO_AGOTADO', 'agotado'],

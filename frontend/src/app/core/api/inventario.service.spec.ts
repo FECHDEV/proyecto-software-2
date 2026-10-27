@@ -17,6 +17,7 @@ const TALADRO: ProductoEnInventario = {
   stock: 10,
   stockMinimo: 5,
   stockBajo: false,
+  comprometido: 0,
 };
 
 const PAGINA = { contenido: [], pagina: 0, tamano: 20, totalElementos: 0, totalPaginas: 0 };

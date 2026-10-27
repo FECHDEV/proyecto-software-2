@@ -11,6 +11,8 @@ function movimiento(cambios: Partial<Movimiento>): Movimiento {
     usuario: 'Ana Paz',
     nota: null,
     idPedido: null,
+    contado: null,
+    comprometido: null,
     ...cambios,
   };
 }

@@ -21,6 +21,7 @@ const MANGUERA: ProductoEnInventario = {
   stock: 3.5,
   stockMinimo: 5,
   stockBajo: true,
+  comprometido: 0,
 };
 
 const AZADA: ProductoEnInventario = {
@@ -33,6 +34,7 @@ const AZADA: ProductoEnInventario = {
   stock: 1200,
   stockMinimo: null,
   stockBajo: false,
+  comprometido: 0,
 };
 
 function pagina(contenido: ProductoEnInventario[], cambios: Partial<Pagina<ProductoEnInventario>> = {}) {
@@ -118,6 +120,15 @@ describe('InventarioPage', () => {
     expect(texto()).toContain('Página 1 de 2 · 21 productos');
     const enlaces = Array.from(pantalla().querySelectorAll('tbody a')).map((enlace) => enlace.getAttribute('href'));
     expect(enlaces).toEqual(['/inventario/9', '/inventario/8']);
+  });
+
+  // HU-08 RF-16: la columna de lo comprometido
+  it('muestra lo comprometido de cada producto', async () => {
+    await abrir('/inventario', (falso) => falso.recurso.value.set(pagina([{ ...MANGUERA, comprometido: 2.5 }])));
+
+    const celda = pantalla().querySelector('td[data-etiqueta="Comprometido"]');
+    expect(celda?.textContent?.replace(/\s+/g, ' ').trim()).toBe('2,5 metro');
+    expect(pantalla().querySelector('thead')?.textContent).toContain('Comprometido');
   });
 
   // HU-08 RF-10: los filtros de la URL llegan al servicio; lo inválido se descarta

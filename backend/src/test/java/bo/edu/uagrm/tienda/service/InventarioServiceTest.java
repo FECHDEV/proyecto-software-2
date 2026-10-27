@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 
 import java.math.BigDecimal;
@@ -39,6 +40,7 @@ import bo.edu.uagrm.tienda.exception.CamposInvalidosException;
 import bo.edu.uagrm.tienda.exception.ProductoNoEncontradoException;
 import bo.edu.uagrm.tienda.exception.StockFueraDeRangoException;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
+import bo.edu.uagrm.tienda.repository.PedidoRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 
@@ -59,12 +61,17 @@ class InventarioServiceTest {
 	@Mock
 	private UsuarioRepository usuarioRepository;
 
+	@Mock
+	private PedidoRepository pedidoRepository;
+
 	private InventarioService servicio;
 
 	@BeforeEach
 	void crearServicio() {
-		servicio = new InventarioService(productoRepository, movimientoRepository, usuarioRepository,
+		servicio = new InventarioService(productoRepository, movimientoRepository, pedidoRepository, usuarioRepository,
 				Clock.fixed(AHORA, ZONA));
+		// Sin pedidos abiertos: lo contado es lo disponible (lo comprometido se prueba en InventarioIntegracionTest)
+		lenient().when(pedidoRepository.comprometidos(any())).thenReturn(List.of());
 	}
 
 	private Producto bloqueado(long id, UnidadVenta unidad, String stock) {

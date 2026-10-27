@@ -771,6 +771,31 @@ del cliente. El stock sigue sin quedar negativo.
 estante; el historial inmutable deja rastro de cada cambio; costos y
 proveedores quedan fuera porque los reportes son de ventas e ingresos.
 
+*27/10/2026 (revisión total, HU-08 ampliada).* **El ajuste cuenta el
+estante.** El stock guardado es el *disponible*: lo reservado por pedidos
+«Pendiente de pago» y lo pagado sin entregar ya se restó, pero esas unidades
+siguen en el estante. Contarlas como disponibles inflaba el stock vendible y
+la tienda podía cobrar productos que no tenía.
+
+- **Comprometido:** la suma de las cantidades de un producto en pedidos
+  «Pendiente de pago» y «Pagado». **En el estante** = disponible +
+  comprometido.
+- **El ajuste lleva lo contado en el estante;** el sistema deja el
+  disponible en *contado − comprometido* y el movimiento guarda la
+  diferencia, lo contado y lo comprometido de ese momento.
+- **El máximo vale para el estante:** una entrada que dejaría el disponible
+  más lo comprometido por encima de 9 999 999,99 se rechaza, porque lo
+  contado no podría cargarse después.
+- **Si lo contado es menos que lo comprometido, se rechaza:** faltan
+  productos ya vendidos o reservados, y eso se resuelve aparte (cancelar o
+  devolver un pedido), no con un ajuste.
+- **Se ve en la ficha** (disponible, comprometido y en el estante) **y en la
+  lista «Inventario»** (columna «Comprometido»).
+
+**Motivo:** quien cuenta ve el estante, no el disponible; descontar a mano lo
+comprometido es fácil de olvidar, y el sistema ya lo sabe. Reemplaza el caso
+límite de HU-12 «el ajuste usa la cantidad contada como siempre».
+
 ### Catálogo público
 
 *14/10/2026 (HU-09).* La tienda es la portada para todos, con o sin sesión.
