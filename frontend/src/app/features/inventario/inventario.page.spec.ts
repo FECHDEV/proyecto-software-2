@@ -127,7 +127,7 @@ describe('InventarioPage', () => {
     await abrir('/inventario', (falso) => falso.recurso.value.set(pagina([{ ...MANGUERA, comprometido: 2.5 }])));
 
     const celda = pantalla().querySelector('td[data-etiqueta="Comprometido"]');
-    expect(celda?.textContent?.replace(/\s+/g, ' ').trim()).toBe('2,5 metro');
+    expect(celda?.textContent?.replace(/\s+/g, ' ').trim()).toBe('2,5 metros');
     expect(pantalla().querySelector('thead')?.textContent).toContain('Comprometido');
   });
 

@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  afterRenderEffect,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -26,6 +27,7 @@ import { MARCA } from './core/marca';
 import { nombreCompleto, Rol } from './core/modelos/usuario';
 import { SesionService } from './core/sesion/sesion.service';
 import { TemaService } from './core/tema/tema.service';
+import { centrarEnLaFila } from './shared/navegacion/centrar-en-la-fila';
 
 // Los módulos del encabezado, además de Inicio (la tienda) y Catálogo, que los
 // ven todos. Ocultarlos según el rol es usabilidad: quien autoriza es el backend
@@ -99,7 +101,8 @@ export class AppComponent {
     ),
     { initialValue: this.router.url },
   );
-  protected readonly enCatalogo = computed(() => this.url().split('?')[0] === '/catalogo');
+  private readonly seccion = computed(() => this.url().split(/[?#]/)[0]);
+  protected readonly enCatalogo = computed(() => this.seccion() === '/catalogo');
 
   protected buscar(): void {
     const q = this.busqueda().trim();
@@ -126,6 +129,19 @@ export class AppComponent {
       const observador = new ResizeObserver(medir);
       observador.observe(cabecera);
       destruccion.onDestroy(() => observador.disconnect());
+    });
+
+    // En el celular, la navegación del personal se desplaza de costado: la sección actual queda a la vista
+    // (revisión total, 26/10/2026). Solo al cambiar de sección o de secciones: un filtro no deshace lo que el
+    // usuario corrió a mano
+    afterRenderEffect(() => {
+      this.seccion();
+      this.modulos();
+      const fila = (anfitrion.nativeElement as HTMLElement).querySelector<HTMLElement>('nav');
+      const actual = fila?.querySelector<HTMLElement>('.actual');
+      if (fila && actual) {
+        centrarEnLaFila(fila, actual);
+      }
     });
   }
 

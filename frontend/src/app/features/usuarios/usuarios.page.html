@@ -63,7 +63,15 @@
   </div>
 </div>
 
-@if (pagina(); as pagina) {
+<!-- El error primero: la página que quedó es de otra búsqueda y lo taparía (revisión total) -->
+@if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="listado.reload()">Reintentar</button>
+  </div>
+} @else if (pagina(); as pagina) {
+  <!-- Mientras carga otra página se ve la anterior: el lector se entera de que viene otra -->
+  <p class="solo-lectores" role="status">@if (listado.isLoading()) {Cargando usuarios…}</p>
   @if (pagina.contenido.length === 0 && pagina.pagina > 0 && pagina.totalElementos > 0) {
     <div class="vacio" role="status">
       <p>Esta página no existe.</p>
@@ -89,7 +97,15 @@
           @for (usuario of pagina.contenido; track usuario.idUsuario) {
             <tr>
               <th scope="row" data-etiqueta="Nombre">{{ usuario.nombre }} {{ usuario.apellido }}</th>
-              <td data-etiqueta="Correo" class="correo">{{ usuario.correo }}</td>
+              <!-- Se corta en la arroba antes que en cualquier letra (revisión total) -->
+              @let arroba = usuario.correo.indexOf('@');
+              <td data-etiqueta="Correo" class="correo">
+                @if (arroba > 0) {
+                  {{ usuario.correo.slice(0, arroba) }}<wbr />{{ usuario.correo.slice(arroba) }}
+                } @else {
+                  {{ usuario.correo }}
+                }
+              </td>
               <td data-etiqueta="Tipo de cuenta">
                 <span>
                   {{ nombresDeRol[usuario.rol] }}
@@ -106,7 +122,7 @@
               <td data-etiqueta="Alta" class="numero">{{ fecha(usuario.fechaRegistro) }}</td>
               <td data-etiqueta="Acciones">
                 @if (usuario.idUsuario === idPropio()) {
-                  <span class="propia">Tú</span>
+                  <span class="propia">Su cuenta</span>
                 } @else {
                   @let desactivada = usuario.estado === 'DESACTIVADA';
                   @let ocupada = procesando().has(usuario.idUsuario);
@@ -116,7 +132,8 @@
                       autocomplete="off"
                       [attr.aria-label]="'Tipo de cuenta de ' + nombreDe(usuario)"
                       [attr.aria-describedby]="desactivada ? 'ayuda-rol-' + usuario.idUsuario : null"
-                      [disabled]="desactivada || ocupada"
+                      [disabled]="desactivada"
+                      [attr.aria-disabled]="ocupada ? 'true' : null"
                       (change)="alElegirRolDe(usuario, $any($event.target))"
                     >
                       @for (rol of roles; track rol) {
@@ -128,7 +145,7 @@
                         [name]="'tipo-' + usuario.idUsuario"
                         autocomplete="off"
                         [attr.aria-label]="'Tipo de cliente de ' + nombreDe(usuario)"
-                        [disabled]="ocupada"
+                        [attr.aria-disabled]="ocupada ? 'true' : null"
                         (change)="alElegirTipoDe(usuario, $any($event.target))"
                       >
                         @for (tipo of tipos; track tipo) {
@@ -150,7 +167,7 @@
                   </div>
                   @if (desactivada) {
                     <p class="ayuda" [id]="'ayuda-rol-' + usuario.idUsuario">
-                      Reactívala para cambiar su tipo de cuenta.
+                      Reactívela para cambiar su tipo de cuenta.
                     </p>
                   }
                 }
@@ -166,7 +183,7 @@
     <button
       type="button"
       class="secundario"
-      [disabled]="pagina.pagina === 0"
+      [attr.aria-disabled]="pagina.pagina === 0 || listado.isLoading() ? 'true' : null"
       (click)="irAPagina(pagina.pagina - 1)"
     >
       Anterior
@@ -178,17 +195,12 @@
     <button
       type="button"
       class="secundario"
-      [disabled]="pagina.pagina + 1 >= pagina.totalPaginas"
+      [attr.aria-disabled]="pagina.pagina + 1 >= pagina.totalPaginas || listado.isLoading() ? 'true' : null"
       (click)="irAPagina(pagina.pagina + 1)"
     >
       Siguiente
     </button>
   </nav>
-} @else if (errorDeCarga()) {
-  <div class="tarjeta-error">
-    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
-    <button type="button" class="secundario" (click)="listado.reload()">Reintentar</button>
-  </div>
 } @else {
   <p class="cargando" role="status">Cargando usuarios…</p>
 }

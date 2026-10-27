@@ -17,6 +17,7 @@
           (focusout)="focoConTeclado.set(false)"
           (pointerdown)="focoConTeclado.set(false)"
           [attr.interaction-prompt]="movimientoReducido ? 'none' : 'auto'"
+          [attr.a11y]="textosDelVisor"
           [attr.ar]="realidadAumentada() ? '' : null"
           [attr.ar-modes]="realidadAumentada() ? 'webxr scene-viewer quick-look' : null"
           [attr.ar-scale]="realidadAumentada() ? 'fixed' : null"

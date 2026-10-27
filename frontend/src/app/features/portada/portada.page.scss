@@ -69,8 +69,9 @@
 	flex: 1 1 0;
 }
 
+// En el celular, más chica: «Almacenamiento y escaleras» entra entera en vez de cortarse (revisión total)
 .compacto .leyenda {
-	font-size: clamp(26px, 4vw, 40px);
+	font-size: clamp(18px, 5vw, 40px);
 	white-space: nowrap;
 	text-overflow: ellipsis;
 	overflow: hidden;

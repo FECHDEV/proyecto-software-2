@@ -57,7 +57,8 @@
 	min-width: 0;
 }
 
-.acciones select[disabled] {
+.acciones select[disabled],
+.acciones select[aria-disabled='true'] {
 	opacity: 0.5;
 }
 

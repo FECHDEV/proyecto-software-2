@@ -278,7 +278,7 @@ describe('StockPage', () => {
     await escribir('ajuste-motivo', 'OTRO');
 
     await pulsar('Registrar ajuste');
-    expect(texto()).toContain('Con el motivo «Otro», explica qué pasó.');
+    expect(texto()).toContain('Con el motivo «Otro», explique qué pasó.');
     expect(texto()).toContain('(obligatoria)');
     expect(pantalla().querySelector('#ajuste-nota')?.getAttribute('aria-required')).toBe('true');
     expect(inventario.ajustes).toEqual([]);
@@ -322,10 +322,10 @@ describe('StockPage', () => {
   it('muestra lo comprometido y lo que hay en el estante', async () => {
     await abrir('/inventario/7', 'EMPLEADO', (falso) => falso.producto.value.set({ ...TALADRO, stock: 10, comprometido: 5 }));
 
-    expect(texto()).toContain('Disponible10 unidad');
-    expect(texto()).toContain('Comprometido5 unidad');
-    expect(texto()).toContain('En el estante 15 unidad');
-    expect(texto()).toContain('incluido lo apartado para pedidos (5 unidad)');
+    expect(texto()).toContain('Disponible10 unidades');
+    expect(texto()).toContain('Comprometido5 unidades');
+    expect(texto()).toContain('En el estante 15 unidades');
+    expect(texto()).toContain('incluido lo apartado para pedidos (5 unidades)');
   });
 
   // HU-08 RF-17: el historial de un ajuste dice lo contado y lo comprometido

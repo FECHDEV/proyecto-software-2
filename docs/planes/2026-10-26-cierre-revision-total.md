@@ -171,3 +171,65 @@ del correo en `CLAUDE.md`. Descartados 2: la prueba de A4 no puede volverse
 inestable (las tareas programadas están apagadas en `application-test`), y
 la interacción real entre el manejador y la página queda cubierta por la
 prueba de `VersionPublicada` con las dos llamadas.
+
+### PR 3 — `fix/cierre-interfaz` (27/10/2026)
+
+**Hecho (grupo B):**
+
+- **B1/B2:** en `styles.scss`, el ojo propio de Edge se oculta
+  (`::-ms-reveal`) y el texto de ejemplo usa el token del texto secundario
+  en toda la app (6,5:1 en claro y en oscuro).
+- **B3:** `centrarEnLaFila` deja a la vista la sección actual de la
+  navegación del personal en el celular; se centra al cambiar de sección o
+  de secciones, no con un filtro.
+- **B4: descartado.** El precio sin unidad es la regla para lo que se vende
+  por unidad (`catalogo.ts`); las demás unidades ya la muestran.
+- **B5:** «Su cuenta», «Reactívela» y «explique qué pasó».
+- **B6:** el correo se parte en la `@` (`<wbr>`); uno sin `@` no se parte.
+- **B7:** «Bs» y no «BS» en los totales de confirmación, pedido y despacho.
+- **B8:** las ventas de «Reportes» siguen siendo una tabla en el celular,
+  con los números a la derecha.
+- **B9:** `unidadPara` y `pluralDeUnidad` (`producto.ts`): «1 unidad»,
+  «40 unidades», «Cantidad (unidades)», en inventario y stock.
+- **B10:** 44 px en los íconos del encabezado y en los nombres de
+  Inventario.
+- **B11:** el nombre en la tarjeta llega a tres líneas (nota en HU-09).
+- **B12:** la leyenda compacta de la portada se achica con la pantalla
+  (`clamp`); una categoría muy larga todavía termina en «…», como se espera.
+- **B13:** `TEXTOS_DEL_VISOR`: el visor 3D le habla en español al lector de
+  pantalla. «Live announcements» de model-viewer no se puede traducir desde
+  la app.
+- **B14:** los paginadores no se deshabilitan mientras cargan ni en el
+  borde (`aria-disabled`, y `irAPagina` ignora el toque), y la página que
+  se veía queda mientras llega la otra (`ultimoValor`, en `shared/recursos/`);
+  tras un error no vuelve la de otra búsqueda. Los selectores de «Usuarios»
+  no se deshabilitan mientras guardan. Al cambiar de pantalla, el foco pasa
+  a `#contenido`, salvo si la dirección se reemplaza (crear un producto).
+
+**Pruebas nuevas:** `centrar-en-la-fila.spec.ts`, `unidad-para.spec.ts`,
+`ultimo-valor.spec.ts`, el foco en `desplazamiento.spec.ts`, el `a11y` del
+visor, y en las pantallas: usuarios («un error de carga con una página ya
+mostrada…» y el borde del paginador), mis pedidos y stock.
+
+**Suites:** frontend 73 archivos, 871 pruebas; `ng build` sin avisos. Sin
+cambios en el backend.
+
+**`/code-review` medium, ronda 1 (9 hallazgos):** corregidos los 9.
+
+**`/code-review` medium, ronda 2 (la última, 10 hallazgos):** corregidos 8:
+sin aviso de carga con la página anterior a la vista, la búsqueda anterior
+de vuelta tras «Reintentar», el foco que dejaba el formulario al crear un
+producto, el centrado que deshacía lo corrido a mano o no esperaba a las
+secciones del rol, el selector bloqueado sin verse, la misma lógica en
+cuatro pantallas (pasó a `ultimoValor`) y el control del toque repetido en
+diez botones (pasó a `irAPagina`). Descartados 2: los paginadores sí tienen
+estilo bloqueado (`_lista.scss`), y el «/ unidad» de «Productos» es un
+precio por unidad, en singular.
+
+**Revisión en el navegador** (`playwright-cli`, Edge, escritorio y
+«iPhone 15», claro y oscuro): 12 de 13 puntos bien; corregidos la tabla de
+reportes (el selector del celular pesaba más que `.numero`), la etiqueta
+«Correo» que se partía con un correo largo y el foco que caía al cuerpo al
+llegar a la última página. Consola sin errores.
+
+**Prueba manual de Fabio:** aprobada.

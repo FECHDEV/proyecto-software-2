@@ -139,6 +139,21 @@ describe('UsuariosPage', () => {
     await harness.fixture.whenStable();
   }
 
+  // Revisión total (26/10/2026): mientras carga otra página queda la anterior, pero un error se ve en su lugar
+  it('un error de carga con una página ya mostrada se ve en lugar de esa página', async () => {
+    await abrir();
+    expect(texto()).toContain('ana@mail.com');
+
+    usuarios.recurso.value.set(undefined);
+    await harness.fixture.whenStable();
+    expect(texto()).toContain('ana@mail.com');
+
+    usuarios.recurso.error.set({ status: 0 });
+    await harness.fixture.whenStable();
+    expect(pantalla().querySelector('[role="alert"]')).not.toBeNull();
+    expect(texto()).not.toContain('ana@mail.com');
+  });
+
   // HU-05 RF-2: nombre, correo, rol, estado y fecha de alta
   it('muestra los usuarios de la página', async () => {
     await abrir();
@@ -243,15 +258,20 @@ describe('UsuariosPage', () => {
     expect(url()).toBe('/usuarios?rol=CLIENTE&pagina=1');
   });
 
+  // Revisión total: en el borde no se deshabilitan (el foco caería al cuerpo de la página); el toque se ignora
   it('en la primera página no se puede ir atrás, en la última no se puede avanzar', async () => {
     await abrir();
-    expect(boton('Anterior').disabled).toBe(true);
-    expect(boton('Siguiente').disabled).toBe(false);
+    expect(boton('Anterior').getAttribute('aria-disabled')).toBe('true');
+    expect(boton('Siguiente').getAttribute('aria-disabled')).toBeNull();
 
     usuarios.recurso.value.set(pagina([ANA], { pagina: 1 }));
     await harness.fixture.whenStable();
-    expect(boton('Anterior').disabled).toBe(false);
-    expect(boton('Siguiente').disabled).toBe(true);
+    expect(boton('Anterior').getAttribute('aria-disabled')).toBeNull();
+    expect(boton('Siguiente').getAttribute('aria-disabled')).toBe('true');
+    const antes = TestBed.inject(Router).url;
+    boton('Siguiente').click();
+    await harness.fixture.whenStable();
+    expect(TestBed.inject(Router).url).toBe(antes);
   });
 
   // Caso límite: filtros sin resultados no son un error
@@ -347,7 +367,7 @@ describe('UsuariosPage', () => {
     await abrir();
 
     const propia = fila('admin@tienda.bo');
-    expect(propia.textContent).toContain('Tú');
+    expect(propia.textContent).toContain('Su cuenta');
     expect(propia.querySelector('select')).toBeNull();
     expect(propia.querySelector('button')).toBeNull();
   });
@@ -460,7 +480,7 @@ describe('UsuariosPage', () => {
     const selector = fila('ana@mail.com').querySelector('select') as HTMLSelectElement;
     expect(selector.disabled).toBe(true);
     const ayuda = document.getElementById(selector.getAttribute('aria-describedby') ?? '');
-    expect(ayuda?.textContent).toContain('Reactívala');
+    expect(ayuda?.textContent).toContain('Reactívela');
   });
 
   // HU-05 RF-12: el motivo del rechazo, y la fila como estaba

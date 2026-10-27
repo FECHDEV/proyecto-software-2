@@ -57,6 +57,28 @@ describe('provideDesplazamiento', () => {
     expect(desplazar).toHaveBeenCalledWith([0, 0]);
   });
 
+  // Revisión total (26/10/2026): el foco pasa al contenido de la pantalla nueva, no con los filtros
+  it('otra pantalla lleva el foco al contenido', async () => {
+    const contenido = document.createElement('main');
+    contenido.id = 'contenido';
+    contenido.tabIndex = -1;
+    document.body.append(contenido);
+    try {
+      await navegar('/producto/7');
+      expect(document.activeElement).toBe(contenido);
+
+      contenido.blur();
+      await navegar('/producto/7?foto=2');
+      expect(document.activeElement).not.toBe(contenido);
+
+      // Como al crear un producto: la dirección se reemplaza y el formulario sigue ahí
+      await router.navigateByUrl('/producto/8', { replaceUrl: true });
+      expect(document.activeElement).not.toBe(contenido);
+    } finally {
+      contenido.remove();
+    }
+  });
+
   it('cambiar los filtros del catálogo no mueve la página', async () => {
     await navegar('/catalogo');
     desplazar.mockClear();

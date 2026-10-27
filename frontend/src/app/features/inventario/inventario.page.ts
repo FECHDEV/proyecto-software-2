@@ -6,11 +6,12 @@ import { comoErrorApi } from '../../core/modelos/error-api';
 
 import { InventarioService } from '../../core/api/inventario.service';
 import { mensajeDeError } from '../../core/api/mensajes-error';
-import { FiltrosDeInventario } from '../../core/modelos/inventario';
-import { NOMBRES_DE_UNIDAD } from '../../core/modelos/producto';
+import { FiltrosDeInventario, ProductoEnInventario } from '../../core/modelos/inventario';
+import { unidadPara } from '../../core/modelos/producto';
 import { cantidad } from '../../shared/formato/precios';
 import { idDeLaUrl } from '../../shared/navegacion/id-de-la-url';
 import { paginaDeLaUrl } from '../../shared/navegacion/pagina-de-la-url';
+import { ultimoValor } from '../../shared/recursos/ultimo-valor';
 
 // Cuánto se espera después de la última tecla antes de buscar
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -33,7 +34,7 @@ export class InventarioPage {
 	protected readonly filtros = computed(() => leerFiltros(this.consulta()));
 
 	protected readonly listado = this.inventario.listado(this.filtros);
-	protected readonly pagina = computed(() => (this.listado.hasValue() ? this.listado.value() : undefined));
+	protected readonly pagina = ultimoValor(this.listado);
 	protected readonly errorDeCarga = computed(() => {
 		const error = this.listado.error();
 		return error === undefined ? '' : mensajeDeError(comoErrorApi(error));
@@ -55,7 +56,7 @@ export class InventarioPage {
 	private espera: ReturnType<typeof setTimeout> | null = null;
 
 	protected readonly cantidad = cantidad;
-	protected readonly nombresDeUnidad = NOMBRES_DE_UNIDAD;
+	protected readonly unidadPara = unidadPara;
 
 	constructor() {
 		inject(DestroyRef).onDestroy(() => this.cancelarEspera());
@@ -83,6 +84,12 @@ export class InventarioPage {
 	}
 
 	protected irAPagina(pagina: number): void {
+		// Mientras carga, o antes de la primera o después de la última, el toque se ignora: el botón no se
+		// deshabilita, para no perder el foco (revisión total)
+		const total = this.pagina()?.totalPaginas ?? 0;
+		if (this.listado.isLoading() || pagina < 0 || (pagina > 0 && pagina >= total)) {
+			return;
+		}
 		this.navegar({ ...this.filtros(), pagina });
 	}
 

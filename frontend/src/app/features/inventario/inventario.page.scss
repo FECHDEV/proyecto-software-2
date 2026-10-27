@@ -132,4 +132,11 @@ tr.inactivo .codigo {
 	.filtros {
 		grid-template-columns: 1fr;
 	}
+
+	// En la tarjeta del celular, el nombre es el enlace a la ficha: con el área tocable completa (revisión total)
+	tbody th a {
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--app-area-tocable);
+	}
 }

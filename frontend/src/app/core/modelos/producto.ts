@@ -15,6 +15,26 @@ export const NOMBRES_DE_UNIDAD: Record<UnidadVenta, string> = {
 	ROLLO: 'Rollo',
 };
 
+// Junto a una cantidad, en singular solo con 1: «1 unidad», «40 unidades», «2,5 metros» (revisión total)
+const PLURALES_DE_UNIDAD: Record<UnidadVenta, string> = {
+	UNIDAD: 'unidades',
+	METRO: 'metros',
+	KILO: 'kilos',
+	LITRO: 'litros',
+	CAJA: 'cajas',
+	PAR: 'pares',
+	ROLLO: 'rollos',
+};
+
+export function unidadPara(unidad: UnidadVenta, cantidad: number): string {
+	return cantidad === 1 ? NOMBRES_DE_UNIDAD[unidad].toLowerCase() : pluralDeUnidad(unidad);
+}
+
+// En una etiqueta («Cantidad (unidades)»)
+export function pluralDeUnidad(unidad: UnidadVenta): string {
+	return PLURALES_DE_UNIDAD[unidad];
+}
+
 // Los mismos límites que ProductoService y ProductoRequest
 export const MAXIMO_IMAGENES = 5;
 export const MAXIMO_CARACTERISTICAS = 15;

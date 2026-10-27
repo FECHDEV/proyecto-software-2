@@ -29,6 +29,25 @@ export const MOVIMIENTO_REDUCIDO = new InjectionToken<() => boolean>('MOVIMIENTO
 	factory: () => () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
 });
 
+// Lo que model-viewer le dice al lector de pantalla, en español (revisión total, 26/10/2026): cómo moverlo y desde
+// dónde se mira. Las claves son las suyas (la vista por altura y por lado). La región «Live announcements» de su
+// shadow DOM no se puede traducir desde afuera
+const LADOS: Record<string, string> = {
+	front: 'de frente',
+	right: 'desde la derecha',
+	back: 'desde atrás',
+	left: 'desde la izquierda',
+};
+const ALTURAS: Record<string, string> = { 'upper-': ', desde arriba', '': '', 'lower-': ', desde abajo' };
+export const TEXTOS_DEL_VISOR = JSON.stringify({
+	'interaction-prompt': 'Use el mouse, los dedos o las flechas del teclado para moverlo.',
+	...Object.fromEntries(
+		Object.entries(ALTURAS).flatMap(([altura, alto]) =>
+			Object.entries(LADOS).map(([lado, desde]) => [`${altura}${lado}`, `Vista ${desde}${alto}`]),
+		),
+	),
+});
+
 // angular.json (assets) los copia de node_modules/three. Sus nombres no llevan hash: nginx los revalida en cada
 // visita (no-cache), así una versión nueva de three no se mezcla con la vieja (/code-review)
 const DECODIFICADORES = '/decodificadores/';
@@ -113,6 +132,7 @@ export class Visor3d {
 	protected readonly etiquetaPantallaCompleta = computed(() =>
 		this.ampliado() ? 'Salir de pantalla completa' : 'Pantalla completa',
 	);
+	protected readonly textosDelVisor = TEXTOS_DEL_VISOR;
 	// Con movimiento reducido, en lugar de la mano: debajo del visor, o sobre el modelo en pantalla completa
 	protected readonly textoDeGestos =
 		'Arrastre para girar el modelo; pellizque o use la rueda para acercarlo. Con el teclado, use las flechas.';

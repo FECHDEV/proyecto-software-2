@@ -45,7 +45,7 @@
         <button
           type="button"
           class="secundario"
-          [disabled]="datos.pagina.pagina === 0 || recurso.isLoading()"
+          [attr.aria-disabled]="datos.pagina.pagina === 0 || recurso.isLoading() ? 'true' : null"
           (click)="irAPagina(datos.pagina.pagina - 1)"
         >
           Anterior
@@ -54,7 +54,7 @@
         <button
           type="button"
           class="secundario"
-          [disabled]="datos.pagina.pagina + 1 >= datos.pagina.totalPaginas || recurso.isLoading()"
+          [attr.aria-disabled]="datos.pagina.pagina + 1 >= datos.pagina.totalPaginas || recurso.isLoading() ? 'true' : null"
           (click)="irAPagina(datos.pagina.pagina + 1)"
         >
           Siguiente

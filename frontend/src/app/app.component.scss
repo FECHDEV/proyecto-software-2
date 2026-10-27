@@ -49,6 +49,11 @@ main {
 	padding-block: var(--app-espacio-8);
 }
 
+// Recibe el foco al cambiar de pantalla para el lector; no es un control, así que no lleva el contorno
+main:focus {
+	outline: none;
+}
+
 // Arriba la marca, la búsqueda ancha y la sesión; abajo, a todo el ancho, la
 // navegación (HU-09: la búsqueda en todas las pantallas)
 .principal {
@@ -230,17 +235,16 @@ nav a.actual,
 	gap: var(--app-espacio-3);
 }
 
-.perfil {
-	min-width: 0;
-}
-
 .carrito {
 	gap: var(--app-espacio-1);
 }
 
-// Solo el ícono: el área tocable completa (44 px)
-.pedidos {
-	min-width: 44px;
+// Con solo el ícono, el área tocable completa (44 px); el nombre de «Mis datos» se achica hasta ahí (revisión
+// total: el carrito sin productos y Mis datos medían 34 px de ancho en el celular)
+.pedidos,
+.carrito,
+.perfil {
+	min-width: var(--app-area-tocable);
 	justify-content: center;
 }
 

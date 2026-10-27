@@ -30,6 +30,7 @@ import { SesionService } from '../../core/sesion/sesion.service';
 import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
 import { fechaCorta } from '../../shared/formato/fechas';
 import { paginaDeLaUrl } from '../../shared/navegacion/pagina-de-la-url';
+import { ultimoValor } from '../../shared/recursos/ultimo-valor';
 
 // Cuánto se espera después de la última tecla antes de buscar
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -54,7 +55,7 @@ export class UsuariosPage {
 	protected readonly filtros = computed(() => leerFiltros(this.consulta()));
 
 	protected readonly listado = this.usuarios.listado(this.filtros);
-	protected readonly pagina = computed(() => (this.listado.hasValue() ? this.listado.value() : undefined));
+	protected readonly pagina = ultimoValor(this.listado);
 	// Un 403 (otro administrador le quitó el rol) o la red caída, con el diccionario
 	protected readonly errorDeCarga = computed(() => {
 		const error = this.listado.error();
@@ -118,7 +119,12 @@ export class UsuariosPage {
 	// backend lo rechaza, el selector vuelve al tipo que la cuenta sigue teniendo
 	protected async alElegirTipoDe(usuario: UsuarioResumen, selector: HTMLSelectElement): Promise<void> {
 		const tipo = selector.value;
-		if (!esTipo(tipo) || tipo === usuario.tipoCliente || this.procesando().has(usuario.idUsuario)) {
+		// Mientras guarda no se deshabilita (el foco caería al cuerpo de la página): lo elegido vuelve a lo de la cuenta
+		if (this.procesando().has(usuario.idUsuario)) {
+			selector.value = usuario.tipoCliente;
+			return;
+		}
+		if (!esTipo(tipo) || tipo === usuario.tipoCliente) {
 			return;
 		}
 		const cambiado = await this.aplicar(
@@ -132,6 +138,12 @@ export class UsuariosPage {
 	}
 
 	protected irAPagina(pagina: number): void {
+		// Mientras carga, o antes de la primera o después de la última, el toque se ignora: el botón no se
+		// deshabilita, para no perder el foco (revisión total)
+		const total = this.pagina()?.totalPaginas ?? 0;
+		if (this.listado.isLoading() || pagina < 0 || (pagina > 0 && pagina >= total)) {
+			return;
+		}
 		this.navegar({ ...this.filtros(), pagina });
 	}
 
@@ -139,6 +151,10 @@ export class UsuariosPage {
 	// vuelve al rol que la cuenta sigue teniendo.
 	protected async alElegirRolDe(usuario: UsuarioResumen, selector: HTMLSelectElement): Promise<void> {
 		const rol = selector.value;
+		if (this.procesando().has(usuario.idUsuario)) {
+			selector.value = usuario.rol;
+			return;
+		}
 		if (!esRol(rol) || rol === usuario.rol) {
 			return;
 		}
@@ -202,7 +218,7 @@ export class UsuariosPage {
 		this.avisoDeExito.set('');
 		try {
 			const actualizado = await operacion();
-			this.listado.value.update((pagina) =>
+			this.pagina.update((pagina) =>
 				pagina === undefined
 					? pagina
 					: {

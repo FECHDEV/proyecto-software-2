@@ -5,3 +5,53 @@
 :host {
 	display: block;
 }
+
+// Las ventas por día, por día de la semana o por hora son filas cortas: en el celular siguen siendo una tabla, que se
+// lee de un vistazo. Como tarjetas, una por día y por hora, la página medía unos 10 800 px (revisión total)
+@media (max-width: 640px) {
+	.contenedor-tabla {
+		border: 1px solid var(--app-borde);
+	}
+
+	thead {
+		display: table-header-group;
+	}
+
+	table {
+		display: table;
+	}
+
+	tbody {
+		display: table-row-group;
+	}
+
+	tr,
+	tbody tr {
+		display: table-row;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+	}
+
+	th,
+	td,
+	tbody th,
+	tbody td {
+		display: table-cell;
+		padding: var(--app-espacio-2);
+		border-bottom: 1px solid var(--app-borde);
+		text-align: left;
+		vertical-align: middle;
+	}
+
+	thead th.numero,
+	tbody td.numero {
+		text-align: right;
+	}
+
+	tbody th::before,
+	tbody td::before {
+		content: none;
+	}
+}

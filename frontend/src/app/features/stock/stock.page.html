@@ -19,16 +19,17 @@
     <!-- HU-08 RF-16: el disponible se vende; lo comprometido sigue en el estante por pedidos abiertos -->
     <div class="dato">
       <dt>Disponible</dt>
-      <dd class="numero">{{ cantidad(producto.stock) }} <span class="unidad">{{ unidad(producto) }}</span></dd>
+      <dd class="numero">{{ cantidad(producto.stock) }} <span class="unidad">{{ unidad(producto, producto.stock) }}</span></dd>
     </div>
     <div class="dato">
       <dt>Comprometido</dt>
-      <dd class="numero">{{ cantidad(producto.comprometido) }} <span class="unidad">{{ unidad(producto) }}</span></dd>
+      <dd class="numero">{{ cantidad(producto.comprometido) }} <span class="unidad">{{ unidad(producto, producto.comprometido) }}</span></dd>
     </div>
     <div class="dato">
       <dt>En el estante</dt>
       <dd class="numero">
-        {{ cantidad(producto.stock + producto.comprometido) }} <span class="unidad">{{ unidad(producto) }}</span>
+        {{ cantidad(producto.stock + producto.comprometido) }}
+        <span class="unidad">{{ unidad(producto, producto.stock + producto.comprometido) }}</span>
       </dd>
     </div>
     <div class="dato">
@@ -72,7 +73,7 @@
         </div>
         <div class="campo">
           @let errorCantidad = mensaje(entrada.cantidad());
-          <label for="entrada-cantidad">Cantidad ({{ unidad(producto) }})</label>
+          <label for="entrada-cantidad">Cantidad ({{ plural(producto) }})</label>
           <input
             id="entrada-cantidad"
             type="text"
@@ -112,7 +113,7 @@
         <p class="ayuda">
           @if (producto.comprometido > 0) {
             Cuente todo lo que hay en el estante, incluido lo apartado para pedidos
-            ({{ cantidad(producto.comprometido) }} {{ unidad(producto) }}). El sistema lo descuenta y guarda la
+            ({{ cantidad(producto.comprometido) }} {{ unidad(producto, producto.comprometido) }}). El sistema lo descuenta y guarda la
             diferencia en lo disponible.
           } @else {
             Escriba cuánto hay en el estante; el sistema guarda la diferencia.
@@ -125,7 +126,7 @@
         </div>
         <div class="campo">
           @let errorContada = mensaje(ajuste.contada());
-          <label for="ajuste-contada">En el estante ({{ unidad(producto) }})</label>
+          <label for="ajuste-contada">En el estante ({{ plural(producto) }})</label>
           <input
             id="ajuste-contada"
             type="text"
@@ -181,7 +182,7 @@
         </div>
         <div class="campo">
           @let errorMinimo = mensaje(minimo.minimo());
-          <label for="minimo">Mínimo ({{ unidad(producto) }})</label>
+          <label for="minimo">Mínimo ({{ plural(producto) }})</label>
           <input
             id="minimo"
             type="text"
