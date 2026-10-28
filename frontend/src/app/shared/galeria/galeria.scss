@@ -164,6 +164,11 @@
 	user-select: none;
 }
 
+.ampliada picture {
+	// La foto de adentro se ubica en la grilla como si el picture no estuviera
+	display: contents;
+}
+
 .ampliada img {
 	// La de 1200 y el original, una sobre otra hasta que el original carga
 	grid-area: 1 / 1;

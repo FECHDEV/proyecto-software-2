@@ -109,14 +109,19 @@
               draggable="false"
             />
           }
-          <img
-            [src]="fotos()[indice].original"
-            [alt]="alt(indice)"
-            [class.cargando]="!originalCargado(indice)"
-            decoding="async"
-            draggable="false"
-            (load)="alCargarOriginal($event, indice)"
-          />
+          <!-- En una pantalla angosta (el celular), la de 1200, que ya bajó el detalle: ningún dato más. El
+               original, de hasta 2 MB, solo en pantallas anchas (HU-22 RF-11, opción B de Fabio) -->
+          <picture>
+            <source [media]="pantallaAngosta" [srcset]="fotos()[indice].src" />
+            <img
+              [src]="fotos()[indice].original"
+              [alt]="alt(indice)"
+              [class.cargando]="!originalCargado(indice)"
+              decoding="async"
+              draggable="false"
+              (load)="alCargarOriginal($event, indice)"
+            />
+          </picture>
         }
       }
     </div>

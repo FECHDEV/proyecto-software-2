@@ -139,6 +139,18 @@ describe('Galeria', () => {
     expect(grande().querySelector('img')).not.toBeNull();
   });
 
+  // HU-22 RF-11 (28/10/2026, opción B de Fabio): en una pantalla angosta, la pantalla completa usa la de 1200,
+  // que ya bajó el detalle; el original, solo en pantallas anchas
+  it('en el celular la pantalla completa usa la de 1200', async () => {
+    await abrir();
+    await ampliar();
+
+    const celular = dialogo().querySelector('.ampliada picture source');
+    expect(celular?.getAttribute('media')).toBe('(max-width: 859px)');
+    expect(celular?.getAttribute('srcset')).toBe('/fotos/a.webp?ancho=1200');
+    expect(fotoAmpliada()).toBe('/fotos/a.webp');
+  });
+
   // HU-22 RF-11: el original pesa hasta 2 MB; con la pantalla completa cerrada no se pide
   it('el original se pide recién al abrir la pantalla completa', async () => {
     await abrir();

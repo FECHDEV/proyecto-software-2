@@ -75,6 +75,8 @@ export class Galeria {
 	// El ancho de la foto grande en pantalla, para elegir entre sus versiones (HU-22): toda la pantalla hasta que el
 	// detalle pasa a dos columnas (detalle.page.scss, 860 px)
 	protected readonly tamanos = '(max-width: 859px) 100vw, 620px';
+	// Hasta ahí, la pantalla completa usa la de 1200 en lugar del original (HU-22 RF-11)
+	protected readonly pantallaAngosta = '(max-width: 859px)';
 	// El original pesa hasta 2 MB: la foto de la pantalla completa entra a la página recién al abrirla (HU-22)
 	protected readonly ampliada = signal(false);
 	protected readonly alInicio = computed(() => this.actual() === 0);

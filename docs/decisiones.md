@@ -1208,6 +1208,11 @@ el detalle elige con `srcset`; la galería a pantalla completa, el original.
   tiene la API. También una que no se puede abrir (`IMAGEN_INVALIDA`).
 - **Las fotos ya subidas se achican solas al arrancar,** en segundo plano;
   mientras falte una versión se sirve el original.
+- *28/10/2026 (revisión de interfaz).* **En el celular, la pantalla completa
+  usa la de 1200** (pantallas hasta 859 px, con `<picture>`): ya la bajó el
+  detalle, así que abrirla no gasta datos. El original queda para pantallas
+  anchas. Con zoom de los dedos se ve menos detalle; Fabio lo prefirió al
+  costo de hasta 2 MB por foto.
 
 **Motivo:** la tarjeta mostraba a 300 px fotos de hasta 2 MB; con la versión
 de 400 baja unos 30 kB. Guardar el original cuesta disco, pero no pierde

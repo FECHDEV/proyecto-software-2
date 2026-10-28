@@ -306,9 +306,10 @@ Distinto del plan:
   - con red lenta la pantalla completa quedaba en blanco hasta bajar el
     original (ahora muestra la versión de la foto grande mientras tanto);
   - el `sizes` del detalle cortaba en 760 px y el diseño cambia en 860.
+  - en el celular la pantalla completa bajaba el original aunque alcanza la
+    de 1200: **Fabio eligió la de 1200** en pantallas angostas (RF-11
+    ampliado; `<picture>` con `media`); medido, abrirla no baja nada nuevo.
   **Descartado o pendiente:**
-  - en el celular la pantalla completa baja el original aunque alcanzaría la
-    de 1200 (lo pide RF-11; se decide con Fabio);
   - una foto muy alta da una «de 400» de 400 × 2667 (las versiones son por
     ancho, RF-1);
   - en fotos chicas la versión puede pesar más que el original (solo con
@@ -347,6 +348,6 @@ Distinto del plan:
     - la orientación EXIF en WebP o PNG (los celulares guardan JPEG; RF-3 es
       para JPEG).
 
-Pruebas al cerrar las revisiones: backend con 771, frontend con 896, `ng
+Pruebas al cerrar las revisiones: backend con 771, frontend con 897, `ng
 build` sin avisos. Cada prueba nueva se comprobó contra el código anterior.
 
