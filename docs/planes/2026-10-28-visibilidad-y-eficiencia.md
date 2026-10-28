@@ -93,15 +93,18 @@ Punto de partida (`main` en 173f240, revisado el 28/10/2026):
    - La imagen de categoría **no**: conserva el nombre al reemplazarse. Va
      con `no-cache` y `ETag`, para que el navegador revalide con un 304. Hoy
      solo se ve en el panel.
-   - Pruebas (`CatalogoIntegracionTest`, `CategoriasIntegracionTest`):
-     `laFotoSeGuardaUnAno`, `laImagenDeCategoriaSeRevalida`,
-     `conElMismoEtagResponde304`.
+   - Pruebas: `ProductosIntegracionTest.laFotoSeGuardaUnAno` y
+     `CategoriasIntegracionTest.laImagenDeCategoriaSeRevalida` (con el mismo
+     `ETag`, 304 sin cuerpo; con otra imagen, la nueva).
 2. **`favicon.ico`** fuera de la regla de un año en `nginx.conf`: `no-cache`,
    como `texturas/`.
 3. **Fuentes servidas por la tienda**, sin Google Fonts:
-   - `frontend/public/fuentes/`: los `woff2` del subconjunto latino (el
-     español entra entero) de los 8 pesos actuales, con la versión en el
-     nombre (`barlow-400-v1.woff2`), más `OFL.txt` (licencia SIL Open Font).
+   - `frontend/public/fuentes/`: los `woff2` de los 8 pesos actuales, en el
+     subconjunto latino (el español entra entero) y el latino extendido (el
+     guaraní), cada uno con su `unicode-range`, con la versión en el
+     nombre (`barlow-400-v13.woff2`, la versión de Google Fonts), más las
+     licencias SIL Open Font. JetBrains Mono es variable: un archivo para sus
+     dos pesos, 7 en total.
      Se bajan una vez de Google Fonts; sin dependencias nuevas.
    - `styles/_fuentes.scss`: `@font-face` con `font-display: swap`.
    - `index.html`: sin los `preconnect` ni el enlace a Google; `preload` de
@@ -184,3 +187,20 @@ consulta y el `effect` se repite al cambiar de producto); el emoji partido al
 recortar (necesita 155 caracteres seguidos sin espacio). Un hallazgo propio:
 un comentario de `index.html` con el marcador hacía que `sub_filter_once`
 reemplazara el comentario en vez de la etiqueta.
+
+**PR 2 (`chore/cache-y-fuentes`):** backend con 743 pruebas; frontend con 75
+archivos y 885 pruebas, `ng build` sin avisos. La prueba de la foto mostró
+que salía con el `no-store` de Spring Security: el navegador no la guardaba
+nunca. Con las fuentes propias, inicio, catálogo, detalle e inicio de sesión
+quedaron idénticos píxel a píxel a `main`, sin pedidos a Google; la parte
+extendida se baja solo con una letra como «ũ». En nginx, con las cabeceras
+probadas: pasar `compartir.jpg` a una expresión regular la dejaba en la regla
+de un año (gana la primera expresión que coincide); van con `=`. Una ronda de
+`/code-review`. **Corregido:** el `?v=Date.now()` de la pantalla de
+categorías anulaba el `ETag` (ahora la dirección fija, y un sufijo solo
+después de cambiar la imagen); la parte latina extendida que servía Google;
+las cifras de las fuentes. **Descartado:** leer el archivo antes de responder
+304 (solo en el panel, imágenes de hasta 2 MB); el `nombre` en
+`ImagenGuardada` (lo llenan los dos servicios y describe la versión); que una
+foto borrada siga un año en el navegador de quien ya la vio (no se vuelve a
+listar y quien la tiene ya la vio; es lo que se decidió para los modelos).

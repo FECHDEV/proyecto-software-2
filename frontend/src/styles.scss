@@ -1,8 +1,9 @@
 @use './styles/tokens';
+@use './styles/fuentes';
 
 // Barlow Condensed para títulos, Barlow para el texto y JetBrains Mono para
 // etiquetas y datos (decisiones.md → Sistema de diseño).
-// Se cargan desde index.html; cada familia lleva su reserva del sistema en
+// Las declara _fuentes.scss; cada familia lleva su reserva del sistema en
 // _tokens.scss por si la fuente no carga.
 
 *,

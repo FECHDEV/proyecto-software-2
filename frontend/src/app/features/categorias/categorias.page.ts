@@ -45,8 +45,10 @@ export class CategoriasPage {
 	protected readonly guardando = signal(false);
 	protected readonly errorDelNombre = signal('');
 	protected readonly aviso = signal('');
-	// Cada imagen se pide con un sufijo nuevo después de cambiarla, para no ver la anterior guardada en el navegador
-	protected readonly versionDeImagen = signal(Date.now());
+	// Al entrar, cada imagen se pide con su dirección fija: el navegador la revalida con su ETag y, si no cambió,
+	// no la vuelve a bajar. Después de cambiar una, se piden con un sufijo nuevo, porque la misma dirección no
+	// vuelve a cargar la imagen en la pantalla abierta (plan 2026-10-28)
+	protected readonly versionDeImagen = signal<number | null>(null);
 	// La categoría cuya imagen se está subiendo
 	protected readonly subiendoImagen = signal<number | null>(null);
 	// Las categorías con una operación en curso: un segundo toque no manda otra (revisión total). El botón no se
@@ -54,7 +56,9 @@ export class CategoriasPage {
 	private readonly enCurso = signal<ReadonlySet<number>>(new Set());
 
 	protected urlDeImagen(categoria: CategoriaGestion): string {
-		return `${this.categorias.urlDeImagen(categoria.idCategoria)}?v=${this.versionDeImagen()}`;
+		const url = this.categorias.urlDeImagen(categoria.idCategoria);
+		const version = this.versionDeImagen();
+		return version === null ? url : `${url}?v=${version}`;
 	}
 
 	protected mensajeDelNombre(): string {

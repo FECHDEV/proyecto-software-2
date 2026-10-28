@@ -279,7 +279,8 @@ de `_tokens.scss`.
 **Body Font:** Barlow 400/500/600 (con 'Segoe UI', system-ui)
 **Label/Mono Font:** JetBrains Mono 400/500 (con ui-monospace, Consolas), solo para datos
 
-Las tres de Google Fonts, cargadas en `index.html`.
+Las tres de Google Fonts, servidas por la tienda (`public/fuentes`, declaradas
+en `styles/_fuentes.scss`); el texto y los títulos se precargan en `index.html`.
 
 **Character:** La condensada en mayúsculas es la rotulación del letrero y de la
 ferretería; Barlow lleva la lectura sin perder el parentesco.

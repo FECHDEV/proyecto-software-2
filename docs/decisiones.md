@@ -13,7 +13,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 ## Índice
 
-- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos)
+- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda)
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
@@ -114,9 +114,33 @@ en variables `TIENDA_PAGO_*` del `.env`.
 - *22/10/2026 (HU-15).* La misma carpeta guarda los modelos 3D (`.glb`), con
   las mismas reglas de nombres. Multipart deja pasar hasta 3 MB, el límite de
   un modelo; los 2 MB de una imagen los controla el servicio.
+- *28/10/2026 (caché).* **Las fotos de un producto se guardan un año en el
+  navegador** (`public, immutable`), como los modelos: el nombre es nuevo con
+  cada subida y nunca se reutiliza. Antes salían con el `no-store` que pone
+  Spring Security y se bajaban en cada visita. **La imagen de una categoría**
+  conserva su dirección al reemplazarse: va con `no-cache` y el nombre del
+  archivo como `ETag`, y con el mismo responde 304 sin cuerpo.
 
 **Motivo:** una URL externa haría depender la imagen de un sitio ajeno, que
 además vería cada visita; guardarla en la base agranda la base y sus respaldos.
+
+### Fuentes servidas por la tienda
+
+*28/10/2026 (`docs/planes/2026-10-28-visibilidad-y-eficiencia.md`).* Barlow,
+Barlow Condensed y JetBrains Mono van en `frontend/public/fuentes`, en
+`woff2` y en dos partes, como las servía Google: la latina (el español entra
+entero; 7 archivos, 166 kB, porque JetBrains Mono es variable y un archivo
+cubre sus dos pesos) y la latina extendida (7 más, 99 kB), con letras como
+«ĩ» o «ỹ» del guaraní. Cada parte lleva su `unicode-range`: el navegador baja
+la extendida solo si la página tiene alguna de esas letras. Las declara
+`styles/_fuentes.scss`; `index.html` precarga Barlow 400 y Barlow Condensed
+800. El nombre lleva la versión de la fuente
+(`barlow-400-v13.woff2`), así que nginx los guarda un año. Las licencias SIL
+Open Font van junto a los archivos.
+
+**Motivo:** con Google Fonts la página esperaba dos conexiones a otros
+dominios antes de mostrar el texto, y Google veía cada visita. Con las mismas
+fuentes, las pantallas quedan iguales (comparadas píxel a píxel).
 
 ### Buscadores y enlaces compartidos
 

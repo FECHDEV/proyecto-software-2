@@ -121,7 +121,7 @@ public class CategoriaService {
 	@Transactional(readOnly = true)
 	public Optional<ImagenGuardada> imagen(Long idCategoria) {
 		return Optional.ofNullable(buscar(idCategoria).getImagen()).flatMap(nombre -> almacen.leer(nombre)
-				.map(contenido -> new ImagenGuardada(contenido, FormatoImagen.deArchivo(nombre))));
+				.map(contenido -> new ImagenGuardada(contenido, FormatoImagen.deArchivo(nombre), nombre)));
 	}
 
 	private Categoria buscar(Long idCategoria) {

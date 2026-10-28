@@ -154,7 +154,7 @@ public class ProductoService {
 	public Optional<ImagenGuardada> imagen(Long idProducto, String imagen) {
 		return productoRepository.findById(idProducto).filter(producto -> producto.getImagenes().contains(imagen))
 				.flatMap(producto -> almacen.leer(imagen))
-				.map(contenido -> new ImagenGuardada(contenido, FormatoImagen.deArchivo(imagen)));
+				.map(contenido -> new ImagenGuardada(contenido, FormatoImagen.deArchivo(imagen), imagen));
 	}
 
 	// Como agregarImagen: con la fila bloqueada, dos reemplazos a la vez dejan un solo modelo; el anterior se borra

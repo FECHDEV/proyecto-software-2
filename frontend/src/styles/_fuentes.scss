@@ -1,0 +1,42 @@
+// Las fuentes las sirve la tienda (public/fuentes), sin Google Fonts: una
+// conexión menos al abrir la página y Google no ve cada visita. Cada peso en
+// dos partes, como las servía Google: la latina, donde entra todo el español,
+// y la latina extendida (letras como «ĩ» o «ỹ» del guaraní), que el navegador
+// baja solo si la página tiene alguna. El nombre lleva la versión: nginx los
+// guarda un año, y otra versión es otro archivo. Licencia SIL Open Font, junto
+// a los archivos (docs/decisiones.md → «Fuentes servidas por la tienda»)
+
+$latina: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+	U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+$latina-extendida: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+	U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+
+// $archivo sin la versión: «barlow-400» sirve barlow-400-v13 y barlow-400-ext-v13
+@mixin fuente($familia, $peso, $archivo, $version) {
+	@font-face {
+		font-family: $familia;
+		font-style: normal;
+		font-weight: $peso;
+		font-display: swap;
+		src: url('/fuentes/#{$archivo}-ext-#{$version}.woff2') format('woff2');
+		unicode-range: $latina-extendida;
+	}
+
+	@font-face {
+		font-family: $familia;
+		font-style: normal;
+		font-weight: $peso;
+		font-display: swap;
+		src: url('/fuentes/#{$archivo}-#{$version}.woff2') format('woff2');
+		unicode-range: $latina;
+	}
+}
+
+@include fuente('Barlow', 400, 'barlow-400', 'v13');
+@include fuente('Barlow', 500, 'barlow-500', 'v13');
+@include fuente('Barlow', 600, 'barlow-600', 'v13');
+@include fuente('Barlow Condensed', 600, 'barlow-condensed-600', 'v13');
+@include fuente('Barlow Condensed', 700, 'barlow-condensed-700', 'v13');
+@include fuente('Barlow Condensed', 800, 'barlow-condensed-800', 'v13');
+// Variable: un solo archivo para los pesos 400 y 500
+@include fuente('JetBrains Mono', 400 500, 'jetbrains-mono', 'v24');
