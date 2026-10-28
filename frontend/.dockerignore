@@ -2,3 +2,7 @@ node_modules
 dist
 .angular
 *.log
+# Pruebas de extremo a extremo: no son parte del sitio, y .env.e2e lleva las claves de la tienda de prueba
+e2e
+test-results
+playwright-report

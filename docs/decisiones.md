@@ -510,6 +510,15 @@ solo lugar por tema evita que se contradigan.
   pedidos), unas 10 a 15 en el CI. **Motivo:** por historia costarían de 10 a
   20 % más de trabajo cada una y se romperían con el rediseño; al final son un
   costo fijo (~4 min de CI) sobre pantallas que ya no cambian.
+  *28/10/2026.* Hechas con `@playwright/test` en `frontend/e2e/`: 16 pruebas
+  (sin sesión, la compra completa hasta la entrega, y celular). Corren contra la
+  tienda completa de `docker-compose.yml`, levantada desde cero en un proyecto
+  aparte (`tienda-e2e`) con los simuladores de pago y de correo y el catálogo de
+  prueba del backend. El enlace de verificación se lee del log del simulador de
+  correo. **Motivo:** prueban lo mismo que se publica (nginx, la API y MySQL),
+  no un backend sobre H2; desde cero, porque el backend deja crear 5 cuentas por
+  hora desde una misma conexión. En el CI, el trabajo «Extremo a extremo»
+  reemplaza al de las imágenes Docker, porque las construye.
 - *20/10/2026 (auditoría).* **Un botón que espera una respuesta no se
   deshabilita:** lleva `aria-disabled` y su manejador ignora un segundo toque.
   Con `disabled` el navegador manda el foco al cuerpo de la página. `disabled`

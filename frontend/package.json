@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "e2e": "node e2e/entorno.mjs levantar && playwright test",
+    "e2e:bajar": "node e2e/entorno.mjs bajar"
   },
   "private": true,
   "dependencies": {
@@ -28,6 +30,7 @@
     "@angular/build": "^22.2.2",
     "@angular/cli": "^22.2.2",
     "@angular/compiler-cli": "^22.2.1",
+    "@playwright/test": "^1.64.1",
     "jsdom": "^30.0.1",
     "typescript": "~6.0.3",
     "vitest": "^4.1.11"
