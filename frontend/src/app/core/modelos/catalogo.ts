@@ -87,9 +87,19 @@ export interface ProductoEnDetalle {
 }
 
 
+// Las versiones achicadas de una foto (HU-22): la de 400 para tarjetas, miniaturas, carrito y panel; la de 1200
+// para el detalle. Sin ancho, el original (la galería a pantalla completa)
+export type AnchoDeFoto = 400 | 1200;
+
 // La única regla para la dirección de una foto: la usan la tienda y la gestión
-export function urlDeImagen(idProducto: number, imagen: string): string {
-	return `/api/productos/${idProducto}/imagenes/${encodeURIComponent(imagen)}`;
+export function urlDeImagen(idProducto: number, imagen: string, ancho?: AnchoDeFoto): string {
+	const original = `/api/productos/${idProducto}/imagenes/${encodeURIComponent(imagen)}`;
+	return ancho === undefined ? original : `${original}?ancho=${ancho}`;
+}
+
+// Para que el navegador elija según el ancho en pantalla y la densidad (HU-22 RF-11)
+export function srcsetDeImagen(idProducto: number, imagen: string): string {
+	return `${urlDeImagen(idProducto, imagen, 400)} 400w, ${urlDeImagen(idProducto, imagen, 1200)} 1200w`;
 }
 
 // La única regla para la dirección de un modelo 3D (HU-15, HU-16), sin sesión como las fotos
@@ -109,7 +119,8 @@ export function aTarjeta(producto: ProductoEnTienda): DatosDeTarjeta {
 		marca: producto.marca,
 		precio: producto.precio,
 		unidad: producto.unidad === 'UNIDAD' ? null : producto.unidad.toLowerCase(),
-		imagen: producto.imagenPrincipal === null ? null : urlDeImagen(producto.idProducto, producto.imagenPrincipal),
+		imagen:
+			producto.imagenPrincipal === null ? null : urlDeImagen(producto.idProducto, producto.imagenPrincipal, 400),
 		agotado: !producto.disponible,
 		enlace: rutaDelProducto(producto.idProducto),
 		conModelo: producto.conModelo,

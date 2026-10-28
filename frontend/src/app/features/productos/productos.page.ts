@@ -80,7 +80,7 @@ export class ProductosPage {
 	protected urlDeImagen(producto: ProductoResumen): string | null {
 		return producto.imagenPrincipal === null
 			? null
-			: this.productos.urlDeImagen(producto.idProducto, producto.imagenPrincipal);
+			: this.productos.urlDeImagen(producto.idProducto, producto.imagenPrincipal, 400);
 	}
 
 	protected alEscribir(texto: string): void {

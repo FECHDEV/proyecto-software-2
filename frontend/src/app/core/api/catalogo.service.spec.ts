@@ -88,7 +88,7 @@ describe('CatalogoService', () => {
       marca: null,
       precio: 12.5,
       unidad: 'metro',
-      imagen: '/api/productos/9/imagenes/b.webp',
+      imagen: '/api/productos/9/imagenes/b.webp?ancho=400',
       agotado: true,
       enlace: '/producto/9',
       conModelo: false,

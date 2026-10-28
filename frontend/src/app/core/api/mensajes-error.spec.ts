@@ -87,6 +87,7 @@ describe('mensajeDeError', () => {
   it.each([
     ['IMAGEN_INVALIDA', 'JPG, PNG o WebP'],
     ['IMAGEN_DEMASIADO_GRANDE', '2 MB'],
+    ['IMAGEN_CON_DEMASIADOS_PIXELES', '8000 px'],
   ])('traduce %s', (codigo, motivo) => {
     const mensaje = mensajeDeError(error(codigo));
 

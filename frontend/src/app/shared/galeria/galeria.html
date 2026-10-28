@@ -5,7 +5,7 @@
     class="en-galeria"
     [src]="modelo"
     [alt]="'Modelo 3D de ' + nombre()"
-    [poster]="total() > 0 && !rota(0) ? fotos()[0] : null"
+    [poster]="total() > 0 && !rota(0) ? fotos()[0].src : null"
     [realidadAumentada]="true"
   />
 } @else if (total() === 0) {
@@ -25,7 +25,9 @@
       <svg lucideWrench class="icono-foto" aria-hidden="true"></svg>
     } @else {
       <img
-        [src]="fotos()[actual()]"
+        [src]="fotos()[actual()].src"
+        [srcset]="fotos()[actual()].srcset"
+        sizes="(max-width: 760px) 100vw, 620px"
         [alt]="alt(actual())"
         width="800"
         height="600"
@@ -49,7 +51,7 @@
             @if (rota($index)) {
               <svg lucideWrench class="icono-foto" aria-hidden="true"></svg>
             } @else {
-              <img [src]="foto" alt="" width="96" height="72" decoding="async" (error)="marcarRota($index)" />
+              <img [src]="foto.miniatura" alt="" width="96" height="72" decoding="async" (error)="marcarRota($index)" />
             }
           </button>
         </li>
@@ -92,8 +94,8 @@
     >
       @if (rota(actual())) {
         <svg lucideWrench class="icono-foto" aria-hidden="true"></svg>
-      } @else {
-        <img [src]="fotos()[actual()]" [alt]="alt(actual())" decoding="async" draggable="false" (error)="marcarRota(actual())" />
+      } @else if (ampliada()) {
+        <img [src]="fotos()[actual()].original" [alt]="alt(actual())" decoding="async" draggable="false" (error)="marcarRota(actual())" />
       }
     </div>
 

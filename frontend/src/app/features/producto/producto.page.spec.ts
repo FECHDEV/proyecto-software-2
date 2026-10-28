@@ -90,8 +90,8 @@ class ProductosFalso {
     this.quitadas.push(imagen);
     return this.respuesta;
   }
-  urlDeImagen(id: number, imagen: string) {
-    return `/api/productos/${id}/imagenes/${imagen}`;
+  urlDeImagen(id: number, imagen: string, ancho?: number) {
+    return `/api/productos/${id}/imagenes/${imagen}${ancho === undefined ? '' : `?ancho=${ancho}`}`;
   }
   subirModelo(id: number, archivo: File) {
     this.modelosSubidos.push({ id, archivo });
@@ -431,8 +431,8 @@ describe('ProductoPage', () => {
 
     const fotos = Array.from(pantalla().querySelectorAll<HTMLImageElement>('.foto img'));
     expect(fotos.map((foto) => foto.getAttribute('src'))).toEqual([
-      '/api/productos/7/imagenes/a.png',
-      '/api/productos/7/imagenes/b.png',
+      '/api/productos/7/imagenes/a.png?ancho=400',
+      '/api/productos/7/imagenes/b.png?ancho=400',
     ]);
     expect(texto()).toContain('Fotos 2 de 5');
     expect(texto()).toContain('Principal');
@@ -448,7 +448,7 @@ describe('ProductoPage', () => {
     await pulsar('Hacer principal la foto 3');
 
     expect(productos.ordenes).toEqual([{ id: 7, imagenes: ['c.png', 'a.png', 'b.png'] }]);
-    expect(pantalla().querySelector('.foto img')?.getAttribute('src')).toBe('/api/productos/7/imagenes/c.png');
+    expect(pantalla().querySelector('.foto img')?.getAttribute('src')).toBe('/api/productos/7/imagenes/c.png?ancho=400');
   });
 
   // HU-07 RF-8: quitar pregunta antes
