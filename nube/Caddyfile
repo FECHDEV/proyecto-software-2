@@ -5,13 +5,17 @@
 # de los archivos, sin mostrarse dentro de otro sitio y sin el nombre del servidor.
 
 {$TIENDA_DOMINIO} {
-	encode gzip
+	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		-Server
+		# La demo no aparece en Google; las tarjetas de los enlaces compartidos
+		# siguen funcionando. Quitar esta línea con un dominio propio
+		# (docs/decisiones.md → «Buscadores y enlaces compartidos»)
+		X-Robots-Tag "noindex"
 	}
 	reverse_proxy frontend:80
 }

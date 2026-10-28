@@ -13,7 +13,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 ## Índice
 
-- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas)
+- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos)
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
@@ -117,6 +117,35 @@ en variables `TIENDA_PAGO_*` del `.env`.
 
 **Motivo:** una URL externa haría depender la imagen de un sitio ajeno, que
 además vería cada visita; guardarla en la base agranda la base y sus respaldos.
+
+### Buscadores y enlaces compartidos
+
+*28/10/2026 (`docs/planes/2026-10-28-visibilidad-y-eficiencia.md`).*
+
+- **La demo no aparece en Google:** `nube/Caddyfile` manda
+  `X-Robots-Tag: noindex`. Con un dominio propio se quita esa línea.
+- **`robots.txt` deja recorrer la tienda,** salvo `/api/`, lo privado del
+  cliente (carrito, confirmar pedido, sus pedidos y sus datos) y los enlaces
+  de los correos, que llevan un token de un solo uso. No lista el
+  panel: el archivo es público y solo diría dónde está.
+- **La tarjeta de un enlace compartido** (WhatsApp, Facebook, Telegram, X)
+  sale de las etiquetas Open Graph fijas de `index.html`, con
+  `public/compartir.jpg` (1200×630). Esos bots no ejecutan JavaScript: **todo
+  enlace muestra la misma tarjeta**, también el de un producto. Una tarjeta
+  por producto necesita SSR.
+- **`og:image` lleva la dirección completa:** nginx la completa
+  (`sub_filter`) con `TIENDA_SITIO_URL`, que la imagen de nginx pone al
+  arrancar (`envsubst` sobre la plantilla). Nunca con el `Host` de la
+  petición, que lo manda el cliente.
+- **La descripción para los buscadores** la pone `TituloYDescripcion` (la
+  `TitleStrategy` de la aplicación) desde `data.descripcion` de la ruta, o la
+  general de `core/marca.ts`; el detalle pone la del producto, en una línea y
+  hasta 155 caracteres.
+
+**Motivo:** `noindex` y no `Disallow: /`. Con `Disallow`, Google puede listar
+la dirección igual (sin texto) y los bots de vista previa que respetan
+`robots.txt` dejan de armar la tarjeta. Va en Caddy y no en `index.html`
+para que valga solo en el servidor público y se quite en una línea.
 
 ---
 

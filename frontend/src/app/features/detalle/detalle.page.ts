@@ -10,13 +10,14 @@ import {
 	viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Title } from '@angular/platform-browser';
+import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { LucideCircleCheck, LucideCircleSlash, LucidePencil } from '@lucide/angular';
 import { comoErrorApi } from '../../core/modelos/error-api';
 
 import { CatalogoService } from '../../core/api/catalogo.service';
 import { mensajeDeError } from '../../core/api/mensajes-error';
+import { ponerDescripcion, resumen } from '../../core/navegacion/titulo-y-descripcion';
 import { MARCA } from '../../core/marca';
 import { aTarjeta, urlDeImagen, urlDeModelo } from '../../core/modelos/catalogo';
 import { SesionService } from '../../core/sesion/sesion.service';
@@ -97,10 +98,12 @@ export class DetallePage {
 
 	constructor() {
 		const pestana = inject(Title);
+		const meta = inject(Meta);
 		effect(() => {
-			const nombre = this.producto()?.nombre;
-			if (nombre !== undefined) {
-				pestana.setTitle(`${nombre} · ${MARCA.nombre}`);
+			const producto = this.producto();
+			if (producto !== undefined) {
+				pestana.setTitle(`${producto.nombre} · ${MARCA.nombre}`);
+				ponerDescripcion(meta, resumen(producto.descripcion ?? '') || MARCA.descripcion);
 			}
 		});
 

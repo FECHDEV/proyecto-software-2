@@ -1,0 +1,14 @@
+# Los buscadores recorren la tienda, salvo la API y lo privado del cliente.
+# El panel no se lista: este archivo es público y solo diría dónde está; sin
+# sesión, esas pantallas llevan a «Iniciar sesión».
+# Que la demo no aparezca en Google lo decide X-Robots-Tag en nube/Caddyfile.
+User-agent: *
+Disallow: /api/
+Disallow: /carrito
+Disallow: /confirmar-pedido
+Disallow: /mis-pedidos
+Disallow: /mis-datos
+# Los enlaces de los correos llevan un token de un solo uso
+Disallow: /restablecer
+Disallow: /verificacion
+Allow: /

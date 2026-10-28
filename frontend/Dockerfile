@@ -9,6 +9,9 @@ COPY . .
 RUN npx ng build --configuration production
 
 FROM nginx:1.30-alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Como plantilla: al arrancar, la imagen de nginx reemplaza ${TIENDA_SITIO_URL}
+# (solo las variables TIENDA_, para no tocar las de nginx como $uri)
+ENV NGINX_ENVSUBST_FILTER=^TIENDA_
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=compilacion /fuente/dist/frontend/browser /usr/share/nginx/html
 EXPOSE 80

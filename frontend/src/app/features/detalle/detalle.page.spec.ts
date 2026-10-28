@@ -1,13 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { effect, signal, Signal, untracked } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Title } from '@angular/platform-browser';
+import { Meta, Title } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { vi } from 'vitest';
 
 import { CarritoService } from '../../core/api/carrito.service';
 import { CatalogoService } from '../../core/api/catalogo.service';
+import { MARCA } from '../../core/marca';
 import { ProductoEnDetalle, ProductoEnTienda } from '../../core/modelos/catalogo';
 import { Rol } from '../../core/modelos/usuario';
 import { SesionService } from '../../core/sesion/sesion.service';
@@ -287,6 +288,26 @@ describe('DetallePage', () => {
     await abrir();
 
     expect(TestBed.inject(Title).getTitle()).toBe('Taladro percutor 750 W · Tienda Montero');
+  });
+
+  // Visibilidad (plan 2026-10-28): la descripción para los buscadores es la del producto
+  it('la descripción de la página es la del producto', async () => {
+    await abrir();
+
+    expect(TestBed.inject(Meta).getTag('name="description"')?.content).toBe(
+      'Para concreto y madera. Con maletín.',
+    );
+  });
+
+  it('un producto sin descripción, o con solo espacios, deja la general', async () => {
+    for (const descripcion of [null, '  \n ']) {
+      await abrir('/producto/8', null, false);
+      catalogo.respuestas.set(8, { ...MARTILLO, descripcion });
+      catalogo.responder();
+      await harness.fixture.whenStable();
+
+      expect(TestBed.inject(Meta).getTag('name="description"')?.content).toBe(MARCA.descripcion);
+    }
   });
 
   // Caso límite: un error que no es 404 se puede reintentar
