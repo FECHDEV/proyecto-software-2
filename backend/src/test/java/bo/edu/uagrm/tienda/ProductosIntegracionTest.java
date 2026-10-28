@@ -368,6 +368,17 @@ class ProductosIntegracionTest {
 				.hasStatus(HttpStatus.NOT_FOUND);
 	}
 
+	// Eficiencia (plan 2026-10-28): el nombre de una foto no se reutiliza, así que el navegador la guarda un año
+	@Test
+	void laFotoSeGuardaUnAno() throws Exception {
+		Integer id = crear("Martillo", "", herramientas);
+		String foto = JsonPath.read(subirImagen(id, PNG).getResponse().getContentAsString(), "$.imagenes[0]");
+
+		MvcTestResult servida = mvc.get().uri("/api/productos/{id}/imagenes/{nombre}", id, foto).exchange();
+
+		assertThat(servida).headers().hasValue(HttpHeaders.CACHE_CONTROL, "max-age=31536000, public, immutable");
+	}
+
 	// HU-07 RF-7: la sexta y un archivo que no es imagen
 	@Test
 	void sextaImagenYArchivoQueNoEsImagenSeRechazan() throws Exception {

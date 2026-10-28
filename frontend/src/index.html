@@ -35,11 +35,11 @@
     } catch (e) {}
   </script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <!-- Fuentes desde el HTML y no con @import en el CSS: así el navegador las
-       pide en paralelo en vez de esperar a descargar la hoja de estilos -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <!-- Las fuentes las sirve la tienda (styles/_fuentes.scss). Las dos que se
+       ven primero, el texto y los títulos, se piden ya, sin esperar a la hoja
+       de estilos -->
+  <link rel="preload" href="/fuentes/barlow-400-v13.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fuentes/barlow-condensed-800-v13.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
   <app-root></app-root>

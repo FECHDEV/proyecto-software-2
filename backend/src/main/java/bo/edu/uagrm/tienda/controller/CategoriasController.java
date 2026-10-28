@@ -2,6 +2,7 @@ package bo.edu.uagrm.tienda.controller;
 
 import java.util.List;
 
+import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,12 +27,14 @@ public class CategoriasController {
 		return categoriaService.visibles().stream().map(CategoriaResponse::from).toList();
 	}
 
+	// La dirección no cambia al reemplazar la imagen: el navegador la guarda pero la revalida cada vez, y el nombre
+	// del archivo, que sí cambia, es el ETag. Con el mismo, Spring responde 304 sin cuerpo (plan 2026-10-28)
 	@GetMapping("/{idCategoria}/imagen")
 	public ResponseEntity<byte[]> imagen(@PathVariable Long idCategoria) {
 		return categoriaService.imagen(idCategoria)
 				.map(imagen -> ResponseEntity.ok()
 						.contentType(MediaType.parseMediaType(imagen.formato().tipoDeContenido()))
-						.body(imagen.contenido()))
+						.cacheControl(CacheControl.noCache()).eTag(imagen.nombre()).body(imagen.contenido()))
 				.orElseGet(() -> ResponseEntity.notFound().build());
 	}
 }

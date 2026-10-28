@@ -221,6 +221,31 @@ class CategoriasIntegracionTest {
 		assertThat(mvc.get().uri("/api/categorias/{id}/imagen", id).exchange()).hasStatus(HttpStatus.NOT_FOUND);
 	}
 
+	// Eficiencia (plan 2026-10-28): la dirección de la imagen no cambia al reemplazarla, así que el navegador la
+	// revalida: con la misma, 304 sin cuerpo; con otra, la nueva
+	@Test
+	void laImagenDeCategoriaSeRevalida() throws Exception {
+		Integer id = idDe(crear(tokenAdmin, "Pintura", null));
+		subirImagen(id, PNG, "uno.png");
+
+		MvcTestResult primera = mvc.get().uri("/api/categorias/{id}/imagen", id).exchange();
+		assertThat(primera).headers().hasValue(HttpHeaders.CACHE_CONTROL, "no-cache");
+		String etag = primera.getResponse().getHeader(HttpHeaders.ETAG);
+		assertThat(etag).isNotBlank();
+
+		MvcTestResult igual = mvc.get().uri("/api/categorias/{id}/imagen", id).header(HttpHeaders.IF_NONE_MATCH, etag)
+				.exchange();
+		assertThat(igual).hasStatus(HttpStatus.NOT_MODIFIED);
+		assertThat(igual.getResponse().getContentAsByteArray()).isEmpty();
+
+		byte[] jpeg = { (byte) 0xff, (byte) 0xd8, (byte) 0xff, (byte) 0xe0, 0, 0 };
+		subirImagen(id, jpeg, "dos.jpg");
+		MvcTestResult otra = mvc.get().uri("/api/categorias/{id}/imagen", id).header(HttpHeaders.IF_NONE_MATCH, etag)
+				.exchange();
+		assertThat(otra).hasStatus(HttpStatus.OK);
+		assertThat(otra.getResponse().getContentAsByteArray()).isEqualTo(jpeg);
+	}
+
 	// HU-06 RF-6: el archivo anterior se borra recién después de guardar la categoría con el nuevo
 	@Test
 	void cambiarLaImagenBorraElArchivoAnterior() throws Exception {

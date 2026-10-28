@@ -63,12 +63,14 @@ public class ProductosController {
 		return catalogoService.detalle(idProducto);
 	}
 
+	// Como el modelo: el nombre es nuevo con cada subida, así que se guarda un año. Sin esto salía con el no-store
+	// que pone Spring Security y el navegador la volvía a bajar en cada visita (plan 2026-10-28)
 	@GetMapping("/{idProducto}/imagenes/{imagen}")
 	public ResponseEntity<byte[]> imagen(@PathVariable Long idProducto, @PathVariable String imagen) {
 		return productoService.imagen(idProducto, imagen)
 				.map(guardada -> ResponseEntity.ok()
 						.contentType(MediaType.parseMediaType(guardada.formato().tipoDeContenido()))
-						.body(guardada.contenido()))
+						.cacheControl(GUARDAR_UN_ANO).body(guardada.contenido()))
 				.orElseGet(() -> ResponseEntity.notFound().build());
 	}
 

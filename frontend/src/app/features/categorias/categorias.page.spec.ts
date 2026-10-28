@@ -348,6 +348,19 @@ describe('CategoriasPage', () => {
     expect((pantalla().querySelector('#nombre') as HTMLInputElement).value).toBe('');
   });
 
+  // Eficiencia (plan 2026-10-28): al entrar, la dirección de siempre, que el navegador revalida con su ETag;
+  // después de cambiar la imagen, una nueva, para que se vea la recién subida
+  it('pide la imagen con su dirección fija y con otra solo después de cambiarla', async () => {
+    expect(fila('Jardín').querySelector('img')?.getAttribute('src')).toBe('/api/categorias/4/imagen');
+    const entrada = fila('Jardín').querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(entrada, 'files', { value: [new File(['png'], 'foto.png', { type: 'image/png' })] });
+
+    entrada.dispatchEvent(new Event('change'));
+    await asentar();
+
+    expect(fila('Jardín').querySelector('img')?.getAttribute('src')).toMatch(/^\/api\/categorias\/4\/imagen\?v=\d+$/);
+  });
+
   // HU-06 RF-7: una subida rechazada no cambia la imagen que se ve
   it('una subida rechazada no vuelve a pedir las imágenes', async () => {
     const antes = fila('Jardín').querySelector('img')?.getAttribute('src');
