@@ -7,6 +7,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -21,6 +23,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import bo.edu.uagrm.tienda.dto.CaracteristicaRequest;
 import bo.edu.uagrm.tienda.dto.CaracteristicaResponse;
@@ -52,6 +56,7 @@ class ProductoServiceTest {
 	private static final Instant AHORA = Instant.parse("2026-10-10T13:00:00Z");
 	// Los primeros bytes de un PNG: alcanzan para que FormatoImagen lo reconozca
 	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 0 };
+	private static final Achicador.Versiones VERSIONES = new Achicador.Versiones(new byte[] { 4 }, new byte[] { 12 });
 
 	@Mock
 	private ProductoRepository productoRepository;
@@ -65,11 +70,14 @@ class ProductoServiceTest {
 	@Mock
 	private AlmacenImagenes almacen;
 
+	@Mock
+	private Achicador achicador;
+
 	private ProductoService servicio;
 
 	@BeforeEach
 	void crearServicio() {
-		servicio = new ProductoService(productoRepository, categoriaRepository, pedidoRepository, almacen,
+		servicio = new ProductoService(productoRepository, categoriaRepository, pedidoRepository, almacen, achicador,
 				Clock.fixed(AHORA, ZONA));
 	}
 
@@ -256,8 +264,34 @@ class ProductoServiceTest {
 		Producto producto = existente(9, Categoria.crear("Jardín", null), "JAR-0009");
 		producto.agregarImagen("a.png");
 		given(almacen.guardar(PNG, FormatoImagen.PNG)).willReturn("b.png");
+		given(achicador.achicar(PNG)).willReturn(VERSIONES);
 
 		assertThat(servicio.agregarImagen(9L, PNG).imagenes()).containsExactly("a.png", "b.png");
+		then(almacen).should().guardarVersion("b.png", 400, VERSIONES.de400());
+		then(almacen).should().guardarVersion("b.png", 1200, VERSIONES.de1200());
+	}
+
+	// HU-22: la lista de lo que se revierte se registra antes de escribir; si falla la segunda versión, al revertir
+	// se borran el original y la primera
+	@Test
+	void siFallaLaSegundaVersionSeBorraLoGuardado() {
+		existente(9, Categoria.crear("Jardín", null), "JAR-0009");
+		given(achicador.achicar(PNG)).willReturn(VERSIONES);
+		given(almacen.guardar(PNG, FormatoImagen.PNG)).willReturn("b.png");
+		given(almacen.guardarVersion("b.png", 400, VERSIONES.de400())).willReturn("b-400.jpg");
+		given(almacen.guardarVersion("b.png", 1200, VERSIONES.de1200())).willThrow(new UncheckedIOException(
+				new IOException("disco lleno")));
+		TransactionSynchronizationManager.initSynchronization();
+		try {
+			assertThatThrownBy(() -> servicio.agregarImagen(9L, PNG)).isInstanceOf(UncheckedIOException.class);
+			TransactionSynchronizationManager.getSynchronizations()
+					.forEach(sincronizacion -> sincronizacion.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
+		} finally {
+			TransactionSynchronizationManager.clearSynchronization();
+		}
+
+		then(almacen).should().borrar("b.png");
+		then(almacen).should().borrar("b-400.jpg");
 	}
 
 	// HU-07 RF-7
@@ -313,6 +347,9 @@ class ProductoServiceTest {
 
 		assertThat(servicio.quitarImagen(9L, "a.png").imagenes()).containsExactly("b.png");
 		then(almacen).should().borrar("a.png");
+		// HU-22 RF-9: también sus versiones
+		then(almacen).should().borrar("a-400.jpg");
+		then(almacen).should().borrar("a-1200.jpg");
 	}
 
 	// HU-07 RF-8: un nombre que no es del producto no toca ningún archivo
