@@ -48,6 +48,7 @@ import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import bo.edu.uagrm.tienda.service.AdministradorInicial;
+import bo.edu.uagrm.tienda.service.Achicador;
 import bo.edu.uagrm.tienda.service.AlmacenImagenes;
 import bo.edu.uagrm.tienda.service.CatalogoDemo;
 import bo.edu.uagrm.tienda.service.CategoriaService;
@@ -90,6 +91,9 @@ class CatalogoDemoIntegracionTest {
 	private ImagenesProperties imagenes;
 
 	@Autowired
+	private Achicador achicador;
+
+	@Autowired
 	private Validator validator;
 
 	@Autowired
@@ -127,7 +131,11 @@ class CatalogoDemoIntegracionTest {
 	@AfterEach
 	void limpiar() {
 		transaccion.execute(estado -> productoRepository.findAll().stream()
-				.flatMap(producto -> Stream.concat(producto.getImagenes().stream(), Stream.ofNullable(producto.getModelo())))
+				.flatMap(producto -> Stream.concat(
+						producto.getImagenes().stream()
+								.flatMap(foto -> Stream.concat(Stream.of(foto),
+										AlmacenImagenes.nombresDeVersiones(foto).stream())),
+						Stream.ofNullable(producto.getModelo())))
 				.toList()).forEach(almacen::borrar);
 		movimientoRepository.deleteAll();
 		productoRepository.deleteAll();
@@ -140,7 +148,7 @@ class CatalogoDemoIntegracionTest {
 
 	private void cargar(Path directorio, AdministradorInicialProperties admin, InventarioService inventario) {
 		new CatalogoDemo(new CatalogoDemoProperties(directorio), admin, categoriaService, productoService, inventario,
-				productoRepository, categoriaRepository, usuarioRepository, validator, transaccion)
+				productoRepository, categoriaRepository, usuarioRepository, validator, transaccion, achicador)
 				.run(new DefaultApplicationArguments());
 	}
 
@@ -379,6 +387,35 @@ class CatalogoDemoIntegracionTest {
 		assertThat(imagenesGuardadas()).isEqualTo(antes);
 		assertThat(salida.getOut()).contains("No se cargó el catálogo de demostración")
 				.contains("Fila 2: falla de prueba");
+	}
+
+	// HU-22 RF-12: pasan por agregarImagen, con sus versiones
+	@Test
+	void lasFotosDeLaDemoTienenVersiones() {
+		cargar(carpeta);
+
+		assertThat(productosPorNombre().values()).flatExtracting(ProductoResponse::imagenes).isNotEmpty()
+				.allSatisfy(foto -> assertThat(almacen.tieneVersiones(foto)).as(foto).isTrue());
+	}
+
+	// HU-22 RF-12: una foto enorme o dañada se informa antes de cargar, con los demás errores, y no se carga nada
+	@Test
+	void unaFotoDeLaDemoEnormeSeInformaAntesDeCargar(CapturedOutput salida) throws IOException {
+		Files.write(carpeta.resolve("enorme.png"), FotoDePrueba.soloEncabezadoPng(20_000, 20_000));
+		Files.write(carpeta.resolve("danada.png"), FotoDePrueba.PNG_DANADO);
+		escribirCatalogo("""
+				Herramientas manuales,Martillo,Bueno.,85.50,12,martillo.png,,,
+				Herramientas manuales,Alicate,Bueno.,60,3,enorme.png,,,
+				Herramientas manuales,Llave,Bueno.,60,3,danada.png,,,
+				""");
+
+		cargar(carpeta);
+
+		assertThat(productoRepository.count()).isZero();
+		assertThat(salida.getOut())
+				.contains("Fila 3: imagenes: enorme.png pasa de 8000 px de lado o 40 megapíxeles")
+				.contains("Fila 4: imagenes: danada.png no se puede abrir")
+				.doesNotContain("Fila 2:");
 	}
 
 	@Test

@@ -42,8 +42,8 @@ import bo.edu.uagrm.tienda.exception.ImagenInvalidaException;
 public class Achicador {
 
 	public static final int[] ANCHOS = { 400, 1200 };
-	static final int MAXIMO_LADO = 8000;
-	static final long MAXIMO_PIXELES = 40_000_000L;
+	public static final int MAXIMO_LADO = 8000;
+	public static final long MAXIMO_PIXELES = 40_000_000L;
 	private static final float CALIDAD = 0.82f;
 
 	public record Versiones(byte[] de400, byte[] de1200) {

@@ -36,6 +36,8 @@ import bo.edu.uagrm.tienda.entity.EstadoCuenta;
 import bo.edu.uagrm.tienda.entity.Rol;
 import bo.edu.uagrm.tienda.entity.UnidadVenta;
 import bo.edu.uagrm.tienda.entity.Usuario;
+import bo.edu.uagrm.tienda.exception.ImagenConDemasiadosPixelesException;
+import bo.edu.uagrm.tienda.exception.ImagenInvalidaException;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
@@ -80,11 +82,13 @@ public class CatalogoDemo implements ApplicationRunner {
 	private final UsuarioRepository usuarioRepository;
 	private final Validator validator;
 	private final TransactionTemplate transaccion;
+	private final Achicador achicador;
 
 	public CatalogoDemo(CatalogoDemoProperties propiedades, AdministradorInicialProperties administrador,
 			CategoriaService categoriaService, ProductoService productoService, InventarioService inventarioService,
 			ProductoRepository productoRepository, CategoriaRepository categoriaRepository,
-			UsuarioRepository usuarioRepository, Validator validator, TransactionTemplate transaccion) {
+			UsuarioRepository usuarioRepository, Validator validator, TransactionTemplate transaccion,
+			Achicador achicador) {
 		this.propiedades = propiedades;
 		this.administrador = administrador;
 		this.categoriaService = categoriaService;
@@ -95,6 +99,7 @@ public class CatalogoDemo implements ApplicationRunner {
 		this.usuarioRepository = usuarioRepository;
 		this.validator = validator;
 		this.transaccion = transaccion;
+		this.achicador = achicador;
 	}
 
 	@Override
@@ -313,7 +318,14 @@ public class CatalogoDemo implements ApplicationRunner {
 				} else if (FormatoImagen.detectar(firma(archivo)).isEmpty()) {
 					errores.add("imagenes: " + nombre + " no es JPG, PNG ni WebP");
 				} else {
-					imagenes.add(archivo);
+					// HU-22 RF-12: con las reglas de una foto subida, antes de cargar. Se achica dos veces (acá y al
+					// subirla), pero solo al arrancar con una demostración nueva
+					String problema = problemaAlAchicar(Files.readAllBytes(archivo));
+					if (problema == null) {
+						imagenes.add(archivo);
+					} else {
+						errores.add("imagenes: " + nombre + " " + problema);
+					}
 				}
 			} catch (IOException e) {
 				errores.add("imagenes: " + nombre + " no se pudo leer");
@@ -363,6 +375,18 @@ public class CatalogoDemo implements ApplicationRunner {
 			errores.add(columna + ": " + nombre + " no se pudo leer");
 		}
 		return null;
+	}
+
+	private String problemaAlAchicar(byte[] contenido) {
+		try {
+			achicador.achicar(contenido);
+			return null;
+		} catch (ImagenConDemasiadosPixelesException enorme) {
+			return "pasa de " + Achicador.MAXIMO_LADO + " px de lado o "
+					+ Achicador.MAXIMO_PIXELES / 1_000_000 + " megapíxeles";
+		} catch (ImagenInvalidaException danada) {
+			return "no se puede abrir";
+		}
 	}
 
 	private static byte[] firma(Path archivo) throws IOException {
