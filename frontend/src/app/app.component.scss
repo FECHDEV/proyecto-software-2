@@ -383,4 +383,17 @@ nav a.actual,
 	.usuario {
 		display: none;
 	}
+
+	// Los íconos ya miden 44 px con el suyo centrado: 4 px entre ellos se ven separados. Con 12 px, la fila del
+	// Cliente (tema, pedidos, carrito, perfil y «Cerrar sesión») medía 326 px y a 320 px se salía 22 px. Si aun así
+	// no entra (el carrito con dos cifras a 320 px), «Cerrar sesión» baja a otra línea en vez de salirse
+	.sesion {
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: var(--app-espacio-1);
+	}
+
+	.salir {
+		padding-inline: var(--app-espacio-2);
+	}
 }
