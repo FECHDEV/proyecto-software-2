@@ -265,3 +265,36 @@ tocan:
 - **`/code-review`**;
 - **`/security-review`**, porque procesa archivos subidos: datos de afuera
   que se decodifican.
+
+## Resultado
+
+Tareas 1 a 6 hechas con TDD; backend con 768 pruebas, frontend con 76
+archivos y 892 pruebas, `ng build` sin avisos. Cada prueba delicada se
+comprobó rompiendo el código a propósito: orientación EXIF, fondo blanco, no
+agrandar, el borrado registrado antes de escribir, el original sin caché y la
+relectura que evita versiones huérfanas.
+
+Medido en el navegador (escritorio e iPhone 15) con una foto de 448 kB: la
+tarjeta baja la de 400 (34 kB), el detalle la de 1200 (115 kB) y el original
+solo al abrir la pantalla completa.
+
+Distinto del plan:
+- **La tarjeta usa solo la de 400, sin `srcset`,** como dice RF-11: con
+  `srcset`, un celular de alta densidad bajaba la de 1200 en los carruseles.
+- **El original de la pantalla completa entra a la página recién al
+  abrirla:** dentro del `<dialog>` cerrado el navegador igual lo bajaba al
+  entrar al detalle (encontrado al medir).
+- **Las fotos ya subidas se completan con `ApplicationReadyEvent`**
+  (`VersionesAlArrancar`, `@Profile("!test")`), después de la demostración: no
+  corren a la vez.
+- **`FotoDePrueba`:** las pruebas subían la sola firma de un PNG, que desde
+  esta historia es una foto dañada; ahora un PNG de verdad.
+- **`ImagenGuardada.servidaComoSePidio`** en lugar de `achicada`: es lo que
+  decide la caché. La prueba del borrado al revertir quedó en
+  `ProductoServiceTest`.
+- **`nombreDeVersion` no valida el original:** `leer` y `borrar` siguen
+  aceptando solo nombres generados.
+
+Revisiones: pendientes (subagente de interfaz, `/code-review` y
+`/security-review`).
+

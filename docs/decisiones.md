@@ -120,6 +120,12 @@ en variables `TIENDA_PAGO_*` del `.env`.
   Spring Security y se bajaban en cada visita. **La imagen de una categoría**
   conserva su dirección al reemplazarse: va con `no-cache` y el nombre del
   archivo como `ETag`, y con el mismo responde 304 sin cuerpo.
+- *28/10/2026 (HU-22).* **Cada foto de producto tiene dos versiones** en la
+  misma carpeta, `<uuid>-400.jpg` y `<uuid>-1200.jpg` (detalle en «Fotos
+  achicadas»). Se piden con `?ancho=400` o `?ancho=1200` en la dirección de la
+  foto, con un año de caché; si la versión todavía no está, va el original
+  **sin caché**, para que el navegador no lo guarde en su lugar. Se escriben
+  a un temporal y se mueven de una vez, y se borran con la foto.
 
 **Motivo:** una URL externa haría depender la imagen de un sitio ajeno, que
 además vería cada visita; guardarla en la base agranda la base y sus respaldos.
@@ -1159,8 +1165,10 @@ lectura) con `catalogo.csv` y sus imágenes. Lo hace `CatalogoDemo`.
   (sale en «Destacados» de la portada); `unidad`, `unidad`, `metro`, `kilo`,
   `litro`, `caja`, `par` o `rollo`, y vacía es `unidad`.
 - **Las reglas de siempre:** categorías, productos, imágenes (2 MB, JPG, PNG o
-  WebP, hasta cinco, sin repetir) y stock pasan por los mismos servicios y
-  validaciones que la gestión. Las categorías que faltan se crean; una fila
+  WebP, hasta cinco, sin repetir; desde HU-22, hasta 8000 px de lado y 40
+  megapíxeles, y que se puedan abrir) y stock pasan por los mismos servicios y
+  validaciones que la gestión. Una foto que no se puede achicar se informa
+  antes de cargar, como las demás filas inválidas. Las categorías que faltan se crean; una fila
   de una categoría oculta es inválida, porque no se vería.
 - **Todo o nada:** una fila inválida se informa en el registro con su número y
   el motivo, y no se carga nada; un fallo durante la carga la revierte entera.
