@@ -52,12 +52,32 @@ jobs:
       - run: npx ng test --watch=false
       - run: npx ng build
 
-  # Que las imágenes se puedan construir: un Dockerfile roto no llega a main
-  imagenes:
-    name: Imágenes Docker
+  # El camino principal en el navegador (registro → catálogo → carrito → pedido → pago simulado → mis pedidos)
+  # contra la tienda completa de docker-compose.yml, con los simuladores de pago y de correo. Construye las dos
+  # imágenes: también comprueba que un Dockerfile roto no llegue a main
+  e2e:
+    name: Extremo a extremo (Playwright)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v5
-      - run: docker build --tag tienda-backend backend
-      - run: docker build --tag tienda-frontend frontend
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - name: Registros de la API
+        if: failure()
+        run: docker compose -p tienda-e2e -f ../docker-compose.yml --env-file e2e/.env.e2e logs backend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: informe-e2e
+          path: frontend/playwright-report/
+          retention-days: 7

@@ -12,6 +12,9 @@ node_modules/
 dist/
 .angular/
 npm-debug.log*
+# Pruebas de extremo a extremo: resultados e informe de cada corrida (el .env.e2e ya lo cubre .env.*)
+frontend/test-results/
+frontend/playwright-report/
 
 # Material de proveedores (manuales en PDF): se consulta en local, no se versiona
 referencias/

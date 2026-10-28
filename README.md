@@ -102,6 +102,22 @@ Las del backend corren contra H2 en memoria (perfil `test`); las del frontend,
 con Vitest sobre jsdom. Ninguna necesita MySQL ni un navegador. Las mismas
 corren en GitHub Actions en cada PR (`.github/workflows/pruebas.yml`).
 
+### De extremo a extremo
+
+```bash
+cd frontend && npm run e2e
+```
+
+Recorren el camino principal en el navegador con Playwright (`frontend/e2e/`):
+registro, catálogo, carrito, verificación del correo, pedido, pago simulado,
+«Mis pedidos» y la entrega, en escritorio y en celular. Cada corrida levanta
+desde cero una tienda aparte en Docker (proyecto `tienda-e2e`, puerto 8090), con
+los simuladores de pago y de correo y el catálogo de prueba del backend; no usa
+el `.env` ni la base de desarrollo. Sus claves se generan al azar en
+`frontend/e2e/.env.e2e`, ignorado por git. En la PC usan Edge; en el CI,
+Chromium. La tienda de prueba queda levantada para revisar un fallo;
+`npm run e2e:bajar` la borra.
+
 ## Correo
 
 Con Docker, los correos (verificación, recuperación de contraseña y avisos del
