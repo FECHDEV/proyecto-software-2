@@ -208,6 +208,10 @@ El catálogo se copia antes con `scp -r <carpeta> root@<ip>:/opt/demo-tienda`.
 Sin la PC, `completar` también se puede correr en el servidor con el `.env`
 completado a mano. Todo se puede volver a correr sin perder nada.
 
+La tienda en la nube **no aparece en Google**: `nube/Caddyfile` manda
+`X-Robots-Tag: noindex`. Con un dominio propio, quitar esa línea
+(`docs/decisiones.md` → «Buscadores y enlaces compartidos»).
+
 ## Documentación
 
 | Archivo | Contenido |

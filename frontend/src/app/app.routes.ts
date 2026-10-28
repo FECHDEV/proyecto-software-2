@@ -53,6 +53,10 @@ export const routes: Routes = [
   {
     path: 'catalogo',
     title: `Catálogo · ${MARCA.nombre}`,
+    data: {
+      descripcion:
+        `Herramientas, hogar y jardín en ${MARCA.nombre}. Busque por nombre, filtre por categoría y vea el precio y si hay stock.`,
+    },
     loadComponent: () => import('./features/catalogo/catalogo.page').then((m) => m.CatalogoPage),
   },
   // El detalle de un producto (HU-10): público; el título lo pone la pantalla

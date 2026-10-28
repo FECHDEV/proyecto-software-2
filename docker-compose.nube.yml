@@ -21,6 +21,8 @@ services:
   # Detrás de Caddy: sin puertos propios en la máquina
   frontend:
     ports: !reset []
+    environment:
+      TIENDA_SITIO_URL: https://${TIENDA_DOMINIO}
 
   backend:
     environment:

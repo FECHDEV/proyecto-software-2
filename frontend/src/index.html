@@ -6,6 +6,23 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0c3326">
+  <!-- Para los buscadores y la tarjeta de un enlace compartido (WhatsApp,
+       Facebook, Telegram, X). Esos no ejecutan JavaScript: todo enlace a la
+       tienda muestra esta misma tarjeta. La descripción es la de
+       core/marca.ts. El origen de og:image lo completa nginx (nginx.conf), porque
+       necesita la dirección completa y el dominio cambia en cada servidor (docs/decisiones.md →
+       «Buscadores y enlaces compartidos») -->
+  <meta name="description" content="Ferretería de Montero: herramientas, hogar y jardín. Vea si hay stock, compre en línea y retire en la tienda.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Tienda Montero">
+  <meta property="og:locale" content="es_BO">
+  <meta property="og:title" content="Tienda Montero">
+  <meta property="og:description" content="Ferretería de Montero: herramientas, hogar y jardín. Vea si hay stock, compre en línea y retire en la tienda.">
+  <meta property="og:image" content="__ORIGEN__/compartir.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Tienda Montero, ferretería de Montero">
+  <meta name="twitter:card" content="summary_large_image">
   <!-- Aplica el modo claro antes de pintar, si fue lo elegido: sin esto la
        página aparece oscura un instante y después cambia. La clave es la de
        core/tema/almacen-tema.ts; desde ahí sigue TemaService -->
