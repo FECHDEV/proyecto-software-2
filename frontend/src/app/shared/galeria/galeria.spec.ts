@@ -50,7 +50,7 @@ describe('Galeria', () => {
   }
 
   function fotoAmpliada(): string | null | undefined {
-    return dialogo().querySelector('.ampliada img')?.getAttribute('src');
+    return dialogo().querySelector('.ampliada img:not(.mientras)')?.getAttribute('src');
   }
 
   function boton(clase: string): HTMLButtonElement {
@@ -81,6 +81,62 @@ describe('Galeria', () => {
     ]);
     await ampliar();
     expect(fotoAmpliada()).toBe('/fotos/a.webp');
+  });
+
+  // HU-22 (revisión de interfaz): con red lenta no queda un recuadro vacío; mientras baja el original se ve la de
+  // 1200, que ya está en caché, y al cargar queda solo el original
+  it('mientras baja el original muestra la de 1200', async () => {
+    await abrir();
+    await ampliar();
+
+    const mientras = dialogo().querySelector('.ampliada img.mientras');
+    expect(mientras?.getAttribute('src')).toBe('/fotos/a.webp?ancho=1200');
+    const original = dialogo().querySelector('.ampliada img:not(.mientras)')!;
+    expect(original.classList).toContain('cargando');
+
+    original.dispatchEvent(new Event('load'));
+    await fijo.whenStable();
+
+    expect(dialogo().querySelector('.ampliada img.mientras')).toBeNull();
+    expect(original.classList).not.toContain('cargando');
+  });
+
+  // /code-review: el respaldo usa el mismo srcset que la foto grande, así reutiliza la versión que ya bajó
+  it('el respaldo de la pantalla completa usa el srcset de la foto grande', async () => {
+    await abrir();
+    await ampliar();
+
+    const mientras = dialogo().querySelector('.ampliada img.mientras');
+    expect(mientras?.getAttribute('srcset')).toBe(grande().querySelector('img')?.getAttribute('srcset'));
+    expect(mientras?.getAttribute('sizes')).toBe(grande().querySelector('img')?.getAttribute('sizes'));
+  });
+
+  // /code-review: la carga tardía del original anterior no marca cargada la foto nueva
+  it('una carga tardía de la foto anterior no cuenta para la nueva', async () => {
+    await abrir();
+    await ampliar();
+    const anterior = dialogo().querySelector('.ampliada img:not(.mientras)')!;
+    await tecla('ArrowRight');
+
+    anterior.dispatchEvent(new Event('load'));
+    await fijo.whenStable();
+
+    expect(dialogo().querySelector('.ampliada img:not(.mientras)')?.classList).toContain('cargando');
+    expect(dialogo().querySelector('.ampliada img.mientras')).not.toBeNull();
+  });
+
+  // /code-review: si falla solo el original, sigue la de 1200; la foto no queda rota en el detalle
+  it('si el original no carga queda la de 1200 y la foto no se marca rota', async () => {
+    await abrir();
+    await ampliar();
+
+    dialogo().querySelector('.ampliada img:not(.mientras)')!.dispatchEvent(new Event('error'));
+    dialogo().querySelector('.ampliada img.mientras')!.dispatchEvent(new Event('error'));
+    await fijo.whenStable();
+
+    expect(dialogo().querySelector('.ampliada .icono-foto')).toBeNull();
+    expect(dialogo().querySelector('.ampliada img:not(.mientras)')).not.toBeNull();
+    expect(grande().querySelector('img')).not.toBeNull();
   });
 
   // HU-22 RF-11: el original pesa hasta 2 MB; con la pantalla completa cerrada no se pide

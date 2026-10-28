@@ -58,6 +58,11 @@ export class Galeria {
 		source: this.mismasFotos,
 		computation: () => new Set<number>(),
 	});
+	// Los originales que ya bajaron: mientras tanto, la pantalla completa muestra la de 1200, que ya está en caché
+	private readonly originalesCargados = linkedSignal<FotoDeGaleria[], ReadonlySet<number>>({
+		source: this.mismasFotos,
+		computation: () => new Set<number>(),
+	});
 
 	// Con otro producto vuelve a las fotos (HU-16 RF-6). La dirección del modelo lleva el producto: la misma lista
 	// de fotos con otra identidad no saca al visitante del modelo (/code-review)
@@ -67,6 +72,9 @@ export class Galeria {
 	});
 
 	protected readonly total = computed(() => this.fotos().length);
+	// El ancho de la foto grande en pantalla, para elegir entre sus versiones (HU-22): toda la pantalla hasta que el
+	// detalle pasa a dos columnas (detalle.page.scss, 860 px)
+	protected readonly tamanos = '(max-width: 859px) 100vw, 620px';
 	// El original pesa hasta 2 MB: la foto de la pantalla completa entra a la página recién al abrirla (HU-22)
 	protected readonly ampliada = signal(false);
 	protected readonly alInicio = computed(() => this.actual() === 0);
@@ -83,6 +91,22 @@ export class Galeria {
 
 	protected rota(indice: number): boolean {
 		return this.rotas().has(indice);
+	}
+
+	protected originalCargado(indice: number): boolean {
+		return this.originalesCargados().has(indice);
+	}
+
+	// El respaldo se quita cuando el original ya se puede pintar: load avisa que bajó, decode() que está decodificado
+	// (una foto de 2 MB tarda en decodificarse y quedaría el fondo vacío unos cuadros; /code-review)
+	protected alCargarOriginal(evento: Event, indice: number): void {
+		const imagen = evento.target as HTMLImageElement;
+		const lista = typeof imagen.decode === 'function' ? imagen.decode() : Promise.resolve();
+		lista.catch(() => undefined).finally(() => this.marcarCargado(indice));
+	}
+
+	private marcarCargado(indice: number): void {
+		this.originalesCargados.update((cargados) => new Set(cargados).add(indice));
 	}
 
 	protected marcarRota(indice: number): void {

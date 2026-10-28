@@ -57,6 +57,15 @@ class AchicadorTest {
 		assertThat(esRojo(version.getRGB(100, 280))).isFalse();
 	}
 
+	// RF-3 (/code-review): la reducción al leer se calcula con el ancho ya girado. 4800 × 1000 con orientación 6 es
+	// una foto de 1000 de ancho: la de 1200 queda en 1000, no en 500
+	@Test
+	void unaFotoGiradaNoPierdeResolucion() throws IOException {
+		byte[] conExif = conOrientacion(jpeg(mitades(4800, 1000)), 6);
+
+		assertThat(medidas(achicador.achicar(conExif).de1200())).containsExactly(1000, 4800);
+	}
+
 	// RF-4
 	@Test
 	void loTransparenteQuedaBlanco() throws IOException {

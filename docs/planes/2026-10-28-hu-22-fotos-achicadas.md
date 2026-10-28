@@ -295,6 +295,58 @@ Distinto del plan:
 - **`nombreDeVersion` no valida el original:** `leer` y `borrar` siguen
   aceptando solo nombres generados.
 
-Revisiones: pendientes (subagente de interfaz, `/code-review` y
-`/security-review`).
+### Revisiones
+
+- **Subagente de interfaz** (escritorio, iPhone 15, modo claro, peores
+  datos). Confirmó la versión que baja cada pantalla, la foto EXIF girada,
+  lo transparente en blanco y CLS 0. **Corregido:**
+  - la pantalla completa y la tarjeta no encajaban una foto muy alta (viene de
+    antes: `max-height` sobre una fila `auto`; ahora la celda es
+    `minmax(0, 1fr)`);
+  - con red lenta la pantalla completa quedaba en blanco hasta bajar el
+    original (ahora muestra la versión de la foto grande mientras tanto);
+  - el `sizes` del detalle cortaba en 760 px y el diseño cambia en 860.
+  **Descartado o pendiente:**
+  - en el celular la pantalla completa baja el original aunque alcanzaría la
+    de 1200 (lo pide RF-11; se decide con Fabio);
+  - una foto muy alta da una «de 400» de 400 × 2667 (las versiones son por
+    ancho, RF-1);
+  - en fotos chicas la versión puede pesar más que el original (solo con
+    fotos de pocos kB);
+  - la miniatura del panel se ve algo blanda en un celular de densidad × 3 (el
+    panel usa la de 400, RF-11).
+- **`/security-review`:** sin hallazgos de confianza ≥ 8. Se revisaron path
+  traversal en las versiones, autorización, EXIF en las versiones, XXE,
+  inyección, caché y los temporales.
+- **`/code-review`, dos rondas.**
+  - **Corregido en la primera:**
+    - un error inesperado cortaba el recorrido de `VersionesFaltantes`;
+    - la carga tardía de la foto anterior contaba para la nueva;
+    - si fallaba solo el original, se marcaba rota la foto entera;
+    - una foto girada perdía resolución: la reducción usaba el ancho
+      guardado;
+    - `ImageIO` escribía temporales a disco;
+    - el respaldo no reutilizaba la versión ya bajada;
+    - la reducción redondeaba hacia abajo.
+  - **Corregido en la segunda:**
+    - el respaldo cambiaba de tamaño al llegar el original;
+    - se quitaba antes de que el original estuviera decodificado (ahora
+      espera `decode()`);
+    - el registro no guardaba la traza;
+    - si fallaba la segunda versión de una foto quitada, la primera quedaba
+      suelta;
+    - un error del respaldo marcaba rota la foto;
+    - una prueba pasaba sin probar nada;
+    - el `Achicador` copiaba los bytes (ahora `ByteArrayImageInputStream`).
+  - **Descartado:**
+    - achicar dos veces las fotos de la demostración (solo al arrancar con una
+      nueva);
+    - la lista mutable de `ArchivosAlTerminar` (documentada);
+    - un semáforo para subidas a la vez (son del Administrador y pocas);
+    - los avisos al apagar (el hilo es *daemon*);
+    - la orientación EXIF en WebP o PNG (los celulares guardan JPEG; RF-3 es
+      para JPEG).
+
+Pruebas al cerrar las revisiones: backend con 771, frontend con 896, `ng
+build` sin avisos. Cada prueba nueva se comprobó contra el código anterior.
 

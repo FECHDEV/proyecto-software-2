@@ -27,7 +27,7 @@
       <img
         [src]="fotos()[actual()].src"
         [srcset]="fotos()[actual()].srcset"
-        sizes="(max-width: 760px) 100vw, 620px"
+        [sizes]="tamanos"
         [alt]="alt(actual())"
         width="800"
         height="600"
@@ -95,7 +95,29 @@
       @if (rota(actual())) {
         <svg lucideWrench class="icono-foto" aria-hidden="true"></svg>
       } @else if (ampliada()) {
-        <img [src]="fotos()[actual()].original" [alt]="alt(actual())" decoding="async" draggable="false" (error)="marcarRota(actual())" />
+        <!-- Con red lenta no queda un recuadro vacío: la versión de la foto grande, ya en caché, hasta que baja el
+             original (HU-22). Un elemento por foto: la carga tardía de la anterior no cuenta para la nueva. Si el
+             original no carga, queda la versión y la foto no se marca rota (/code-review) -->
+        @for (indice of [actual()]; track indice) {
+          @if (!originalCargado(indice)) {
+            <img
+              class="mientras"
+              [src]="fotos()[indice].src"
+              [srcset]="fotos()[indice].srcset"
+              [sizes]="tamanos"
+              alt=""
+              draggable="false"
+            />
+          }
+          <img
+            [src]="fotos()[indice].original"
+            [alt]="alt(indice)"
+            [class.cargando]="!originalCargado(indice)"
+            decoding="async"
+            draggable="false"
+            (load)="alCargarOriginal($event, indice)"
+          />
+        }
       }
     </div>
 

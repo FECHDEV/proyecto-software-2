@@ -5,7 +5,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +20,8 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
+import javax.imageio.stream.MemoryCacheImageInputStream;
+import javax.imageio.stream.MemoryCacheImageOutputStream;
 
 import org.springframework.stereotype.Component;
 
@@ -31,6 +32,7 @@ import com.twelvemonkeys.imageio.metadata.jpeg.JPEGSegment;
 import com.twelvemonkeys.imageio.metadata.jpeg.JPEGSegmentUtil;
 import com.twelvemonkeys.imageio.metadata.tiff.TIFF;
 import com.twelvemonkeys.imageio.metadata.tiff.TIFFReader;
+import com.twelvemonkeys.imageio.stream.ByteArrayImageInputStream;
 
 import bo.edu.uagrm.tienda.exception.ErrorNegocioException;
 import bo.edu.uagrm.tienda.exception.ImagenConDemasiadosPixelesException;
@@ -50,7 +52,8 @@ public class Achicador {
 	}
 
 	public Versiones achicar(byte[] contenido) {
-		try (ImageInputStream entrada = ImageIO.createImageInputStream(new ByteArrayInputStream(contenido))) {
+		// Sobre el arreglo, sin copiarlo: createImageInputStream escribiría un temporal en disco (/code-review)
+		try (ImageInputStream entrada = new ByteArrayImageInputStream(contenido)) {
 			Iterator<ImageReader> lectores = ImageIO.getImageReaders(entrada);
 			if (!lectores.hasNext()) {
 				throw new ImagenInvalidaException();
@@ -65,11 +68,14 @@ public class Achicador {
 					throw new ImagenConDemasiadosPixelesException();
 				}
 				ImageReadParam parametros = lector.getDefaultReadParam();
-				// Se lee ya reducida, a no menos del doble de la versión más grande: menos memoria, y el achique
-				// en pasos conserva la nitidez
-				int salto = Math.max(1, ancho / (2 * ANCHOS[1]));
+				// Se lee ya reducida, cerca del doble de la versión más grande y nunca por debajo de ella: menos
+				// memoria, y el achique en pasos conserva la nitidez. Con el ancho ya girado: en las orientaciones 5 a
+				// 8 el ancho que se ve es el alto guardado (/code-review)
+				int orientacion = orientacion(contenido);
+				int anchoQueSeVe = orientacion >= 5 ? alto : ancho;
+				int salto = Math.max(1, (int) Math.ceil(anchoQueSeVe / (2.0 * ANCHOS[1])));
 				parametros.setSourceSubsampling(salto, salto, 0, 0);
-				BufferedImage derecha = enderezar(sobreBlanco(lector.read(0, parametros)), orientacion(contenido));
+				BufferedImage derecha = enderezar(sobreBlanco(lector.read(0, parametros)), orientacion);
 				return new Versiones(jpeg(reducir(derecha, ANCHOS[0])), jpeg(reducir(derecha, ANCHOS[1])));
 			} finally {
 				lector.dispose();
@@ -98,7 +104,7 @@ public class Achicador {
 		if (FormatoImagen.detectar(contenido).orElse(null) != FormatoImagen.JPEG) {
 			return 1;
 		}
-		try (ImageInputStream entrada = ImageIO.createImageInputStream(new ByteArrayInputStream(contenido))) {
+		try (ImageInputStream entrada = new ByteArrayImageInputStream(contenido)) {
 			List<JPEGSegment> exif = JPEGSegmentUtil.readSegments(entrada, JPEG.APP1, "Exif");
 			if (exif.isEmpty()) {
 				return 1;
@@ -106,7 +112,7 @@ public class Achicador {
 			InputStream datos = exif.getFirst().data();
 			// El identificador «Exif» va seguido de dos ceros; data() ya saltó el primero
 			datos.read();
-			try (ImageInputStream tiff = ImageIO.createImageInputStream(datos)) {
+			try (ImageInputStream tiff = new MemoryCacheImageInputStream(datos)) {
 				Directory directorio = new TIFFReader().read(tiff);
 				Entry entrada0 = directorio.getEntryById(TIFF.TAG_ORIENTATION);
 				return Optional.ofNullable(entrada0).map(Entry::getValue).filter(Number.class::isInstance)
@@ -168,7 +174,7 @@ public class Achicador {
 	private static byte[] jpeg(BufferedImage imagen) throws IOException {
 		ImageWriter escritor = ImageIO.getImageWritersByFormatName("jpeg").next();
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		try (ImageOutputStream salida = ImageIO.createImageOutputStream(bytes)) {
+		try (ImageOutputStream salida = new MemoryCacheImageOutputStream(bytes)) {
 			escritor.setOutput(salida);
 			ImageWriteParam parametros = escritor.getDefaultWriteParam();
 			parametros.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);

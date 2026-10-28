@@ -5,6 +5,7 @@ import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -139,6 +140,30 @@ class VersionesFaltantesIntegracionTest {
 				.contains("La foto " + enorme + " del producto " + idProducto + " queda sin versiones");
 	}
 
+	// RF-10 (/code-review): cualquier error con una foto, no solo los previstos, no corta el recorrido
+	@Test
+	void unErrorInesperadoNoCortaElRecorrido() {
+		String primera = fotoSinVersiones(FotoDePrueba.PNG);
+		String segunda = fotoSinVersiones(FotoDePrueba.PNG);
+		Achicador queFallaUnaVez = new Achicador() {
+			private boolean fallo;
+
+			@Override
+			public Versiones achicar(byte[] contenido) {
+				if (!fallo) {
+					fallo = true;
+					throw new IllegalStateException("inesperado");
+				}
+				return achicador.achicar(contenido);
+			}
+		};
+
+		new VersionesFaltantes(productoRepository, almacen, queFallaUnaVez, transaccion).completar();
+
+		assertThat(almacen.tieneVersiones(primera)).isFalse();
+		assertThat(almacen.tieneVersiones(segunda)).isTrue();
+	}
+
 	// Caso límite: el Administrador la quita mientras se achica; sus versiones no quedan sueltas en la carpeta
 	@Test
 	void unaFotoQuitadaDuranteElAchiqueNoDejaHuerfanas() throws IOException {
@@ -152,6 +177,36 @@ class VersionesFaltantesIntegracionTest {
 		};
 
 		new VersionesFaltantes(productoRepository, almacen, queQuitaEnElMedio, transaccion).completar();
+
+		String uuid = foto.substring(0, foto.indexOf('.'));
+		try (Stream<Path> archivos = Files.list(imagenes.directorio())) {
+			assertThat(archivos.map(archivo -> archivo.getFileName().toString()).filter(n -> n.startsWith(uuid)))
+					.isEmpty();
+		}
+	}
+
+	// /code-review: quitada mientras se achica y con la segunda versión fallando, la primera no queda suelta
+	@Test
+	void siFallaLaSegundaVersionDeUnaQuitadaNoQuedaLaPrimera() throws IOException {
+		String foto = fotoSinVersiones(FotoDePrueba.PNG);
+		Achicador queQuitaEnElMedio = new Achicador() {
+			@Override
+			public Versiones achicar(byte[] contenido) {
+				productoService.quitarImagen(idProducto, foto);
+				return achicador.achicar(contenido);
+			}
+		};
+		AlmacenImagenes queFallaEnLaSegunda = new AlmacenImagenes(imagenes) {
+			@Override
+			public String guardarVersion(String original, int ancho, byte[] jpeg) {
+				if (ancho == 1200) {
+					throw new UncheckedIOException(new IOException("disco lleno"));
+				}
+				return super.guardarVersion(original, ancho, jpeg);
+			}
+		};
+
+		new VersionesFaltantes(productoRepository, queFallaEnLaSegunda, queQuitaEnElMedio, transaccion).completar();
 
 		String uuid = foto.substring(0, foto.indexOf('.'));
 		try (Stream<Path> archivos = Files.list(imagenes.directorio())) {
