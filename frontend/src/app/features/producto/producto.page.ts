@@ -236,7 +236,7 @@ export class ProductoPage implements ConCambiosSinGuardar {
 
 	protected urlDeFoto(imagen: string): string {
 		const producto = this.producto();
-		return producto === undefined ? '' : this.productos.urlDeImagen(producto.idProducto, imagen);
+		return producto === undefined ? '' : this.productos.urlDeImagen(producto.idProducto, imagen, 400);
 	}
 
 	// Agrega una fila vacía a la ficha y lleva el foco a su nombre

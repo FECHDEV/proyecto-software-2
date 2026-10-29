@@ -148,7 +148,7 @@ describe('CarritoPage', () => {
 
     const martillo = fila('Martillo');
     expect(martillo.querySelector('a')?.getAttribute('href')).toBe('/producto/7');
-    expect(martillo.querySelector('img')?.getAttribute('src')).toBe('/api/productos/7/imagenes/a.webp');
+    expect(martillo.querySelector('img')?.getAttribute('src')).toBe('/api/productos/7/imagenes/a.webp?ancho=400');
     expect(textoDe(martillo)).toContain('Bs 85,50');
     expect(textoDe(martillo)).toContain('Bs 171,00');
     expect(martillo.querySelector('input')?.value).toBe('2');

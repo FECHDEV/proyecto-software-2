@@ -3,10 +3,15 @@ package bo.edu.uagrm.tienda;
 import static bo.edu.uagrm.tienda.IpsDePrueba.ipNueva;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,8 +47,8 @@ class ProductosIntegracionTest {
 	private static final String CLAVE_ADMIN = "clave-admin-pruebas";
 	private static final String GESTION = "/api/gestion/productos";
 	private static final String CATEGORIAS = "/api/gestion/categorias";
-	// La firma de un PNG: el formato se reconoce por el contenido
-	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n', 0, 0, 0, 0 };
+	private static final String FOTOS = "/api/productos/{id}/imagenes/{nombre}";
+	private static final byte[] PNG = FotoDePrueba.PNG;
 
 	@Autowired
 	private MockMvcTester mvc;
@@ -393,6 +398,116 @@ class ProductosIntegracionTest {
 
 		Integer otro = crear("Serrucho", "", herramientas);
 		assertThat(subirImagen(otro, "%PDF-1.7".getBytes())).hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
+	// HU-22 RF-1, RF-7: el original y sus dos versiones; cada versión mide su ancho y se guarda un año
+	@Test
+	void subirUnaFotoGuardaSusVersiones() throws Exception {
+		Integer id = crear("Martillo", "", herramientas);
+		String foto = JsonPath.read(subirImagen(id, FotoDePrueba.png(1600, 1000)).getResponse().getContentAsString(),
+				"$.imagenes[0]");
+
+		for (int ancho : new int[] { 400, 1200 }) {
+			MvcTestResult version = mvc.get().uri(FOTOS + "?ancho={ancho}", id, foto, ancho).exchange();
+			assertThat(version).hasStatus(HttpStatus.OK).hasContentType("image/jpeg");
+			assertThat(version).headers().hasValue(HttpHeaders.CACHE_CONTROL, "max-age=31536000, public, immutable");
+			assertThat(anchoDe(version)).isEqualTo(ancho);
+		}
+		assertThat(mvc.get().uri(FOTOS, id, foto).exchange()).hasContentType("image/png");
+	}
+
+	// HU-22 RF-8: solo 400 o 1200
+	@Test
+	void unAnchoInvalidoResponde400() throws Exception {
+		Integer id = crear("Martillo", "", herramientas);
+		String foto = JsonPath.read(subirImagen(id, PNG).getResponse().getContentAsString(), "$.imagenes[0]");
+
+		for (String ancho : List.of("abc", "-1", "0", "999", "1200.5")) {
+			MvcTestResult rechazado = mvc.get().uri(FOTOS + "?ancho={ancho}", id, foto, ancho).exchange();
+			assertThat(rechazado).as(ancho).hasStatus(HttpStatus.BAD_REQUEST);
+			assertThat(rechazado).bodyJson().extractingPath("$.errores[0].campo").isEqualTo("ancho");
+		}
+	}
+
+	// HU-22 RF-8: sin la versión, el original, sin caché: si no, el navegador lo guardaría un año en su lugar
+	@Test
+	void sinLaVersionSirveElOriginalSinCache() throws Exception {
+		Integer id = crear("Martillo", "", herramientas);
+		String foto = JsonPath.read(subirImagen(id, PNG).getResponse().getContentAsString(), "$.imagenes[0]");
+		Files.delete(imagenes.directorio().resolve(foto.replaceFirst("\\.png$", "-400.jpg")));
+
+		MvcTestResult original = mvc.get().uri(FOTOS + "?ancho=400", id, foto).exchange();
+
+		assertThat(original).hasStatus(HttpStatus.OK).hasContentType("image/png");
+		assertThat(original).headers().hasValue(HttpHeaders.CACHE_CONTROL, "no-cache");
+	}
+
+	// HU-22 RF-9
+	@Test
+	void quitarUnaFotoBorraSusVersiones() throws Exception {
+		Integer id = crear("Martillo", "", herramientas);
+		String foto = JsonPath.read(subirImagen(id, PNG).getResponse().getContentAsString(), "$.imagenes[0]");
+		String uuid = foto.substring(0, foto.indexOf('.'));
+		assertThat(archivosQueEmpiezanCon(uuid)).hasSize(3);
+
+		mvc.delete().uri(GESTION + "/{id}/imagenes/{nombre}", id, foto)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin).exchange();
+
+		assertThat(archivosQueEmpiezanCon(uuid)).isEmpty();
+	}
+
+	// HU-22 RF-5: se rechaza antes de abrirla, y la carpeta queda igual
+	@Test
+	void unaFotoEnormeSeRechazaSinGuardarNada() throws Exception {
+		Integer id = crear("Martillo", "", herramientas);
+		long antes = cantidadDeArchivos();
+
+		MvcTestResult rechazada = subirImagen(id, FotoDePrueba.soloEncabezadoPng(20_000, 20_000));
+
+		assertThat(rechazada).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(rechazada).bodyJson().extractingPath("$.codigo").isEqualTo("IMAGEN_CON_DEMASIADOS_PIXELES");
+		assertThat(cantidadDeArchivos()).isEqualTo(antes);
+		assertThat(mvc.get().uri(GESTION + "/{id}", id).header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
+				.exchange()).bodyJson().extractingPath("$.imagenes").asArray().isEmpty();
+	}
+
+	// HU-22 RF-6: empieza como PNG pero no se puede abrir
+	@Test
+	void unaFotoDanadaSeRechaza() throws Exception {
+		Integer id = crear("Martillo", "", herramientas);
+
+		MvcTestResult rechazada = subirImagen(id, FotoDePrueba.PNG_DANADO);
+
+		assertThat(rechazada).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(rechazada).bodyJson().extractingPath("$.codigo").isEqualTo("IMAGEN_INVALIDA");
+	}
+
+	// HU-22, caso límite: la versión es de la foto, y la foto, del producto; un nombre de versión no es una foto
+	@Test
+	void elAnchoDeOtroProductoDa404() throws Exception {
+		Integer martillo = crear("Martillo", "", herramientas);
+		Integer pala = crear("Pala", "", jardin);
+		String foto = JsonPath.read(subirImagen(martillo, PNG).getResponse().getContentAsString(), "$.imagenes[0]");
+
+		assertThat(mvc.get().uri(FOTOS + "?ancho=400", pala, foto).exchange()).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(mvc.get().uri(FOTOS, martillo, foto.replaceFirst("\\.png$", "-400.jpg")).exchange())
+				.hasStatus(HttpStatus.NOT_FOUND);
+	}
+
+	private static int anchoDe(MvcTestResult resultado) throws Exception {
+		return ImageIO.read(new ByteArrayInputStream(resultado.getResponse().getContentAsByteArray())).getWidth();
+	}
+
+	private List<Path> archivosQueEmpiezanCon(String prefijo) throws Exception {
+		try (Stream<Path> archivos = Files.list(imagenes.directorio())) {
+			return archivos.filter(archivo -> archivo.getFileName().toString().startsWith(prefijo)).toList();
+		}
+	}
+
+	private long cantidadDeArchivos() throws Exception {
+		try (Stream<Path> archivos = Files.list(imagenes.directorio())) {
+			return archivos.count();
+		}
 	}
 
 	// HU-07 RF-8: una lista que no coincide con las imágenes no cambia nada

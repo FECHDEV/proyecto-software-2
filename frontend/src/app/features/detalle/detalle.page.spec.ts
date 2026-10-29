@@ -185,7 +185,21 @@ describe('DetallePage', () => {
     const fotos = Array.from(pantalla().querySelectorAll('app-galeria .miniaturas img')).map((cada) =>
       cada.getAttribute('src'),
     );
-    expect(fotos).toEqual(['/api/productos/7/imagenes/a.webp', '/api/productos/7/imagenes/b.webp']);
+    expect(fotos).toEqual([
+      '/api/productos/7/imagenes/a.webp?ancho=400',
+      '/api/productos/7/imagenes/b.webp?ancho=400',
+    ]);
+  });
+
+  // HU-22 RF-11: la foto grande elige entre las dos versiones; el póster del visor 3D, la de 1200
+  it('la foto grande con srcset y el póster del visor con la de 1200', async () => {
+    await abrir();
+
+    const grande = pantalla().querySelector('app-galeria .foto-grande img');
+    expect(grande?.getAttribute('src')).toBe('/api/productos/7/imagenes/a.webp?ancho=1200');
+    expect(grande?.getAttribute('srcset')).toBe(
+      '/api/productos/7/imagenes/a.webp?ancho=400 400w, /api/productos/7/imagenes/a.webp?ancho=1200 1200w',
+    );
   });
 
   // HU-10 RF-2: el precio va con su unidad cuando no es «unidad»

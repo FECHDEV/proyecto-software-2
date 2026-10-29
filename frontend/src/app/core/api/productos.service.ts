@@ -1,7 +1,7 @@
 import { HttpClient, httpResource, HttpResourceRef } from '@angular/common/http';
 import { inject, Injectable, Signal } from '@angular/core';
 
-import { urlDeImagen, urlDeModelo } from '../modelos/catalogo';
+import { AnchoDeFoto, urlDeImagen, urlDeModelo } from '../modelos/catalogo';
 import { Pagina } from '../modelos/pagina';
 import {
 	Caracteristica,
@@ -79,8 +79,8 @@ export class ProductosService {
 	}
 
 	// La imagen se sirve sin sesión, como la verá el catálogo
-	urlDeImagen(idProducto: number, imagen: string): string {
-		return urlDeImagen(idProducto, imagen);
+	urlDeImagen(idProducto: number, imagen: string, ancho?: AnchoDeFoto): string {
+		return urlDeImagen(idProducto, imagen, ancho);
 	}
 
 	// HU-15: subir el modelo reemplaza el que hubiera

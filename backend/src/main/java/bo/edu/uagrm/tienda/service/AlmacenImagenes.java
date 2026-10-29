@@ -5,6 +5,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -22,8 +24,10 @@ import lombok.extern.slf4j.Slf4j;
 @EnableConfigurationProperties(ImagenesProperties.class)
 public class AlmacenImagenes {
 
+	private static final String UUID_GENERADO = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+	// El original y, para una foto, sus versiones achicadas (HU-22): <uuid>-400.jpg y <uuid>-1200.jpg
 	private static final Pattern NOMBRE_GENERADO = Pattern
-			.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(jpg|png|webp|glb)");
+			.compile(UUID_GENERADO + "(\\.(jpg|png|webp|glb)|-(400|1200)\\.jpg)");
 
 	private final Path directorio;
 
@@ -48,6 +52,39 @@ public class AlmacenImagenes {
 			throw new UncheckedIOException("No se pudo guardar la imagen " + nombre, e);
 		}
 		return nombre;
+	}
+
+	// HU-22: la versión de una foto lleva su nombre sin la extensión, el ancho y .jpg. No valida: leer() y borrar()
+	// solo aceptan nombres generados, así que con un original inventado la versión tampoco se encuentra
+	public static String nombreDeVersion(String original, int ancho) {
+		int punto = original.lastIndexOf('.');
+		return (punto < 0 ? original : original.substring(0, punto)) + "-" + ancho + ".jpg";
+	}
+
+	public static List<String> nombresDeVersiones(String original) {
+		return List.of(nombreDeVersion(original, Achicador.ANCHOS[0]), nombreDeVersion(original, Achicador.ANCHOS[1]));
+	}
+
+	// A un temporal de la misma carpeta y después a su nombre, de una vez: nunca se sirve una versión a medias
+	public String guardarVersion(String original, int ancho, byte[] jpeg) {
+		String nombre = nombreDeVersion(original, ancho);
+		try {
+			Path temporal = Files.createTempFile(directorio, "version-", ".tmp");
+			try {
+				Files.write(temporal, jpeg);
+				Files.move(temporal, directorio.resolve(nombre), StandardCopyOption.ATOMIC_MOVE,
+						StandardCopyOption.REPLACE_EXISTING);
+			} finally {
+				Files.deleteIfExists(temporal);
+			}
+		} catch (IOException e) {
+			throw new UncheckedIOException("No se pudo guardar la versión " + nombre, e);
+		}
+		return nombre;
+	}
+
+	public boolean tieneVersiones(String original) {
+		return nombresDeVersiones(original).stream().allMatch(nombre -> Files.exists(directorio.resolve(nombre)));
 	}
 
 	public Optional<byte[]> leer(String nombre) {

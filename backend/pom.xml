@@ -105,6 +105,18 @@
 			<artifactId>javase</artifactId>
 			<version>3.5.3</version>
 		</dependency>
+		<!-- Lectores de ImageIO para achicar las fotos: WebP y JPEG en CMYK, que el JDK no abre, y el EXIF
+		     (decisiones.md → Fotos achicadas) -->
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-jpeg</artifactId>
+			<version>3.15.3</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-webp</artifactId>
+			<version>3.15.3</version>
+		</dependency>
 		<!-- Exportar los reportes en Excel y en PDF (decisiones.md → Exportar reportes) -->
 		<dependency>
 			<groupId>org.apache.poi</groupId>

@@ -5,7 +5,7 @@
     class="en-galeria"
     [src]="modelo"
     [alt]="'Modelo 3D de ' + nombre()"
-    [poster]="total() > 0 && !rota(0) ? fotos()[0] : null"
+    [poster]="total() > 0 && !rota(0) ? fotos()[0].src : null"
     [realidadAumentada]="true"
   />
 } @else if (total() === 0) {
@@ -25,7 +25,9 @@
       <svg lucideWrench class="icono-foto" aria-hidden="true"></svg>
     } @else {
       <img
-        [src]="fotos()[actual()]"
+        [src]="fotos()[actual()].src"
+        [srcset]="fotos()[actual()].srcset"
+        [sizes]="tamanos"
         [alt]="alt(actual())"
         width="800"
         height="600"
@@ -49,7 +51,7 @@
             @if (rota($index)) {
               <svg lucideWrench class="icono-foto" aria-hidden="true"></svg>
             } @else {
-              <img [src]="foto" alt="" width="96" height="72" decoding="async" (error)="marcarRota($index)" />
+              <img [src]="foto.miniatura" alt="" width="96" height="72" decoding="async" (error)="marcarRota($index)" />
             }
           </button>
         </li>
@@ -92,8 +94,35 @@
     >
       @if (rota(actual())) {
         <svg lucideWrench class="icono-foto" aria-hidden="true"></svg>
-      } @else {
-        <img [src]="fotos()[actual()]" [alt]="alt(actual())" decoding="async" draggable="false" (error)="marcarRota(actual())" />
+      } @else if (ampliada()) {
+        <!-- Con red lenta no queda un recuadro vacío: la versión de la foto grande, ya en caché, hasta que baja el
+             original (HU-22). Un elemento por foto: la carga tardía de la anterior no cuenta para la nueva. Si el
+             original no carga, queda la versión y la foto no se marca rota (/code-review) -->
+        @for (indice of [actual()]; track indice) {
+          @if (!originalCargado(indice)) {
+            <img
+              class="mientras"
+              [src]="fotos()[indice].src"
+              [srcset]="fotos()[indice].srcset"
+              [sizes]="tamanos"
+              alt=""
+              draggable="false"
+            />
+          }
+          <!-- En una pantalla angosta (el celular), la de 1200, que ya bajó el detalle: ningún dato más. El
+               original, de hasta 2 MB, solo en pantallas anchas (HU-22 RF-11, opción B de Fabio) -->
+          <picture>
+            <source [media]="pantallaAngosta" [srcset]="fotos()[indice].src" />
+            <img
+              [src]="fotos()[indice].original"
+              [alt]="alt(indice)"
+              [class.cargando]="!originalCargado(indice)"
+              decoding="async"
+              draggable="false"
+              (load)="alCargarOriginal($event, indice)"
+            />
+          </picture>
+        }
       }
     </div>
 

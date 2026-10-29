@@ -19,11 +19,11 @@ import { CatalogoService } from '../../core/api/catalogo.service';
 import { mensajeDeError } from '../../core/api/mensajes-error';
 import { ponerDescripcion, resumen } from '../../core/navegacion/titulo-y-descripcion';
 import { MARCA } from '../../core/marca';
-import { aTarjeta, urlDeImagen, urlDeModelo } from '../../core/modelos/catalogo';
+import { aTarjeta, srcsetDeImagen, urlDeImagen, urlDeModelo } from '../../core/modelos/catalogo';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { Carrusel } from '../../shared/carrusel/carrusel';
 import { precio } from '../../shared/formato/precios';
-import { Galeria } from '../../shared/galeria/galeria';
+import { FotoDeGaleria, Galeria } from '../../shared/galeria/galeria';
 import { idDeLaUrl } from '../../shared/navegacion/id-de-la-url';
 import { TarjetaProducto } from '../../shared/tarjeta-producto/tarjeta-producto';
 import { AgregarAlCarrito } from './agregar-al-carrito';
@@ -69,9 +69,18 @@ export class DetallePage {
 		return error === undefined || this.noDisponible() ? '' : mensajeDeError(comoErrorApi(error));
 	});
 
-	protected readonly fotos = computed(() => {
+	// Cada foto en sus versiones (HU-22 RF-11): la grande elige con srcset, la miniatura es la de 400 y la pantalla
+	// completa, el original
+	protected readonly fotos = computed<FotoDeGaleria[]>(() => {
 		const producto = this.producto();
-		return producto === undefined ? [] : producto.imagenes.map((imagen) => urlDeImagen(producto.idProducto, imagen));
+		return producto === undefined
+			? []
+			: producto.imagenes.map((imagen) => ({
+					src: urlDeImagen(producto.idProducto, imagen, 1200),
+					srcset: srcsetDeImagen(producto.idProducto, imagen),
+					miniatura: urlDeImagen(producto.idProducto, imagen, 400),
+					original: urlDeImagen(producto.idProducto, imagen),
+				}));
 	});
 
 	// HU-16: la dirección del modelo 3D, o null; la galería ofrece «Ver en 3D»

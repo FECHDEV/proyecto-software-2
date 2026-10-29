@@ -109,4 +109,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
 	record ConteoPorCategoria(Long idCategoria, Long productos) {
 	}
+
+	// HU-22 RF-10: los productos con alguna foto, para completar sus versiones al arrancar
+	@Query("select distinct p.idProducto from Producto p join p.imagenes i")
+	List<Long> idsConImagenes();
 }

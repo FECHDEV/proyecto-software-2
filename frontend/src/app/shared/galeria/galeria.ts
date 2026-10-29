@@ -5,11 +5,21 @@ import {
 	ElementRef,
 	input,
 	linkedSignal,
+	signal,
 	viewChild,
 } from '@angular/core';
 import { LucideBox, LucideChevronLeft, LucideChevronRight, LucideImage, LucideWrench, LucideX } from '@lucide/angular';
 
 import { Visor3d } from '../visor-3d/visor-3d';
+
+// Una foto en sus versiones, ya armadas por la pantalla (HU-22): la grande (src y srcset), la miniatura y el original
+// para la pantalla completa
+export interface FotoDeGaleria {
+	src: string;
+	srcset: string;
+	miniatura: string;
+	original: string;
+}
 
 // Lo que hay que deslizar con el dedo para pasar de foto; menos es un toque
 const DESLIZAMIENTO = 40;
@@ -27,7 +37,7 @@ const DESLIZAMIENTO = 40;
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Galeria {
-	readonly fotos = input.required<string[]>();
+	readonly fotos = input.required<FotoDeGaleria[]>();
 	// Para el texto alternativo: «Taladro, foto 1 de 3»
 	readonly nombre = input.required<string>();
 	// La dirección del modelo 3D, o null sin modelo (HU-16)
@@ -38,12 +48,18 @@ export class Galeria {
 
 	// Las fotos por su contenido: la misma lista leída otra vez no es otro producto (/code-review, ronda 2)
 	private readonly mismasFotos = computed(() => this.fotos(), {
-		equal: (antes, ahora) => antes.length === ahora.length && antes.every((foto, indice) => foto === ahora[indice]),
+		equal: (antes, ahora) =>
+			antes.length === ahora.length && antes.every((foto, indice) => foto.original === ahora[indice].original),
 	});
 
 	// Con otras fotos (otro producto), vuelve a la primera y olvida las rotas
 	protected readonly actual = linkedSignal({ source: this.mismasFotos, computation: () => 0 });
-	protected readonly rotas = linkedSignal<string[], ReadonlySet<number>>({
+	protected readonly rotas = linkedSignal<FotoDeGaleria[], ReadonlySet<number>>({
+		source: this.mismasFotos,
+		computation: () => new Set<number>(),
+	});
+	// Los originales que ya bajaron: mientras tanto, la pantalla completa muestra la de 1200, que ya está en caché
+	private readonly originalesCargados = linkedSignal<FotoDeGaleria[], ReadonlySet<number>>({
 		source: this.mismasFotos,
 		computation: () => new Set<number>(),
 	});
@@ -56,6 +72,13 @@ export class Galeria {
 	});
 
 	protected readonly total = computed(() => this.fotos().length);
+	// El ancho de la foto grande en pantalla, para elegir entre sus versiones (HU-22): toda la pantalla hasta que el
+	// detalle pasa a dos columnas (detalle.page.scss, 860 px)
+	protected readonly tamanos = '(max-width: 859px) 100vw, 620px';
+	// Hasta ahí, la pantalla completa usa la de 1200 en lugar del original (HU-22 RF-11)
+	protected readonly pantallaAngosta = '(max-width: 859px)';
+	// El original pesa hasta 2 MB: la foto de la pantalla completa entra a la página recién al abrirla (HU-22)
+	protected readonly ampliada = signal(false);
 	protected readonly alInicio = computed(() => this.actual() === 0);
 	protected readonly alFinal = computed(() => this.actual() >= this.total() - 1);
 
@@ -70,6 +93,22 @@ export class Galeria {
 
 	protected rota(indice: number): boolean {
 		return this.rotas().has(indice);
+	}
+
+	protected originalCargado(indice: number): boolean {
+		return this.originalesCargados().has(indice);
+	}
+
+	// El respaldo se quita cuando el original ya se puede pintar: load avisa que bajó, decode() que está decodificado
+	// (una foto de 2 MB tarda en decodificarse y quedaría el fondo vacío unos cuadros; /code-review)
+	protected alCargarOriginal(evento: Event, indice: number): void {
+		const imagen = evento.target as HTMLImageElement;
+		const lista = typeof imagen.decode === 'function' ? imagen.decode() : Promise.resolve();
+		lista.catch(() => undefined).finally(() => this.marcarCargado(indice));
+	}
+
+	private marcarCargado(indice: number): void {
+		this.originalesCargados.update((cargados) => new Set(cargados).add(indice));
 	}
 
 	protected marcarRota(indice: number): void {
@@ -87,6 +126,7 @@ export class Galeria {
 	}
 
 	protected ampliar(): void {
+		this.ampliada.set(true);
 		// «Cerrar» es el primer botón: showModal() le da el foco una sola vez
 		this.dialogo()?.nativeElement.showModal();
 	}
@@ -97,6 +137,7 @@ export class Galeria {
 
 	// Por cualquier cierre (botón, fondo o Escape): el foco vuelve a la foto
 	protected alCerrar(): void {
+		this.ampliada.set(false);
 		this.grande()?.nativeElement.focus();
 	}
 

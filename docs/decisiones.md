@@ -17,7 +17,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
-- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Exportar reportes](#exportar-reportes) · [Catálogo de demostración](#catálogo-de-demostración)
+- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Exportar reportes](#exportar-reportes) · [Catálogo de demostración](#catálogo-de-demostración) · [Fotos achicadas](#fotos-achicadas)
 
 ---
 
@@ -120,6 +120,12 @@ en variables `TIENDA_PAGO_*` del `.env`.
   Spring Security y se bajaban en cada visita. **La imagen de una categoría**
   conserva su dirección al reemplazarse: va con `no-cache` y el nombre del
   archivo como `ETag`, y con el mismo responde 304 sin cuerpo.
+- *28/10/2026 (HU-22).* **Cada foto de producto tiene dos versiones** en la
+  misma carpeta, `<uuid>-400.jpg` y `<uuid>-1200.jpg` (detalle en «Fotos
+  achicadas»). Se piden con `?ancho=400` o `?ancho=1200` en la dirección de la
+  foto, con un año de caché; si la versión todavía no está, va el original
+  **sin caché**, para que el navegador no lo guarde en su lugar. Se escriben
+  a un temporal y se mueven de una vez, y se borran con la foto.
 
 **Motivo:** una URL externa haría depender la imagen de un sitio ajeno, que
 además vería cada visita; guardarla en la base agranda la base y sus respaldos.
@@ -1159,8 +1165,10 @@ lectura) con `catalogo.csv` y sus imágenes. Lo hace `CatalogoDemo`.
   (sale en «Destacados» de la portada); `unidad`, `unidad`, `metro`, `kilo`,
   `litro`, `caja`, `par` o `rollo`, y vacía es `unidad`.
 - **Las reglas de siempre:** categorías, productos, imágenes (2 MB, JPG, PNG o
-  WebP, hasta cinco, sin repetir) y stock pasan por los mismos servicios y
-  validaciones que la gestión. Las categorías que faltan se crean; una fila
+  WebP, hasta cinco, sin repetir; desde HU-22, hasta 8000 px de lado y 40
+  megapíxeles, y que se puedan abrir) y stock pasan por los mismos servicios y
+  validaciones que la gestión. Una foto que no se puede achicar se informa
+  antes de cargar, como las demás filas inválidas. Las categorías que faltan se crean; una fila
   de una categoría oculta es inválida, porque no se vería.
 - **Todo o nada:** una fila inválida se informa en el registro con su número y
   el motivo, y no se carga nada; un fallo durante la carga la revierte entera.
@@ -1176,3 +1184,36 @@ lectura) con `catalogo.csv` y sus imágenes. Lo hace `CatalogoDemo`.
 **Motivo:** como la carga no se repite, saltar filas dejaría un catálogo a
 medias que no se completa corrigiendo el CSV; pasar por los servicios evita
 reglas duplicadas que se desfasen.
+
+### Fotos achicadas
+
+*28/10/2026 (HU-22, entrevista con Fabio).* Al subir una foto de producto se
+guardan el original y dos versiones en **JPEG, de 400 y 1200 px de ancho**.
+La tarjeta, el carrito, las miniaturas y las listas del panel usan la de 400;
+el detalle elige con `srcset`; la galería a pantalla completa, el original.
+
+- **El original se guarda:** da nitidez a pantalla completa y deja generar
+  otras medidas en el futuro.
+- **Las WebP también se achican.** El JDK no lee WebP ni los JPEG en CMYK;
+  se suman los lectores de **TwelveMonkeys** (`imageio-webp`,
+  `imageio-jpeg`), Java puro, que se enchufan a `ImageIO`. Fabio pidió la
+  mejor forma aunque sume dependencias.
+- **La salida es JPEG, no WebP:** escribir WebP en Java necesita código
+  nativo, y en una foto de 400 px la diferencia es de pocos kB.
+- **Sin agrandar:** una foto más angosta que la versión queda con su ancho.
+  Se respeta la orientación EXIF, y lo transparente va en blanco (el fondo
+  de las fotos de la tienda, `--app-foto`).
+- **Se rechaza al subir** una foto de más de 8000 px de lado o 40 megapíxeles
+  (`IMAGEN_CON_DEMASIADOS_PIXELES`): achicarla pediría más memoria de la que
+  tiene la API. También una que no se puede abrir (`IMAGEN_INVALIDA`).
+- **Las fotos ya subidas se achican solas al arrancar,** en segundo plano;
+  mientras falte una versión se sirve el original.
+- *28/10/2026 (revisión de interfaz).* **En el celular, la pantalla completa
+  usa la de 1200** (pantallas hasta 859 px, con `<picture>`): ya la bajó el
+  detalle, así que abrirla no gasta datos. El original queda para pantallas
+  anchas. Con zoom de los dedos se ve menos detalle; Fabio lo prefirió al
+  costo de hasta 2 MB por foto.
+
+**Motivo:** la tarjeta mostraba a 300 px fotos de hasta 2 MB; con la versión
+de 400 baja unos 30 kB. Guardar el original cuesta disco, pero no pierde
+calidad ni obliga a pedirle al Administrador que vuelva a subir las fotos.

@@ -81,8 +81,8 @@ class ProductosFalso {
     this.cambios.push({ id, activo });
     return this.respuesta;
   }
-  urlDeImagen(id: number, imagen: string) {
-    return `/api/productos/${id}/imagenes/${imagen}`;
+  urlDeImagen(id: number, imagen: string, ancho?: number) {
+    return `/api/productos/${id}/imagenes/${imagen}${ancho === undefined ? '' : `?ancho=${ancho}`}`;
   }
 }
 
@@ -154,7 +154,7 @@ describe('ProductosPage', () => {
     expect(texto()).toContain('Bs 1.234,50 / metro');
     expect(texto()).toContain('Inactivo');
     const imagen: HTMLImageElement = pantalla().querySelector('td.miniatura img')!;
-    expect(imagen.getAttribute('src')).toBe('/api/productos/7/imagenes/a.png');
+    expect(imagen.getAttribute('src')).toBe('/api/productos/7/imagenes/a.png?ancho=400');
     expect(pantalla().querySelectorAll('td.miniatura img')).toHaveLength(1);
     expect(texto()).toContain('Página 1 de 2 · 21 productos');
   });

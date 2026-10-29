@@ -3,6 +3,7 @@ package bo.edu.uagrm.tienda.service;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -49,6 +50,7 @@ public class ProductoService {
 	private final CategoriaRepository categoriaRepository;
 	private final PedidoRepository pedidoRepository;
 	private final AlmacenImagenes almacen;
+	private final Achicador achicador;
 	private final Clock clock;
 
 	@Transactional(readOnly = true)
@@ -117,12 +119,20 @@ public class ProductoService {
 			throw new ImagenDemasiadoGrandeException();
 		}
 		FormatoImagen formato = FormatoImagen.detectar(contenido).orElseThrow(ImagenInvalidaException::new);
+		// Antes de bloquear: el trabajo de CPU no frena a nadie, y una foto rechazada no bloquea nada (HU-22)
+		Achicador.Versiones versiones = achicador.achicar(contenido);
 		Producto producto = bloquear(idProducto);
 		if (producto.getImagenes().size() >= MAXIMO_IMAGENES) {
 			throw new ProductoLlenoDeImagenesException();
 		}
+		// Se registra antes de escribir y se llena a medida que se guarda: si falla la segunda versión, al revertir se
+		// borran el original y la primera
+		List<String> guardados = new ArrayList<>();
+		ArchivosAlTerminar.borrar(almacen, List.of(), guardados);
 		String nueva = almacen.guardar(contenido, formato);
-		ArchivosAlTerminar.borrar(almacen, null, nueva);
+		guardados.add(nueva);
+		guardados.add(almacen.guardarVersion(nueva, Achicador.ANCHOS[0], versiones.de400()));
+		guardados.add(almacen.guardarVersion(nueva, Achicador.ANCHOS[1], versiones.de1200()));
 		producto.agregarImagen(nueva);
 		return ProductoResponse.from(producto);
 	}
@@ -133,7 +143,9 @@ public class ProductoService {
 		Producto producto = bloquear(idProducto);
 		if (producto.getImagenes().contains(imagen)) {
 			producto.quitarImagen(imagen);
-			ArchivosAlTerminar.borrar(almacen, imagen, null);
+			List<String> archivos = new ArrayList<>(List.of(imagen));
+			archivos.addAll(AlmacenImagenes.nombresDeVersiones(imagen));
+			ArchivosAlTerminar.borrar(almacen, archivos, List.of());
 		}
 		return ProductoResponse.from(producto);
 	}
@@ -149,12 +161,23 @@ public class ProductoService {
 		return ProductoResponse.from(producto);
 	}
 
-	// Pública, como la verá el catálogo; solo sirve las imágenes que son del producto
+	// Pública, como la verá el catálogo; solo sirve las imágenes que son del producto. Con un ancho (HU-22), su
+	// versión achicada, o el original si todavía no está (RF-8); el ancho ya llega validado
 	@Transactional(readOnly = true)
-	public Optional<ImagenGuardada> imagen(Long idProducto, String imagen) {
-		return productoRepository.findById(idProducto).filter(producto -> producto.getImagenes().contains(imagen))
-				.flatMap(producto -> almacen.leer(imagen))
-				.map(contenido -> new ImagenGuardada(contenido, FormatoImagen.deArchivo(imagen), imagen));
+	public Optional<ImagenGuardada> imagen(Long idProducto, String imagen, Integer ancho) {
+		if (productoRepository.findById(idProducto).filter(producto -> producto.getImagenes().contains(imagen))
+				.isEmpty()) {
+			return Optional.empty();
+		}
+		if (ancho != null) {
+			String version = AlmacenImagenes.nombreDeVersion(imagen, ancho);
+			Optional<byte[]> achicada = almacen.leer(version);
+			if (achicada.isPresent()) {
+				return Optional.of(new ImagenGuardada(achicada.get(), FormatoImagen.JPEG, version));
+			}
+		}
+		return almacen.leer(imagen).map(
+				contenido -> new ImagenGuardada(contenido, FormatoImagen.deArchivo(imagen), imagen, ancho == null));
 	}
 
 	// Como agregarImagen: con la fila bloqueada, dos reemplazos a la vez dejan un solo modelo; el anterior se borra

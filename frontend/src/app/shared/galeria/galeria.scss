@@ -154,6 +154,9 @@
 
 .ampliada {
 	display: grid;
+	// Una celda con alto definido: sin esto, max-height de la foto no limita nada y una foto alta se sale de la
+	// pantalla y queda bajo los controles (revisión de interfaz de HU-22)
+	grid-template: minmax(0, 1fr) / minmax(0, 1fr);
 	place-items: center;
 	min-height: 0;
 	// El dedo desliza la foto, no la página; el zoom del sistema sigue andando
@@ -161,11 +164,30 @@
 	user-select: none;
 }
 
+.ampliada picture {
+	// La foto de adentro se ubica en la grilla como si el picture no estuviera
+	display: contents;
+}
+
 .ampliada img {
+	// La de 1200 y el original, una sobre otra hasta que el original carga
+	grid-area: 1 / 1;
 	max-width: 100%;
 	max-height: 100%;
 	background: var(--app-foto);
 	object-fit: contain;
+}
+
+.ampliada img.cargando {
+	opacity: 0;
+}
+
+// El respaldo ocupa la celda entera, como el original: con srcset su tamaño natural sale de sizes (620 px) y la
+// foto saltaría al cambiar. Es un JPEG ya sobre blanco: sin el fondo de foto alrededor (/code-review)
+.ampliada img.mientras {
+	width: 100%;
+	height: 100%;
+	background: none;
 }
 
 .ampliada .icono-foto {

@@ -43,6 +43,7 @@ const MENSAJES: Record<string, string> = {
 		'El stock, el mínimo o un pedido abierto de este producto tienen decimales y esa unidad no los admite. Ajuste el stock o espere a que se entregue el pedido.',
 	IMAGEN_INVALIDA: 'Ese archivo no es una imagen JPG, PNG o WebP.',
 	IMAGEN_DEMASIADO_GRANDE: 'La imagen pesa más de 2 MB. Elija una más liviana.',
+	IMAGEN_CON_DEMASIADOS_PIXELES: 'La foto es demasiado grande: hasta 8000 px de lado y 40 megapíxeles.',
 	MODELO_INVALIDO: 'Ese archivo no es un modelo 3D .glb.',
 	MODELO_DEMASIADO_GRANDE: 'El modelo pesa más de 3 MB. Prepárelo más liviano antes de subirlo.',
 	PRODUCTO_AGOTADO: 'Este producto está agotado.',

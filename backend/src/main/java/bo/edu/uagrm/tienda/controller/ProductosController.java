@@ -2,6 +2,7 @@ package bo.edu.uagrm.tienda.controller;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.http.CacheControl;
@@ -18,6 +19,9 @@ import bo.edu.uagrm.tienda.dto.PaginaResponse;
 import bo.edu.uagrm.tienda.dto.PortadaResponse;
 import bo.edu.uagrm.tienda.dto.ProductoDetalleResponse;
 import bo.edu.uagrm.tienda.dto.ProductoTarjetaResponse;
+import bo.edu.uagrm.tienda.exception.CamposInvalidosException;
+import bo.edu.uagrm.tienda.exception.CamposInvalidosException.CampoInvalido;
+import bo.edu.uagrm.tienda.service.Achicador;
 import bo.edu.uagrm.tienda.service.CatalogoService;
 import bo.edu.uagrm.tienda.service.FormatoModelo;
 import bo.edu.uagrm.tienda.service.ProductoService;
@@ -65,12 +69,19 @@ public class ProductosController {
 
 	// Como el modelo: el nombre es nuevo con cada subida, así que se guarda un año. Sin esto salía con el no-store
 	// que pone Spring Security y el navegador la volvía a bajar en cada visita (plan 2026-10-28)
+	// HU-22: con ?ancho=400 o 1200, la versión achicada. Si todavía no está, el original sin caché: con un año, el
+	// navegador lo seguiría usando en lugar de la versión cuando ya exista (RF-8)
 	@GetMapping("/{idProducto}/imagenes/{imagen}")
-	public ResponseEntity<byte[]> imagen(@PathVariable Long idProducto, @PathVariable String imagen) {
-		return productoService.imagen(idProducto, imagen)
+	public ResponseEntity<byte[]> imagen(@PathVariable Long idProducto, @PathVariable String imagen,
+			@RequestParam(required = false) Integer ancho) {
+		if (ancho != null && Arrays.stream(Achicador.ANCHOS).noneMatch(valido -> valido == ancho)) {
+			throw new CamposInvalidosException(List.of(new CampoInvalido("ancho", "admite 400 o 1200")));
+		}
+		return productoService.imagen(idProducto, imagen, ancho)
 				.map(guardada -> ResponseEntity.ok()
 						.contentType(MediaType.parseMediaType(guardada.formato().tipoDeContenido()))
-						.cacheControl(GUARDAR_UN_ANO).body(guardada.contenido()))
+						.cacheControl(guardada.servidaComoSePidio() ? GUARDAR_UN_ANO : CacheControl.noCache())
+						.body(guardada.contenido()))
 				.orElseGet(() -> ResponseEntity.notFound().build());
 	}
 

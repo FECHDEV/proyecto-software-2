@@ -49,8 +49,7 @@ class CarritoIntegracionTest {
 	private static final String LINEAS = CARRITO + "/lineas";
 	private static final List<String> CORREOS = List.of("ana.hu11@mail.com", "beto.hu11@mail.com",
 			"emp.hu11@mail.com", "con.hu11@mail.com");
-	// La firma de un PNG: el formato se reconoce por el contenido
-	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n', 0, 0, 0, 0 };
+	private static final byte[] PNG = FotoDePrueba.PNG;
 
 	@Autowired
 	private MockMvcTester mvc;

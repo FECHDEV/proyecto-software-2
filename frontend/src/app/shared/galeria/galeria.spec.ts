@@ -2,9 +2,19 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 
 import { CARGAR_VISOR_3D, MOVIMIENTO_REDUCIDO } from '../visor-3d/visor-3d';
-import { Galeria } from './galeria';
+import { FotoDeGaleria, Galeria } from './galeria';
 
 const FOTOS = ['/fotos/a.webp', '/fotos/b.webp', '/fotos/c.webp'];
+
+// Como las arma el detalle (HU-22): la grande de 1200 con srcset, la miniatura de 400 y el original
+function comoFoto(original: string): FotoDeGaleria {
+  return {
+    src: `${original}?ancho=1200`,
+    srcset: `${original}?ancho=400 400w, ${original}?ancho=1200 1200w`,
+    miniatura: `${original}?ancho=400`,
+    original,
+  };
+}
 
 // HU-10: las fotos del producto y su pantalla completa
 describe('Galeria', () => {
@@ -13,7 +23,7 @@ describe('Galeria', () => {
   async function abrir(fotos: string[] = FOTOS) {
     TestBed.resetTestingModule();
     fijo = TestBed.createComponent(Galeria);
-    fijo.componentRef.setInput('fotos', fotos);
+    fijo.componentRef.setInput('fotos', fotos.map(comoFoto));
     fijo.componentRef.setInput('nombre', 'Taladro');
     fijo.autoDetectChanges();
     await fijo.whenStable();
@@ -40,7 +50,7 @@ describe('Galeria', () => {
   }
 
   function fotoAmpliada(): string | null | undefined {
-    return dialogo().querySelector('.ampliada img')?.getAttribute('src');
+    return dialogo().querySelector('.ampliada img:not(.mientras)')?.getAttribute('src');
   }
 
   function boton(clase: string): HTMLButtonElement {
@@ -57,11 +67,104 @@ describe('Galeria', () => {
     await fijo.whenStable();
   }
 
+  // HU-22 RF-11: la grande elige con srcset, las miniaturas van con la de 400 y la pantalla completa con el original
+  it('cada foto con la versión que le corresponde', async () => {
+    await abrir();
+
+    const foto = grande().querySelector('img')!;
+    expect(foto.getAttribute('srcset')).toBe('/fotos/a.webp?ancho=400 400w, /fotos/a.webp?ancho=1200 1200w');
+    expect(foto.getAttribute('sizes')).toBeTruthy();
+    expect(miniaturas().map((cada) => cada.querySelector('img')?.getAttribute('src'))).toEqual([
+      '/fotos/a.webp?ancho=400',
+      '/fotos/b.webp?ancho=400',
+      '/fotos/c.webp?ancho=400',
+    ]);
+    await ampliar();
+    expect(fotoAmpliada()).toBe('/fotos/a.webp');
+  });
+
+  // HU-22 (revisión de interfaz): con red lenta no queda un recuadro vacío; mientras baja el original se ve la de
+  // 1200, que ya está en caché, y al cargar queda solo el original
+  it('mientras baja el original muestra la de 1200', async () => {
+    await abrir();
+    await ampliar();
+
+    const mientras = dialogo().querySelector('.ampliada img.mientras');
+    expect(mientras?.getAttribute('src')).toBe('/fotos/a.webp?ancho=1200');
+    const original = dialogo().querySelector('.ampliada img:not(.mientras)')!;
+    expect(original.classList).toContain('cargando');
+
+    original.dispatchEvent(new Event('load'));
+    await fijo.whenStable();
+
+    expect(dialogo().querySelector('.ampliada img.mientras')).toBeNull();
+    expect(original.classList).not.toContain('cargando');
+  });
+
+  // /code-review: el respaldo usa el mismo srcset que la foto grande, así reutiliza la versión que ya bajó
+  it('el respaldo de la pantalla completa usa el srcset de la foto grande', async () => {
+    await abrir();
+    await ampliar();
+
+    const mientras = dialogo().querySelector('.ampliada img.mientras');
+    expect(mientras?.getAttribute('srcset')).toBe(grande().querySelector('img')?.getAttribute('srcset'));
+    expect(mientras?.getAttribute('sizes')).toBe(grande().querySelector('img')?.getAttribute('sizes'));
+  });
+
+  // /code-review: la carga tardía del original anterior no marca cargada la foto nueva
+  it('una carga tardía de la foto anterior no cuenta para la nueva', async () => {
+    await abrir();
+    await ampliar();
+    const anterior = dialogo().querySelector('.ampliada img:not(.mientras)')!;
+    await tecla('ArrowRight');
+
+    anterior.dispatchEvent(new Event('load'));
+    await fijo.whenStable();
+
+    expect(dialogo().querySelector('.ampliada img:not(.mientras)')?.classList).toContain('cargando');
+    expect(dialogo().querySelector('.ampliada img.mientras')).not.toBeNull();
+  });
+
+  // /code-review: si falla solo el original, sigue la de 1200; la foto no queda rota en el detalle
+  it('si el original no carga queda la de 1200 y la foto no se marca rota', async () => {
+    await abrir();
+    await ampliar();
+
+    dialogo().querySelector('.ampliada img:not(.mientras)')!.dispatchEvent(new Event('error'));
+    dialogo().querySelector('.ampliada img.mientras')!.dispatchEvent(new Event('error'));
+    await fijo.whenStable();
+
+    expect(dialogo().querySelector('.ampliada .icono-foto')).toBeNull();
+    expect(dialogo().querySelector('.ampliada img:not(.mientras)')).not.toBeNull();
+    expect(grande().querySelector('img')).not.toBeNull();
+  });
+
+  // HU-22 RF-11 (28/10/2026, opción B de Fabio): en una pantalla angosta, la pantalla completa usa la de 1200,
+  // que ya bajó el detalle; el original, solo en pantallas anchas
+  it('en el celular la pantalla completa usa la de 1200', async () => {
+    await abrir();
+    await ampliar();
+
+    const celular = dialogo().querySelector('.ampliada picture source');
+    expect(celular?.getAttribute('media')).toBe('(max-width: 859px)');
+    expect(celular?.getAttribute('srcset')).toBe('/fotos/a.webp?ancho=1200');
+    expect(fotoAmpliada()).toBe('/fotos/a.webp');
+  });
+
+  // HU-22 RF-11: el original pesa hasta 2 MB; con la pantalla completa cerrada no se pide
+  it('el original se pide recién al abrir la pantalla completa', async () => {
+    await abrir();
+    expect(dialogo().querySelector('.ampliada img')).toBeNull();
+
+    await ampliar();
+    expect(fotoAmpliada()).toBe('/fotos/a.webp');
+  });
+
   // HU-10 RF-5
   it('muestra la principal y las miniaturas', async () => {
     await abrir();
 
-    expect(fotoGrande()).toBe('/fotos/a.webp');
+    expect(fotoGrande()).toBe('/fotos/a.webp?ancho=1200');
     expect(grande().querySelector('img')?.getAttribute('alt')).toBe('Taladro, foto 1 de 3');
     expect(miniaturas()).toHaveLength(3);
     expect(miniaturas()[0].getAttribute('aria-pressed')).toBe('true');
@@ -75,7 +178,7 @@ describe('Galeria', () => {
     miniaturas()[2].click();
     await fijo.whenStable();
 
-    expect(fotoGrande()).toBe('/fotos/c.webp');
+    expect(fotoGrande()).toBe('/fotos/c.webp?ancho=1200');
     expect(miniaturas()[2].getAttribute('aria-pressed')).toBe('true');
     expect(miniaturas()[0].getAttribute('aria-pressed')).toBe('false');
   });
@@ -168,7 +271,7 @@ describe('Galeria', () => {
 
     expect(dialogo().hasAttribute('open')).toBe(false);
     expect(document.activeElement).toBe(grande());
-    expect(fotoGrande()).toBe('/fotos/b.webp');
+    expect(fotoGrande()).toBe('/fotos/b.webp?ancho=1200');
   });
 
   // HU-10 RF-6
@@ -252,10 +355,10 @@ describe('Galeria', () => {
     miniaturas()[2].click();
     await fijo.whenStable();
 
-    fijo.componentRef.setInput('fotos', ['/fotos/x.webp', '/fotos/y.webp']);
+    fijo.componentRef.setInput('fotos', ['/fotos/x.webp', '/fotos/y.webp'].map(comoFoto));
     await fijo.whenStable();
 
-    expect(fotoGrande()).toBe('/fotos/x.webp');
+    expect(fotoGrande()).toBe('/fotos/x.webp?ancho=1200');
     expect(miniaturas()[0].getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -274,7 +377,7 @@ describe('Galeria', () => {
       ],
     });
     fijo = TestBed.createComponent(Galeria);
-    fijo.componentRef.setInput('fotos', fotos);
+    fijo.componentRef.setInput('fotos', fotos.map(comoFoto));
     fijo.componentRef.setInput('nombre', 'Taladro');
     fijo.componentRef.setInput('modelo', MODELO);
     fijo.autoDetectChanges();
@@ -312,7 +415,8 @@ describe('Galeria', () => {
     expect(grande()).toBeNull();
     const modelo = raiz().querySelector('model-viewer')!;
     expect(modelo.getAttribute('src')).toBe(MODELO);
-    expect(modelo.getAttribute('poster')).toBe(FOTOS[0]);
+    // HU-22 RF-11: el póster es la de 1200
+    expect(modelo.getAttribute('poster')).toBe(`${FOTOS[0]}?ancho=1200`);
     expect(modelo.getAttribute('alt')).toBe('Modelo 3D de Taladro');
     // En la tienda, con realidad aumentada
     expect(modelo.hasAttribute('ar')).toBe(true);
@@ -339,7 +443,7 @@ describe('Galeria', () => {
     await cambiarVista();
 
     expect(visor()).toBeNull();
-    expect(fotoGrande()).toBe(FOTOS[1]);
+    expect(fotoGrande()).toBe(`${FOTOS[1]}?ancho=1200`);
   });
 
   // HU-16 RF-6
@@ -351,7 +455,7 @@ describe('Galeria', () => {
     await fijo.whenStable();
 
     expect(visor()).toBeNull();
-    expect(fotoGrande()).toBe(FOTOS[2]);
+    expect(fotoGrande()).toBe(`${FOTOS[2]}?ancho=1200`);
     expect(botonDeVista()!.textContent).toContain('Ver en 3D');
   });
 
@@ -360,12 +464,12 @@ describe('Galeria', () => {
     await abrirConModelo();
     await cambiarVista();
 
-    fijo.componentRef.setInput('fotos', ['/fotos/x.webp']);
+    fijo.componentRef.setInput('fotos', ['/fotos/x.webp'].map(comoFoto));
     fijo.componentRef.setInput('modelo', '/api/productos/8/modelo/n.glb');
     await fijo.whenStable();
 
     expect(visor()).toBeNull();
-    expect(fotoGrande()).toBe('/fotos/x.webp');
+    expect(fotoGrande()).toBe('/fotos/x.webp?ancho=1200');
   });
 
   // /code-review: una foto principal rota no es el póster
@@ -387,12 +491,12 @@ describe('Galeria', () => {
     await fijo.whenStable();
     await cambiarVista();
 
-    fijo.componentRef.setInput('fotos', [...FOTOS]);
+    fijo.componentRef.setInput('fotos', FOTOS.map(comoFoto));
     await fijo.whenStable();
     expect(visor()).not.toBeNull();
 
     await cambiarVista();
-    expect(fotoGrande()).toBe(FOTOS[2]);
+    expect(fotoGrande()).toBe(`${FOTOS[2]}?ancho=1200`);
   });
 
   // HU-16 caso límite: un modelo sin fotos
@@ -425,7 +529,7 @@ describe('Galeria', () => {
 
     await cambiarVista();
 
-    expect(fotoGrande()).toBe(FOTOS[0]);
+    expect(fotoGrande()).toBe(`${FOTOS[0]}?ancho=1200`);
   });
 
   // HU-16 caso límite «Teclado»: el botón no se reemplaza, así el foco no se pierde

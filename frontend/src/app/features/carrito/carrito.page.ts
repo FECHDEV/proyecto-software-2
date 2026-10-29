@@ -89,7 +89,7 @@ export class CarritoPage {
 	}
 
 	protected foto(linea: LineaDeCarrito): string | null {
-		return linea.imagen === null ? null : urlDeImagen(linea.idProducto, linea.imagen);
+		return linea.imagen === null ? null : urlDeImagen(linea.idProducto, linea.imagen, 400);
 	}
 
 	// «Unidad» no se escribe, como en el detalle
