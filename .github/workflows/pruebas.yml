@@ -75,7 +75,7 @@ jobs:
       - name: Registros de la API
         if: failure()
         run: docker compose -p tienda-e2e -f ../docker-compose.yml --env-file e2e/.env.e2e logs backend
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: informe-e2e
