@@ -181,6 +181,9 @@ los datos del `.env`.
   total, así que alcanza un servidor de 2 GB con swap. Para ver el uso:
   `docker stats $(docker compose ps -q)`.
 - **Registros de la API:** `docker compose logs -f backend`.
+- **Salud de la API:** `docker compose ps` la muestra `(healthy)` cuando responde
+  y llega a la base; `(unhealthy)` si dejó de hacerlo. El sitio arranca recién
+  con la API sana.
 
 ### En un servidor, con HTTPS
 

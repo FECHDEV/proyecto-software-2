@@ -42,6 +42,8 @@ public class SecurityConfig {
 						// token: sin esto, cualquier error de una petición autenticada terminaría como 401. Pedir
 						// /error directamente es un despacho REQUEST y sigue exigiendo sesión
 						.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+						// La salud, para el healthcheck de Docker: sin detalles, y nginx no la publica (decisiones.md)
+						.requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/registro", "/api/auth/inicio-sesion",
 								"/api/auth/recuperacion", "/api/auth/recuperacion/restablecimiento",
 								"/api/auth/verificacion").permitAll()
