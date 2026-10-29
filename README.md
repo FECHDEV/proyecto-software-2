@@ -36,7 +36,7 @@ historia por historia, con Scrum y el flujo SDD de `docs/flujo-sdd.md`.
 ## Requisitos
 
 - JDK 21
-- Node.js 22 y npm
+- Node.js 26 (LTS) y npm
 - MySQL Server 8.4 en `localhost:3306` (solo para levantar la API en local; las
   pruebas no lo necesitan)
 

@@ -212,6 +212,11 @@ las acciones del CI. Cada PR pasa por el CI como cualquier otro.
   con `@google/model-viewer` (pide una versión fija: con otra, `npm ci` no
   instala), ni las menores y mayores de TypeScript, que siguen a lo que acepte
   Angular (22 pide `>=6.0 <6.1`).
+- *29/10/2026.* Con la imagen de Docker en Node 26 (#83, LTS desde octubre),
+  el CI, el README y las sesiones en la nube pasan también a Node 26: todos
+  compilan con la misma. npm 11 no corre los scripts de instalación de
+  `esbuild`, `lmdb`, `msgpackr-extract` y `@parcel/watcher`, que solo compilan
+  un binario si no hay uno hecho; para Linux lo hay y el build anda sin ellos.
 - **Motivo:** el 29/10/2026 `npm audit` marcaba 8 avisos (4 altos), casi todos
   de herramientas de desarrollo y uno, `zod`, que llega por `@angular/forms`
   pero no termina en la página. El npm 10.9 del CI, de Docker y de la sesión
