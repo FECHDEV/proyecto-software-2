@@ -6,6 +6,7 @@ import {
   enlaceDeVerificacion,
   iniciarSesion,
   registrar,
+  revisarAccesibilidad,
   vigilarPoliticaDeContenido,
 } from './apoyo';
 
@@ -19,7 +20,8 @@ let numeroDePedido: string;
 let bloqueos: string[];
 
 test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage();
+  // En un contexto propio y no con browser.newPage(): axe abre otra página en el mismo contexto
+  page = await (await browser.newContext()).newPage();
   bloqueos = vigilarPoliticaDeContenido(page);
 });
 
@@ -29,7 +31,7 @@ test.afterEach(() => {
 });
 
 test.afterAll(async () => {
-  await page.close();
+  await page.context().close();
 });
 
 test('se registra y queda con la sesión iniciada', async () => {
@@ -63,6 +65,7 @@ test('en el carrito cambia la cantidad, quita un producto y el total sigue', asy
   await page.getByRole('button', { name: 'Quitar Pala de punta' }).click();
   await expect(page.locator('.linea')).toHaveCount(1);
   await expect(total).toContainText('171,00');
+  await revisarAccesibilidad(page);
 });
 
 test('sin verificar el correo no puede confirmar el pedido', async () => {
@@ -92,11 +95,13 @@ test('confirma el pedido y tiene 30 minutos para pagarlo', async () => {
   await expect(page.getByText('Pendiente de pago', { exact: false }).first()).toBeVisible();
   await expect(page.getByRole('timer')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Carrito, sin productos' })).toBeVisible();
+  await revisarAccesibilidad(page);
 });
 
 test('paga con el simulador y el pedido queda pagado', async () => {
   await page.getByRole('button', { name: 'Pagar con QR' }).click();
   await expect(page.getByRole('img', { name: `Código QR para pagar el pedido N.º ${numeroDePedido}` })).toBeVisible();
+  await revisarAccesibilidad(page);
 
   await page.getByRole('button', { name: 'Simular pago' }).click();
 
@@ -111,6 +116,7 @@ test('el pedido aparece pagado en «Mis pedidos»', async () => {
   await expect(fila).toContainText('Pagado');
   await expect(fila).toContainText('171,00');
   await expect(page.getByRole('region', { name: /esperando el pago/ })).toHaveCount(0);
+  await revisarAccesibilidad(page);
 });
 
 test('el personal ve el pedido pagado y registra la entrega', async () => {
@@ -122,11 +128,23 @@ test('el personal ve el pedido pagado y registra la entrega', async () => {
   await page.getByRole('link', { name: new RegExp(`N\\.º\\s${numeroDePedido}`) }).click();
   await expect(page.getByRole('heading', { level: 1, name: new RegExp(`${numeroDePedido}$`) })).toBeVisible();
   await expect(page.getByText(cliente.correo)).toBeVisible();
+  await revisarAccesibilidad(page);
 
   await page.getByRole('button', { name: 'Registrar entrega' }).click();
+  await revisarAccesibilidad(page);
   await page.getByRole('dialog').getByRole('button', { name: /entrega/i }).click();
 
   await expect(page.locator('.estado').first()).toHaveText('Entregado');
+});
+
+// Las pantallas de gestión, con datos: el pedido de recién y el catálogo de prueba
+test('las pantallas de gestión no tienen problemas de accesibilidad', async () => {
+  const rutas = ['/panel', '/usuarios', '/categorias', '/productos', '/productos/1', '/inventario', '/inventario/1'];
+  for (const ruta of [...rutas, '/pedidos', '/reportes']) {
+    await page.goto(ruta);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await revisarAccesibilidad(page);
+  }
 });
 
 test('el Cliente ve su pedido entregado', async () => {
@@ -135,4 +153,5 @@ test('el Cliente ve su pedido entregado', async () => {
 
   await page.goto(`/mis-pedidos/${numeroDePedido}`);
   await expect(page.getByText(/Lo retiraron/)).toBeVisible();
+  await revisarAccesibilidad(page);
 });

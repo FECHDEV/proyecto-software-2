@@ -627,6 +627,17 @@ solo lugar por tema evita que se contradigan.
   no un backend sobre H2; desde cero, porque el backend deja crear 5 cuentas por
   hora desde una misma conexión. En el CI, el trabajo «Extremo a extremo»
   reemplaza al de las imágenes Docker, porque las construye.
+  *29/10/2026.* **Revisión de accesibilidad con axe** (`@axe-core/playwright`,
+  dependencia de desarrollo): las pruebas de extremo a extremo revisan con WCAG
+  2.2 AA y las buenas prácticas de axe las pantallas sin sesión (en los dos
+  temas, con la foto a pantalla completa y los errores del formulario), cada
+  pantalla de la compra, las de gestión y el celular, y **fallan con cualquier
+  problema**, no solo los graves. La primera revisión encontró uno solo, en
+  todas las pantallas: el enlace del logo se llamaba «Tienda Montero, ir al
+  inicio» por un `aria-label`, distinto de lo que se ve (WCAG 2.5.3). Ahora el
+  nombre sale del texto visible y «, ir al inicio» va solo para lectores.
+  **Motivo:** la revisión automática no reemplaza probar con un lector de
+  pantalla, pero atrapa a tiempo lo que se rompe al cambiar una pantalla.
 - *20/10/2026 (auditoría).* **Un botón que espera una respuesta no se
   deshabilita:** lleva `aria-disabled` y su manejador ignora un segundo toque.
   Con `disabled` el navegador manda el foco al cuerpo de la página. `disabled`

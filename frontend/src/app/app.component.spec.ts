@@ -72,6 +72,18 @@ describe('AppComponent', () => {
     expect(encabezado.textContent).toContain(MARCA.nombre);
   });
 
+  // WCAG 2.5.3 (revisión de accesibilidad, 29/10/2026): el nombre del enlace sale del texto que se ve, así quien
+  // maneja la página por voz lo nombra como lo lee. Sin aria-label, que lo reemplazaba
+  it('el enlace de la marca se llama como se ve, y avisa que va al inicio', () => {
+    const marca: HTMLAnchorElement = crear().nativeElement.querySelector('header a.marca');
+    const partes = [...marca.querySelectorAll('span:not([aria-hidden="true"])')];
+    const nombre = partes.map((parte) => parte.textContent).join('');
+
+    expect(marca.hasAttribute('aria-label')).toBe(false);
+    expect(nombre).toBe(`${MARCA.nombre}, ir al inicio`);
+    expect(marca.querySelector('.solo-lectores')?.textContent).toBe(', ir al inicio');
+  });
+
   // La aplicación se presenta como el producto de una empresa (decisiones.md → Sistema de diseño)
   it('no menciona la universidad ni el origen académico', () => {
     const texto: string = crear().nativeElement.textContent.toLowerCase();

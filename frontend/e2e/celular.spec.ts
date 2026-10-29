@@ -1,6 +1,6 @@
 import { expect, Page, test } from '@playwright/test';
 
-import { clienteNuevo, registrar } from './apoyo';
+import { clienteNuevo, registrar, revisarAccesibilidad } from './apoyo';
 
 // En un celular (proyecto «celular» de playwright.config.ts): la tienda entra en el ancho y se puede comprar
 async function sinScrollHorizontal(page: Page): Promise<void> {
@@ -12,11 +12,13 @@ test('el catálogo y el producto entran en el ancho del celular', async ({ page 
   await page.goto('/catalogo');
   await expect(page.locator('app-tarjeta-producto')).toHaveCount(3);
   await sinScrollHorizontal(page);
+  await revisarAccesibilidad(page);
 
   await page.locator('app-tarjeta-producto').filter({ hasText: 'Pala de punta' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Pala de punta' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Agregar al carrito' })).toBeVisible();
   await sinScrollHorizontal(page);
+  await revisarAccesibilidad(page);
 });
 
 test('desde el celular se registra y agrega al carrito', async ({ page }) => {
