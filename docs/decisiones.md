@@ -13,7 +13,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 ## Índice
 
-- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot)
+- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api)
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios) · [Política de contenido](#política-de-contenido)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
@@ -214,6 +214,30 @@ las acciones del CI. Cada PR pasa por el CI como cualquier otro.
   falla al rearmar el lockfile (un error interno con la dependencia opcional
   `canvas` de jsdom) y borra los campos `libc` que necesita la imagen Alpine:
   Dependabot lo rearma con su propio npm.
+
+### Salud de la API
+
+*29/10/2026.* La API expone `/actuator/health` (Spring Boot Actuator) y el
+`healthcheck` del backend en `docker-compose.yml` la consulta con `curl` desde
+adentro del contenedor. nginx solo reenvía `/api`, así que desde afuera no se
+llega.
+
+- **Solo la salud, sin detalles:** responde `{"status":"UP"}` o `DOWN`; ningún
+  otro endpoint de Actuator queda expuesto. Revisa la base y el disco, **no
+  Gmail** (`management.health.mail.enabled=false`): un corte del correo no hace
+  mala a la API, y no se abre una conexión SMTP cada 30 s.
+- **El frontend arranca recién con la API sana** (`depends_on` con
+  `service_healthy`), como la API espera a la base: el sitio no abre con `/api`
+  respondiendo 502.
+- **Hasta 10 minutos para el primer arranque** (`start_period`), lo que espera
+  `scripts/instalar-servidor.sh` mientras Hibernate crea las tablas. Mientras
+  arranca pregunta cada 5 s, así que pasa a sana apenas responde; después,
+  cada 30 s.
+- **Docker no reinicia un contenedor enfermo:** solo lo marca `(unhealthy)` en
+  `docker compose ps`. Un proceso que se cae (o se queda sin memoria, con
+  `-XX:+ExitOnOutOfMemoryError`) sí se reinicia por `restart: unless-stopped`.
+  Reiniciar uno colgado necesitaría otro contenedor que vigile; no hace falta
+  por ahora.
 
 ---
 

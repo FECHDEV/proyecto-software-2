@@ -40,6 +40,12 @@
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
+		<!-- Salud de la API para el healthcheck de Docker: solo /actuator/health (decisiones.md → Salud de la API) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>

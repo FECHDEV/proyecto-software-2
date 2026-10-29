@@ -76,13 +76,26 @@ services:
       # Solo lectura. Sin TIENDA_DEMO_DIRECTORIO se monta una carpeta vacía del repositorio, que no se lee
       - ${TIENDA_DEMO_DIRECTORIO:-./backend/demo-vacia}:/datos/demo:ro
     # Sin puertos publicados: se llega por nginx, bajo /api
+    # Sana si responde /actuator/health, que revisa también la base (decisiones.md → Salud de la API). Mientras
+    # arranca pregunta cada 5 s y pasa a sana apenas responde; tiene hasta 10 minutos, como el primer arranque de
+    # scripts/instalar-servidor.sh, que crea todas las tablas. Después, cada 30 s: tres fallas seguidas la marcan
+    # «unhealthy» en docker compose ps
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--max-time", "4", "http://localhost:8080/actuator/health"]
+      start_period: 10m
+      start_interval: 5s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   frontend:
     build: ./frontend
     restart: unless-stopped
     mem_limit: 32m
+    # Recién con la API sana: así el sitio no abre con /api respondiendo 502
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
       # La dirección completa de la imagen de los enlaces compartidos (nginx.conf)
       TIENDA_SITIO_URL: ${TIENDA_SITIO_URL:-http://localhost}
