@@ -1,6 +1,13 @@
 import { expect, Page, test } from '@playwright/test';
 
-import { administrador, clienteNuevo, enlaceDeVerificacion, iniciarSesion, registrar } from './apoyo';
+import {
+  administrador,
+  clienteNuevo,
+  enlaceDeVerificacion,
+  iniciarSesion,
+  registrar,
+  vigilarPoliticaDeContenido,
+} from './apoyo';
 
 // El camino principal, en orden y con una sola sesión: se registra, arma el carrito, verifica el correo, confirma,
 // paga con el simulador y ve el pedido; al final, el personal lo entrega
@@ -9,9 +16,16 @@ test.describe.configure({ mode: 'serial' });
 const cliente = clienteNuevo();
 let page: Page;
 let numeroDePedido: string;
+let bloqueos: string[];
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage();
+  bloqueos = vigilarPoliticaDeContenido(page);
+});
+
+// Ningún paso de la compra choca con la política de contenido
+test.afterEach(() => {
+  expect(bloqueos).toEqual([]);
 });
 
 test.afterAll(async () => {
