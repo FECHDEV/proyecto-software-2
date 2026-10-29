@@ -15,8 +15,11 @@ services:
       MYSQL_PASSWORD: ${TIENDA_DB_PASSWORD:?Falta TIENDA_DB_PASSWORD en .env}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Falta MYSQL_ROOT_PASSWORD en .env}
       TZ: America/La_Paz
-    # utf8mb4 para nombres con tildes y ñ, como en la base de desarrollo (README)
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    # utf8mb4 para nombres con tildes y ñ, como en la base de desarrollo (README). Sin performance_schema: es
+    # diagnóstico que la tienda no usa y ocupa unos 200 MB (decisiones.md → Despliegue)
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--performance-schema=OFF"]
+    # Límites de memoria: lo medido más un margen, para que entre holgado en un servidor de 2 GB (decisiones.md)
+    mem_limit: 512m
     volumes:
       - datos-mysql:/var/lib/mysql
     healthcheck:
@@ -31,6 +34,8 @@ services:
   backend:
     build: ./backend
     restart: unless-stopped
+    # Con lugar para achicar una foto de 40 megapíxeles; Java toma el 70 % para su montón (backend/Dockerfile)
+    mem_limit: 1g
     depends_on:
       base:
         condition: service_healthy
@@ -75,6 +80,7 @@ services:
   frontend:
     build: ./frontend
     restart: unless-stopped
+    mem_limit: 32m
     depends_on:
       - backend
     environment:

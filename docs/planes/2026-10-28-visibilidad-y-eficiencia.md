@@ -204,3 +204,15 @@ las cifras de las fuentes. **Descartado:** leer el archivo antes de responder
 `ImagenGuardada` (lo llenan los dos servicios y describe la versión); que una
 foto borrada siga un año en el navegador de quien ya la vio (no se vuelve a
 listar y quien la tiene ya la vio; es lo que se decidió para los modelos).
+
+**PR 3 (`chore/memoria-del-servidor`):** medido por Fabio con `docker stats`
+en la PC, con 23 productos y uso del Cliente y del Administrador (incluida una
+foto subida). Antes, sin límites: la API 413 MB en reposo y 546 MB bajo uso;
+MySQL 442 MB; nginx 10 MB. Después: la API 449 MB de 1 GB; MySQL 198 MB de
+512 MB (`performance_schema` ocupaba unos 245 MB); nginx 9 MB de 32 MB. El
+montón de Java queda en 718 MB (`MaxHeapSize` con el 70 % de 1 GB). Las 18
+pruebas e2e en verde con los límites puestos (en `tienda-e2e`: la API 389 MB,
+MySQL 210 MB). **Distinto del plan:** las opciones de Java van en el
+`ENTRYPOINT` y no en `JAVA_TOOL_OPTIONS`, que escribe un aviso en cada
+arranque; el límite de la API es 1 GB y no 768 MB, para achicar una foto de
+40 megapíxeles.
