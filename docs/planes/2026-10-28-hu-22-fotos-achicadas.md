@@ -351,3 +351,28 @@ Distinto del plan:
 Pruebas al cerrar las revisiones: backend con 771, frontend con 897, `ng
 build` sin avisos. Cada prueba nueva se comprobó contra el código anterior.
 
+### Cobertura RF → pruebas
+
+| RF | Pruebas |
+|---|---|
+| RF-1 | `AchicadorTest`: `achicaA400Y1200ConLaMismaProporcion`, `leeWebP`, `unaWebPAnimadaUsaElPrimerCuadro`, `leeUnJpegCmyk`; `ProductosIntegracionTest.subirUnaFotoGuardaSusVersiones` |
+| RF-2 | `AchicadorTest.unaFotoAngostaNoSeAgranda` |
+| RF-3 | `AchicadorTest`: `respetaLaOrientacionExif`, `unaFotoGiradaNoPierdeResolucion` |
+| RF-4 | `AchicadorTest.loTransparenteQuedaBlanco` |
+| RF-5 | `AchicadorTest`: `rechazaMasDe8000PxSinDecodificar`, `rechazaMasDe40Megapixeles`; `ProductosIntegracionTest.unaFotoEnormeSeRechazaSinGuardarNada`; `mensajes-error.spec.ts` |
+| RF-6 | `AchicadorTest.rechazaUnJpegCortado`; `ProductosIntegracionTest.unaFotoDanadaSeRechaza` |
+| RF-7 | `ProductosIntegracionTest`: `subirUnaFotoGuardaSusVersiones` (un año de caché), `elAnchoDeOtroProductoDa404` |
+| RF-8 | `ProductosIntegracionTest`: `unAnchoInvalidoResponde400`, `sinLaVersionSirveElOriginalSinCache` |
+| RF-9 | `ProductosIntegracionTest.quitarUnaFotoBorraSusVersiones`; `ProductoServiceTest`: `quitarImagenBorraElArchivo`, `siFallaLaSegundaVersionSeBorraLoGuardado` |
+| RF-10 | `VersionesFaltantesIntegracionTest`: `generaLasQueFaltan`, `noRegeneraLasQueYaEstan`, `unaFotoDanadaOEnormeSeSalteaYSigue`, `unErrorInesperadoNoCortaElRecorrido`, `unaFotoQuitadaDuranteElAchiqueNoDejaHuerfanas`, `siFallaLaSegundaVersionDeUnaQuitadaNoQuedaLaPrimera`, `elArranqueNoEsperaAlAchique` |
+| RF-11 | `catalogo.spec.ts` (tarjeta con la de 400, `srcset`); `galeria.spec.ts` (versión por lugar, original al abrir, la de 1200 en el celular, respaldo, póster de 1200); `detalle.page.spec.ts` (miniaturas de 400, foto grande con `srcset`); `carrito`, `productos` y `producto` (la de 400) |
+| RF-12 | `CatalogoDemoIntegracionTest`: `lasFotosDeLaDemoTienenVersiones`, `unaFotoDeLaDemoEnormeSeInformaAntesDeCargar` |
+
+Suites al cerrar (28/10/2026): backend con 771 pruebas, 0 fallas; frontend con
+76 archivos y 897 pruebas; `ng build` sin avisos.
+
+Prueba manual (29/10/2026, Fabio): pasó. Una foto vertical del celular, un PNG
+transparente, una WebP y un archivo dañado; en el celular, la pestaña Red
+muestra la de 400 en las tarjetas y la de 1200 en el detalle y a pantalla
+completa.
+
