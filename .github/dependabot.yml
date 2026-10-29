@@ -12,6 +12,13 @@ updates:
       time: "08:00"
       timezone: America/La_Paz
     open-pull-requests-limit: 5
+    ignore:
+      # three sube junto con @google/model-viewer, que pide una versión fija (hoy ^0.183.0): a mano, cuando cambie
+      # ese pedido. Con otra, npm ci no instala (29/10/2026)
+      - dependency-name: three
+      # La que acepte Angular: 22 pide >=6.0 <6.1. Solo los parches; la menor y la mayor, cuando Angular las acepte
+      - dependency-name: typescript
+        update-types: [version-update:semver-minor, version-update:semver-major]
     commit-message:
       prefix: chore
       include: scope

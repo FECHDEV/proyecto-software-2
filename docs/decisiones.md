@@ -208,6 +208,10 @@ las acciones del CI. Cada PR pasa por el CI como cualquier otro.
   versión mayor llega sola, para revisarla aparte.
 - Sin saltos de versión mayor de Java (21) ni de MySQL (8.4 LTS), que son
   decisiones del proyecto.
+- *29/10/2026, tras los primeros PRs.* Tampoco `three`, que sube a mano junto
+  con `@google/model-viewer` (pide una versión fija: con otra, `npm ci` no
+  instala), ni las menores y mayores de TypeScript, que siguen a lo que acepte
+  Angular (22 pide `>=6.0 <6.1`).
 - **Motivo:** el 29/10/2026 `npm audit` marcaba 8 avisos (4 altos), casi todos
   de herramientas de desarrollo y uno, `zod`, que llega por `@angular/forms`
   pero no termina en la página. El npm 10.9 del CI, de Docker y de la sesión
