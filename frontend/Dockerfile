@@ -1,7 +1,7 @@
 # Cliente web (Angular) servido por nginx, que además reenvía /api al backend:
 # el navegador ve un solo origen, así que no hace falta CORS.
 
-FROM node:22.23-alpine AS compilacion
+FROM node:26.12-alpine AS compilacion
 WORKDIR /fuente
 COPY package.json package-lock.json ./
 RUN npm ci
