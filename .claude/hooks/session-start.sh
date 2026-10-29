@@ -11,17 +11,17 @@ fi
 PROYECTO="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 cd "$PROYECTO"
 
-# --- Node 22 al día: Angular CLI pide al menos 22.22.3 y la imagen trae una anterior ----------------------------
+# --- Node 26, el de Docker y el CI (29/10/2026): la imagen trae la 22 -------------------------------------------
 # Con nvm, que ya viene en la imagen; la ruta queda para toda la sesión por CLAUDE_ENV_FILE
 export NVM_DIR="${NVM_DIR:-/opt/nvm}"
 set +u
 # shellcheck disable=SC1091
 . "$NVM_DIR/nvm.sh"
-nvm install 22 >/dev/null 2>&1
-nvm use 22 >/dev/null
+nvm install 26 >/dev/null 2>&1
+nvm use 26 >/dev/null
 set -u
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-	echo "export PATH=\"$(dirname "$(nvm which 22)"):\$PATH\"" >> "$CLAUDE_ENV_FILE"
+	echo "export PATH=\"$(dirname "$(nvm which 26)"):\$PATH\"" >> "$CLAUDE_ENV_FILE"
 fi
 
 # Las apagadas en skillOverrides de .claude/settings.json (CLAUDE.md → Uso de skills): acá no se enlazan
