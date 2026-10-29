@@ -3,9 +3,11 @@
 <header>
   <div class="barra">
     <div class="principal">
-      <a class="marca" routerLink="/" [attr.aria-label]="marca.nombre + ', ir al inicio'">
+      <!-- El nombre accesible sale del texto que se ve, no de un aria-label: así coincide con lo que lee quien
+           maneja la página por voz (WCAG 2.5.3) -->
+      <a class="marca" routerLink="/">
         <span class="logotipo" aria-hidden="true">{{ marca.inicial }}</span>
-        <span class="nombre" translate="no">{{ marca.nombre }}</span>
+        <span class="nombre" translate="no">{{ marca.nombre }}</span><span class="solo-lectores">, ir al inicio</span>
       </a>
 
       <nav aria-label="Módulos">

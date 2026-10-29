@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { MARCA } from '../src/app/core/marca';
-import { vigilarPoliticaDeContenido } from './apoyo';
+import { revisarAccesibilidad, vigilarPoliticaDeContenido } from './apoyo';
 
 // El visitante sin cuenta: el catálogo de prueba tiene 3 productos y la cinta métrica está agotada
 test.describe('Sin sesión', () => {
@@ -116,4 +116,31 @@ test.describe('Política de contenido', () => {
 
     expect(corrio).toBe(false);
   });
+});
+
+// Accesibilidad (revisión del 29/10/2026): las pantallas sin sesión, en los dos temas y con los errores del formulario
+test.describe('Accesibilidad sin sesión', () => {
+  for (const tema of ['oscuro', 'claro']) {
+    test(`las pantallas no tienen problemas, en el tema ${tema}`, async ({ page }) => {
+      if (tema === 'claro') {
+        await page.addInitScript(() => localStorage.setItem('app.tema', 'claro'));
+      }
+      for (const ruta of ['/', '/catalogo', '/producto/1', '/producto/2', '/registro', '/recuperacion', '/no-existe']) {
+        await page.goto(ruta);
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+        await revisarAccesibilidad(page);
+      }
+
+      // La foto a pantalla completa
+      await page.goto('/producto/2');
+      await page.getByRole('button', { name: /^Ampliar/ }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await revisarAccesibilidad(page);
+
+      // El formulario con sus errores
+      await page.goto('/inicio-sesion');
+      await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+      await revisarAccesibilidad(page);
+    });
+  }
 });

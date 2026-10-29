@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { AxeBuilder } from '@axe-core/playwright';
 import { expect, Page } from '@playwright/test';
 
 // Lo que comparten las pruebas de extremo a extremo: el entorno que generó e2e/entorno.mjs, las cuentas y el
@@ -89,4 +90,26 @@ export function vigilarPoliticaDeContenido(page: Page): string[] {
     }
   });
   return bloqueos;
+}
+
+// Revisión de accesibilidad con axe (WCAG 2.2 AA y sus buenas prácticas) de lo que muestra la página ahora: falla con
+// cualquier problema. Espera que terminen las animaciones de entrada, que a mitad de camino tienen poco contraste.
+// La página tiene que venir de browser.newContext(): axe abre otra en el mismo contexto
+export async function revisarAccesibilidad(page: Page): Promise<void> {
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animacion) => Number.isFinite(animacion.effect?.getComputedTiming().endTime))
+        .map((animacion) => animacion.finished.catch(() => undefined)),
+    ),
+  );
+  const { violations } = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
+    .analyze();
+  const problemas = violations.map((problema) => {
+    const donde = problema.nodes.map((nodo) => nodo.target.join(' ')).join(', ');
+    return `${problema.id} (${problema.help}): ${donde}`;
+  });
+  expect(problemas, `accesibilidad de ${page.url()}`).toEqual([]);
 }
