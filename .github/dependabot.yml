@@ -1,0 +1,94 @@
+# Dependencias al día (docs/decisiones.md → «Dependencias al día con Dependabot»): los lunes, Dependabot abre PRs
+# con las versiones nuevas. Cada uno pasa por el CI como cualquier otro y entra solo si queda en verde.
+# Los parches y las menores van juntos en un PR por ecosistema; una versión mayor, en el suyo, para revisarla aparte.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: America/La_Paz
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      # Angular se actualiza entero: sus paquetes piden la misma versión entre sí
+      angular:
+        patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
+          - "@schematics/angular"
+        update-types: [minor, patch]
+      parches-y-menores:
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: America/La_Paz
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      parches-y-menores:
+        update-types: [minor, patch]
+
+  # Las imágenes de los Dockerfile: node, nginx y temurin
+  - package-ecosystem: docker
+    directories: [/frontend, /backend]
+    ignore:
+      # Java 21 es la versión del proyecto (CLAUDE.md → Stack): sin saltos a la siguiente LTS
+      - dependency-name: eclipse-temurin
+        update-types: [version-update:semver-major]
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: America/La_Paz
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      imagenes:
+        update-types: [minor, patch]
+
+  # Las del compose: mysql y caddy
+  - package-ecosystem: docker-compose
+    directory: /
+    ignore:
+      # MySQL 8.4 LTS (CLAUDE.md → Stack): las 9.x no son LTS
+      - dependency-name: mysql
+        update-types: [version-update:semver-major]
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: America/La_Paz
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      imagenes:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: America/La_Paz
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      acciones:
+        update-types: [minor, patch]
