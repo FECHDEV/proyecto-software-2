@@ -13,7 +13,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 ## Índice
 
-- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda)
+- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot)
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios) · [Política de contenido](#política-de-contenido)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
@@ -196,6 +196,24 @@ fuentes, las pantallas quedan iguales (comparadas píxel a píxel).
 la dirección igual (sin texto) y los bots de vista previa que respetan
 `robots.txt` dejan de armar la tarjeta. Va en Caddy y no en `index.html`
 para que valga solo en el servidor público y se quite en una línea.
+
+### Dependencias al día con Dependabot
+
+*29/10/2026.* `.github/dependabot.yml`: los lunes, Dependabot abre PRs con las
+versiones nuevas de npm, Maven, las imágenes de los Dockerfile y del compose y
+las acciones del CI. Cada PR pasa por el CI como cualquier otro.
+
+- Los parches y las menores van juntos, un PR por ecosistema (Angular, en su
+  propio grupo, porque sus paquetes piden la misma versión entre sí). Una
+  versión mayor llega sola, para revisarla aparte.
+- Sin saltos de versión mayor de Java (21) ni de MySQL (8.4 LTS), que son
+  decisiones del proyecto.
+- **Motivo:** el 29/10/2026 `npm audit` marcaba 8 avisos (4 altos), casi todos
+  de herramientas de desarrollo y uno, `zod`, que llega por `@angular/forms`
+  pero no termina en la página. El npm 10.9 del CI, de Docker y de la sesión
+  falla al rearmar el lockfile (un error interno con la dependencia opcional
+  `canvas` de jsdom) y borra los campos `libc` que necesita la imagen Alpine:
+  Dependabot lo rearma con su propio npm.
 
 ---
 
