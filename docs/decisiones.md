@@ -14,7 +14,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 ## Índice
 
 - **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda)
-- **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios)
+- **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios) · [Política de contenido](#política-de-contenido)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
 - **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Exportar reportes](#exportar-reportes) · [Catálogo de demostración](#catálogo-de-demostración) · [Fotos achicadas](#fotos-achicadas)
@@ -422,6 +422,35 @@ código:
 - **Listado paginado:** 20 por página (100 como máximo), del más reciente al
   más antiguo, con filtro por rol y estado y búsqueda en correo, nombre y
   apellido. No muestra el teléfono.
+
+### Política de contenido
+
+*29/10/2026.* El HTML de la tienda sale con la cabecera
+`Content-Security-Policy`: si un script ajeno llega a la página (un error que
+deje pasar HTML, una librería comprometida), el navegador no lo ejecuta y no
+puede leer la sesión.
+
+- **La pone nginx, no Caddy:** el Dockerfile la arma después de `ng build` con
+  `frontend/scripts/politica-de-contenido.mjs`, que permite los dos scripts en
+  línea del `index.html` compilado (el del tema y el que agrega Angular para la
+  hoja de estilos) **por su hash**. Así coincide siempre con lo que se sirve y
+  vale también en Docker en la PC y en las pruebas de extremo a extremo. Si
+  `index.html` trae un manejador en un atributo (`onload=…`), la compilación
+  falla en vez de servir una página rota.
+- **Scripts:** de la tienda y los dos hashes. Lleva `'unsafe-eval'` porque los
+  decodificadores del visor 3D (HU-16 RF-10) son WebAssembly y el de KTX2 arma
+  sus funciones con `new Function`; sin eso, un modelo con texturas KTX2 no se
+  ve. Un script inyectado sigue bloqueado.
+- **Estilos:** `'unsafe-inline'`, porque Angular pone los estilos de los
+  componentes en `<style>` y en atributos `style`. Un estilo inyectado no
+  ejecuta código.
+- **El resto:** imágenes, fuentes y conexiones solo de la tienda (más `data:` y
+  `blob:`, que son las texturas que three saca de un `.glb`); workers de la
+  tienda o `blob:` (Draco y KTX2); sin `<object>`, `<base>` ajena, formularios
+  hacia afuera ni la tienda dentro de otro sitio (`frame-ancestors 'none'`). El
+  enlace a la pasarela de pago es una navegación, que la política no limita.
+- Las pruebas de extremo a extremo fallan si la política bloquea algo de la
+  compra o del catálogo, y comprueban que un script inyectado no corre.
 - *10/10/2026 (HU-05).* **Desactivar invalida las sesiones para siempre:** la
   cuenta lleva una versión de sesión que viaja en el token y se compara en cada
   petición, como la huella de la contraseña; desactivar la incrementa, así los

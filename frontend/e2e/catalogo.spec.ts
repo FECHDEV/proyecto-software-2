@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { MARCA } from '../src/app/core/marca';
+import { vigilarPoliticaDeContenido } from './apoyo';
 
 // El visitante sin cuenta: el catálogo de prueba tiene 3 productos y la cinta métrica está agotada
 test.describe('Sin sesión', () => {
@@ -73,5 +74,46 @@ test.describe('Buscadores y enlaces compartidos', () => {
     expect(html).toContain(`<meta property="og:description" content="${MARCA.descripcion}">`);
     expect(html).toContain(`<meta property="og:title" content="${MARCA.nombre}">`);
     expect((await request.get('/compartir.jpg')).headers()['content-type']).toBe('image/jpeg');
+  });
+});
+
+// Política de contenido (decisiones.md → «Política de contenido»): la tienda anda con ella y un script ajeno no corre
+test.describe('Política de contenido', () => {
+  test('llega con la página y no bloquea nada de la tienda', async ({ page }) => {
+    const bloqueos = vigilarPoliticaDeContenido(page);
+
+    const respuesta = await page.goto('/');
+    expect(respuesta?.headers()['content-security-policy']).toContain("script-src 'self' 'sha256-");
+    await page.goto('/catalogo');
+    await page.locator('app-tarjeta-producto').filter({ hasText: 'Martillo de uña 16 oz' }).click();
+    // El visor 3D se descarga aparte, en su propio fragmento
+    await page.getByRole('button', { name: 'Ver en 3D' }).click();
+    await expect(page.locator('model-viewer')).toBeAttached();
+    // El script del tema, en línea en index.html, lo permite su hash: si no, la consola anota el bloqueo
+    await page.evaluate(() => localStorage.setItem('app.tema', 'claro'));
+    await page.goto('/inicio-sesion');
+    await expect(page.locator('html')).toHaveAttribute('data-tema', 'claro');
+    // La hoja de estilos se activa con el script en línea que agrega Angular
+    await expect(page.locator('link[rel="stylesheet"]').first()).toHaveAttribute('media', 'all');
+
+    expect(bloqueos).toEqual([]);
+  });
+
+  test('un script inyectado en la página no corre', async ({ page }) => {
+    await page.goto('/catalogo');
+
+    const corrio = await page.evaluate(async () => {
+      const ventana = window as unknown as Record<string, boolean>;
+      const script = document.createElement('script');
+      script.textContent = 'window.inyectado = true';
+      document.body.append(script);
+      const caja = document.createElement('div');
+      caja.innerHTML = '<img src="x" onerror="window.inyectadoEnAtributo = true">';
+      document.body.append(caja);
+      await new Promise((listo) => setTimeout(listo, 500));
+      return Boolean(ventana['inyectado'] || ventana['inyectadoEnAtributo']);
+    });
+
+    expect(corrio).toBe(false);
   });
 });

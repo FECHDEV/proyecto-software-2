@@ -78,3 +78,15 @@ export async function enlaceDeVerificacion(correo: string): Promise<string> {
     .toBeTruthy();
   return `/verificacion?token=${encodeURIComponent(token!)}`;
 }
+
+// Lo que la política de contenido (nginx, scripts/politica-de-contenido.mjs) bloqueó en la página, en todas sus
+// navegaciones: el navegador lo anota en la consola
+export function vigilarPoliticaDeContenido(page: Page): string[] {
+  const bloqueos: string[] = [];
+  page.on('console', (mensaje) => {
+    if (mensaje.type() === 'error' && mensaje.text().includes('Content Security Policy')) {
+      bloqueos.push(mensaje.text());
+    }
+  });
+  return bloqueos;
+}

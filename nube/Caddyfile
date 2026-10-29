@@ -3,6 +3,8 @@
 # la IP del servidor (por ejemplo 203-0-113-10.sslip.io), que no necesita DNS.
 # Las cabeceras de seguridad van acá: HTTPS siempre (HSTS), sin adivinar el tipo
 # de los archivos, sin mostrarse dentro de otro sitio y sin el nombre del servidor.
+# La política de contenido (Content-Security-Policy) la pone nginx: depende del
+# index.html compilado (docs/decisiones.md → «Política de contenido»).
 
 {$TIENDA_DOMINIO} {
 	encode zstd gzip
