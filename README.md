@@ -177,6 +177,9 @@ los datos del `.env`.
   `imagenes`): sobreviven a `docker compose down`. `docker compose down -v` los
   borra.
 - **Actualizar:** `git pull` y `docker compose up -d --build`.
+- **Memoria:** cada contenedor tiene su límite (`mem_limit`): unos 1,7 GB en
+  total, así que alcanza un servidor de 2 GB con swap. Para ver el uso:
+  `docker stats $(docker compose ps -q)`.
 - **Registros de la API:** `docker compose logs -f backend`.
 
 ### En un servidor, con HTTPS

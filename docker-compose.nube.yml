@@ -6,6 +6,7 @@ services:
   caddy:
     image: caddy:2.11
     restart: unless-stopped
+    mem_limit: 128m
     depends_on:
       - frontend
     environment:

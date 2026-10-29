@@ -63,6 +63,26 @@ un `.env` que no se versiona (`.env.example` dice cuáles son).
 - **La imagen de la API no corre las pruebas:** corren en desarrollo, antes de
   cada PR y en GitHub Actions. La API corre sin privilegios de root.
 
+*28/10/2026.* **Límites de memoria por contenedor** (`mem_limit`), para que
+la tienda entre holgada en un servidor de 2 GB con la swap de
+`instalar-servidor.sh`. Medido con `docker stats` en la PC, con 23 productos
+y uso del Cliente y del Administrador: la API 413 MB en reposo y 546 MB
+bajo uso; MySQL 442 MB, casi sin cambios; nginx 10 MB.
+
+- **MySQL, 512 MB,** con `--performance-schema=OFF`: es diagnóstico que no se
+  usa y ocupaba unos 200 MB. `innodb_buffer_pool_size` queda en sus 128 MB:
+  la base de la tienda es más chica.
+- **La API, 1 GB,** con `-XX:MaxRAMPercentage=70`: el montón se calcula sobre
+  el límite y no sobre la RAM del servidor, y deja lugar para achicar una foto
+  de 40 megapíxeles (unos 160 MB, el doble si hay que girarla). Con
+  `-XX:+ExitOnOutOfMemoryError`, sin memoria el proceso termina y
+  `restart: unless-stopped` lo levanta, en vez de quedar a medias.
+- **nginx, 32 MB; Caddy, 128 MB.** En total, unos 1,7 GB.
+- *Descartado:* hilos virtuales (con este tráfico no se notan, y en Java 21
+  un hilo virtual dentro de un `synchronized` bloquea su hilo de plataforma),
+  cambiar el grupo de conexiones de Hikari (10 alcanzan) y gzip en nginx (en
+  el servidor público ya comprime Caddy).
+
 ### Base de datos: sin migraciones
 
 El esquema lo genera Hibernate (`ddl-auto=update`), sin Flyway ni Liquibase.

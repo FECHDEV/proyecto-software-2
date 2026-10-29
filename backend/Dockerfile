@@ -25,4 +25,6 @@ ENV SPRING_PROFILES_ACTIVE=prod \
 	TIENDA_IMAGENES_DIRECTORIO=/datos/imagenes
 VOLUME /datos/imagenes
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/tienda.jar"]
+# El montón se calcula sobre el límite del contenedor (mem_limit), no sobre la RAM del servidor. Sin memoria, el
+# proceso termina y Docker lo reinicia, en vez de quedar a medias
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70", "-XX:+ExitOnOutOfMemoryError", "-jar", "/app/tienda.jar"]
