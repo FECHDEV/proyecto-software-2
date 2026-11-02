@@ -1,7 +1,7 @@
 # Cliente web (Angular) servido por nginx, que además reenvía /api al backend:
 # el navegador ve un solo origen, así que no hace falta CORS.
 
-FROM node:26.12-alpine AS compilacion
+FROM node:26.13-alpine AS compilacion
 WORKDIR /fuente
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -10,7 +10,7 @@ RUN npx ng build --configuration production
 # La política de contenido, con el hash de los scripts en línea del index.html recién compilado
 RUN node scripts/politica-de-contenido.mjs dist/frontend/browser/index.html > dist/politica-de-contenido.conf
 
-FROM nginx:1.30-alpine
+FROM nginx:1.31-alpine
 # Como plantilla: al arrancar, la imagen de nginx reemplaza ${TIENDA_SITIO_URL}
 # (solo las variables TIENDA_, para no tocar las de nginx como $uri)
 ENV NGINX_ENVSUBST_FILTER=^TIENDA_
