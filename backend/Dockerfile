@@ -1,7 +1,7 @@
 # API REST (Spring Boot). Dos etapas: se compila con el JDK y se ejecuta con el
 # JRE, así la imagen final no lleva Maven ni el código fuente.
 
-FROM eclipse-temurin:21.0.12_8-jdk AS compilacion
+FROM eclipse-temurin:21.0.13_9-jdk AS compilacion
 WORKDIR /fuente
 # Primero el wrapper y el pom: las dependencias se bajan en una capa propia que
 # solo se rehace si cambia el pom
@@ -12,7 +12,7 @@ COPY src src
 # Las pruebas corren en la máquina de desarrollo y antes de cada PR, no al armar la imagen
 RUN ./mvnw -q -B -DskipTests package && cp target/tienda-*.jar /fuente/tienda.jar
 
-FROM eclipse-temurin:21.0.12_8-jre
+FROM eclipse-temurin:21.0.13_9-jre
 # La hora de Bolivia también para los registros; la aplicación ya usa America/La_Paz en su reloj
 ENV TZ=America/La_Paz
 # Sin privilegios de root: la aplicación solo necesita escribir las imágenes subidas
