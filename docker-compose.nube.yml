@@ -7,6 +7,12 @@ services:
     image: caddy:2.11
     restart: unless-stopped
     mem_limit: 128m
+    # Con el mismo tope que los demás (docker-compose.yml → x-registros)
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
     depends_on:
       - frontend
     environment:

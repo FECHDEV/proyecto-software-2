@@ -3,11 +3,20 @@
 #   docker compose up -d --build
 # El sitio queda en http://localhost (o el puerto de TIENDA_PUERTO).
 
+# Registros con tope: hasta 3 archivos de 10 MB por contenedor, y Docker borra los más viejos. Sin esto crecen sin
+# fin y, con el tiempo, llenan el disco del servidor (decisiones.md → Despliegue)
+x-registros: &registros
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
   base:
     # 8.4 LTS: la línea 8.0 terminó su soporte en abril de 2026. Abre una base
     # creada con 8.0 y la actualiza sola al arrancar (decisiones.md)
     image: mysql:8.4
+    logging: *registros
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: tienda_db
@@ -33,6 +42,7 @@ services:
 
   backend:
     build: ./backend
+    logging: *registros
     restart: unless-stopped
     # Con lugar para achicar una foto de 40 megapíxeles; Java toma el 70 % para su montón (backend/Dockerfile)
     mem_limit: 1g
@@ -90,6 +100,7 @@ services:
 
   frontend:
     build: ./frontend
+    logging: *registros
     restart: unless-stopped
     mem_limit: 32m
     # Recién con la API sana: así el sitio no abre con /api respondiendo 502
