@@ -141,6 +141,16 @@ completar() {
   fi
   echo "API lista y Administrador creado"
 
+  paso "Respaldo diario (base e imágenes, 14 días)"
+  # A las 07:17 UTC, las 03:17 en Bolivia: de madrugada, con la tienda casi sin uso. cron del sistema corre en UTC
+  # (docs/decisiones.md → «Respaldos»)
+  cat > /etc/cron.d/respaldo-tienda <<CRON
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+17 7 * * * root bash $(pwd)/scripts/respaldar.sh >> /var/log/respaldo-tienda.log 2>&1
+CRON
+  chmod 644 /etc/cron.d/respaldo-tienda
+  bash scripts/respaldar.sh
+
   paso "Listo"
   echo "Sitio:   https://$(valor TIENDA_DOMINIO)"
   echo "El certificado HTTPS se pide la primera vez que se abre la dirección (unos segundos)."

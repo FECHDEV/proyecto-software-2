@@ -13,7 +13,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 ## Índice
 
-- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api)
+- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api) · [Respaldos](#respaldos)
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios) · [Política de contenido](#política-de-contenido)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
@@ -82,6 +82,13 @@ bajo uso; MySQL 442 MB, casi sin cambios; nginx 10 MB.
   un hilo virtual dentro de un `synchronized` bloquea su hilo de plataforma),
   cambiar el grupo de conexiones de Hikari (10 alcanzan) y gzip en nginx (en
   el servidor público ya comprime Caddy).
+
+*04/11/2026.* **Registros con tope:** cada contenedor guarda hasta 3 archivos
+de 10 MB (`x-registros` en `docker-compose.yml`, y Caddy en
+`docker-compose.nube.yml`), y Docker borra los más viejos. Sin tope, el
+`json-file` de Docker crece sin fin y, con el tiempo, llena el disco del
+servidor. Son 30 MB por contenedor, unos 120 MB en total. Se aplica al
+recrear los contenedores (`docker compose up -d` lo hace solo).
 
 ### Base de datos: sin migraciones
 
@@ -247,6 +254,38 @@ llega.
   `-XX:+ExitOnOutOfMemoryError`) sí se reinicia por `restart: unless-stopped`.
   Reiniciar uno colgado necesitaría otro contenedor que vigile; no hace falta
   por ahora.
+
+### Respaldos
+
+*04/11/2026.* `scripts/respaldar.sh` guarda la base y las imágenes subidas en
+un solo archivo, `/opt/respaldos-tienda/tienda-AAAA-MM-DD_HHMMSS.tar`. En el
+servidor lo corre `cron` todos los días a las 03:17 de Bolivia (07:17 UTC,
+`/etc/cron.d/respaldo-tienda`). Lo instala `instalar-servidor.sh completar`,
+que además hace el primer respaldo. `scripts/restaurar.sh` vuelve la tienda a
+uno de esos archivos.
+
+- **La base con `mysqldump --single-transaction`:** lee una foto fija sin
+  bloquear la tienda. Un volcado sin la línea final de mysqldump cuenta como
+  fallido.
+- **Las imágenes con la imagen de la API,** que monta el volumen aunque la API
+  esté parada. La base y las fotos no se copian en el mismo instante. Si se
+  sube una foto justo en el medio, queda un archivo sin uso, sin romper nada.
+- **14 días:** se borran los de más de 14 días, y solo después de que el nuevo
+  salió bien. Si los respaldos empiezan a fallar, los viejos no se pierden.
+- **Solo root:** los archivos tienen los datos de los clientes (`umask 077`).
+- **Restaurar reemplaza todo:** borra y recrea la base `tienda_db`, vacía las
+  imágenes y descomprime las del respaldo, con la API y el sitio parados.
+  Antes hace un respaldo de lo actual, por si fue un error, y pide escribir
+  «restaurar».
+- **Una copia fuera del servidor:** los respaldos viven en el mismo disco que
+  la tienda, así que solo protegen de borrar datos por error o de un problema
+  de la base. Contra perder el servidor, se bajan a la PC con `scp`
+  (README → «Respaldos»; la carpeta `respaldos/` está en `.gitignore`).
+- *Probado* en Docker con una API de prueba con el mismo usuario sin root:
+  respaldar, retención, cancelar, y restaurar la base, las fotos y los
+  permisos de `tienda_app`.
+- *Descartado:* subirlos solos a otro servicio (Drive, S3). Hacen falta una
+  cuenta y credenciales en el servidor; se puede sumar después.
 
 ---
 

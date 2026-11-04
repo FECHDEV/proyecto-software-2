@@ -30,7 +30,7 @@ historia por historia, con Scrum y el flujo SDD de `docs/flujo-sdd.md`.
 ├── backend/   Spring Boot: JWT, roles, ManejadorErrores, correo SMTP, IPago (simulador y Libélula)
 ├── frontend/  Angular: features/core/shared, interceptores, guards, tema claro/oscuro, tokens
 ├── docker-compose.yml  docker-compose.nube.yml  nube/Caddyfile
-└── scripts/   instalar-servidor.sh  copiar-env-al-servidor.sh
+└── scripts/   instalar-servidor.sh  copiar-env-al-servidor.sh  respaldar.sh  restaurar.sh
 ```
 
 ## Requisitos
@@ -180,7 +180,8 @@ los datos del `.env`.
 - **Memoria:** cada contenedor tiene su límite (`mem_limit`): unos 1,7 GB en
   total, así que alcanza un servidor de 2 GB con swap. Para ver el uso:
   `docker stats $(docker compose ps -q)`.
-- **Registros de la API:** `docker compose logs -f backend`.
+- **Registros de la API:** `docker compose logs -f backend`. Cada contenedor
+  guarda hasta 30 MB de registros; los más viejos se borran solos.
 - **Salud de la API:** `docker compose ps` la muestra `(healthy)` cuando responde
   y llega a la base; `(unhealthy)` si dejó de hacerlo. El sitio arranca recién
   con la API sana.
@@ -213,6 +214,30 @@ pide la contraseña del Administrador la primera vez y levanta los contenedores.
 El catálogo se copia antes con `scp -r <carpeta> root@<ip>:/opt/demo-tienda`.
 Sin la PC, `completar` también se puede correr en el servidor con el `.env`
 completado a mano. Todo se puede volver a correr sin perder nada.
+
+### Respaldos
+
+En el servidor, `cron` respalda la base y las imágenes todos los días a las
+03:17 y guarda los últimos 14 días en `/opt/respaldos-tienda`. A mano, como
+root en `/opt/tienda`:
+
+```bash
+bash scripts/respaldar.sh                                   # un respaldo ahora
+bash scripts/restaurar.sh /opt/respaldos-tienda/tienda-….tar  # volver a uno
+```
+
+`restaurar.sh` reemplaza la base y las imágenes. Antes respalda lo que hay y pide
+confirmación. El registro de cada noche queda en `/var/log/respaldo-tienda.log`.
+
+Los respaldos están en el mismo disco que la tienda. Para tener una copia si se
+pierde el servidor, se bajan a la PC de vez en cuando. En PowerShell, en la
+carpeta del proyecto:
+
+```powershell
+mkdir -Force respaldos; scp "root@<ip>:/opt/respaldos-tienda/tienda-*.tar" .\respaldos\
+```
+
+La carpeta `respaldos/` no se versiona: tiene los datos de los clientes.
 
 La tienda en la nube **no aparece en Google**: `nube/Caddyfile` manda
 `X-Robots-Tag: noindex`. Con un dominio propio, quitar esa línea

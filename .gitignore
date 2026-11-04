@@ -33,6 +33,10 @@ application-local.yml
 id_rsa*
 id_ed25519*
 
+# Respaldos bajados del servidor (scripts/respaldar.sh): tienen los datos de los clientes
+respaldos/
+tienda-*.tar
+
 # Logs
 *.log
 
