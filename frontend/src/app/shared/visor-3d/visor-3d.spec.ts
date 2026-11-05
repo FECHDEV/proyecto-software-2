@@ -261,6 +261,8 @@ describe('Visor3d', () => {
         if (rechazar) {
           return Promise.reject(new TypeError('no permitida'));
         }
+        // El elemento que pidió la pantalla completa, como hace el navegador
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         ampliado = this;
         document.dispatchEvent(new Event('fullscreenchange'));
         return Promise.resolve();

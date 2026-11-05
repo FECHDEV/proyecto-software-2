@@ -71,7 +71,7 @@ class ProductosFalso {
   recurso = new RecursoFalso<Pagina<ProductoResumen>>(pagina([TALADRO, MANGUERA]));
   filtros: Signal<FiltrosDeProductos> | null = null;
   respuesta: Promise<Producto> = Promise.resolve({ ...TALADRO, activo: false } as unknown as Producto);
-  cambios: Array<{ id: number; activo: boolean }> = [];
+  cambios: { id: number; activo: boolean }[] = [];
 
   listado(filtros: Signal<FiltrosDeProductos>) {
     this.filtros = filtros;

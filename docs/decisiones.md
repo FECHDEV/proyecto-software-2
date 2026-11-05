@@ -16,7 +16,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 - **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api) · [Respaldos](#respaldos) · [Servidor](#servidor) · [Cobertura de las pruebas](#cobertura-de-las-pruebas)
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios) · [Política de contenido](#política-de-contenido)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
-- **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
+- **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend) · [ESLint](#eslint)
 - **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Exportar reportes](#exportar-reportes) · [Catálogo de demostración](#catálogo-de-demostración) · [Fotos achicadas](#fotos-achicadas)
 
 ---
@@ -784,6 +784,35 @@ solo lugar por tema evita que se contradigan.
   **`.solo-lectores` es global** (`styles.scss`), no una copia por
   componente, y **`comoErrorApi` vive en `core/modelos/error-api.ts`**, junto
   a `comoError`.
+
+### ESLint
+
+*05/11/2026.* **ESLint con angular-eslint** (`frontend/eslint.config.js`,
+instalado con `ng add angular-eslint`): `npm run lint` (`ng lint`) revisa
+`src/`, las pruebas e2e y `playwright.config.ts`. En el CI corre antes que las
+pruebas del frontend, y un error deja el PR en rojo.
+
+- **Las reglas recomendadas,** sin bajarlas: las de JavaScript, las de
+  typescript-eslint (`recommended` y `stylistic`) y las de Angular, también las
+  de **accesibilidad en las plantillas** (`templateAccessibility`), que se suman
+  a axe en las pruebas e2e.
+- **Ajustes propios, cada uno con su motivo en el archivo:**
+  - un `_` al frente marca un parámetro sin usar a propósito, y lo que se saca
+    de un objeto con `{ [id]: _, ...resto }`;
+  - en las pruebas se permite `() => {}`, el simulado que no hace nada;
+  - `<button appVerContrasena>` cuenta como botón con contenido: el ícono y el
+    `aria-label` los pone el componente.
+- **Cuatro excepciones en el código,** con su motivo al lado: dos selectores
+  sin el prefijo `app` (`button[appVerContrasena]` y `input[type="file"][ocupado]`,
+  atributos sobre elementos nativos), el clic en el fondo de la galería
+  ampliada (con el teclado cierra Esc, como todo `<dialog>`), y un `this` en el
+  simulado de la pantalla completa.
+- **Lo que encontró al instalarse** (56 avisos): tres imports que sobraban en
+  pantallas, y 19 `Array<T>` en pruebas pasados a `T[]`. Lo demás eran los
+  ajustes y las excepciones de arriba.
+- *Descartado por ahora:* Prettier (el formato ya es parejo y cambiarlo tocaría
+  todos los archivos) y las reglas con tipos (`recommendedTypeChecked`), que
+  hacen el lint varias veces más lento.
 
 ---
 

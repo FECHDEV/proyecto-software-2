@@ -29,7 +29,7 @@ const SESION: Sesion = {
 
 class AutenticacionFalsa {
   respuesta: Promise<Sesion> = Promise.resolve(SESION);
-  llamadas: Array<{ correo: string; contrasena: string }> = [];
+  llamadas: { correo: string; contrasena: string }[] = [];
 
   iniciarSesion(correo: string, contrasena: string): Promise<Sesion> {
     this.llamadas.push({ correo, contrasena });

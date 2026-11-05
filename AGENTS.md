@@ -37,7 +37,7 @@ cualquier cosa. El detalle del flujo para implementar una historia está en
 ## Comandos
 
 - Backend: `cd backend && ./mvnw test` (Java 21, sobre H2; no necesita MySQL).
-- Frontend: `cd frontend && npx ng test --watch=false && npx ng build` (Vitest).
+- Frontend: `cd frontend && npx ng test --watch=false && npm run lint && npx ng build` (Vitest y ESLint).
 - Las dos suites, una después de la otra, nunca a la vez: juntas, el
   frontend se queda sin tiempo y saltea pruebas (`docs/flujo-sdd.md`).
 - Todo junto: `docker compose up -d --build`.

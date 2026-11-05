@@ -71,6 +71,8 @@
 }
 
 @if (total() > 0) {
+  <!-- El clic en el fondo cierra con el ratón o el dedo; con el teclado cierra Esc, como todo <dialog> -->
+  <!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -->
   <dialog
     #dialogo
     class="pantalla-completa"
