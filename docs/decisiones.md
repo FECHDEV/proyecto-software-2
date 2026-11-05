@@ -13,7 +13,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 ## Índice
 
-- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api) · [Respaldos](#respaldos)
+- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api) · [Respaldos](#respaldos) · [Servidor](#servidor)
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios) · [Política de contenido](#política-de-contenido)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
@@ -286,6 +286,32 @@ uno de esos archivos.
   permisos de `tienda_app`.
 - *Descartado:* subirlos solos a otro servicio (Drive, S3). Hacen falta una
   cuenta y credenciales en el servidor; se puede sumar después.
+
+### Servidor
+
+*04/11/2026.* `scripts/instalar-servidor.sh preparar` deja el servidor con lo
+mínimo de seguridad, además del firewall (22, 80 y 443):
+
+- **Parches de seguridad automáticos** (`unattended-upgrades`): cada día,
+  solo los de Ubuntu `-security`, lo que trae el paquete por defecto. Docker,
+  que viene de su propio repositorio, no se actualiza solo: lo hace quien
+  administra. Si un parche pide reiniciar, como el del kernel, el servidor
+  reinicia a las 08:30 UTC (04:30 en Bolivia), después del respaldo, y
+  `restart: unless-stopped` vuelve a levantar la tienda.
+- **SSH solo con llave:** sin contraseña ni teclado interactivo, y root solo
+  con llave (`/etc/ssh/sshd_config.d/10-tienda.conf`). El archivo empieza con
+  10 porque en sshd vale el primer valor: así gana al `50-cloud-init.conf` de
+  algunos proveedores, que vuelve a permitir contraseñas. **Solo si root ya
+  tiene una llave autorizada;** si no, lo avisa y deja todo como está, para
+  no dejar a nadie afuera. La configuración se revisa con `sshd -t` antes de
+  recargar, y la sesión abierta sigue.
+- *Probado* en un contenedor de Ubuntu 24.04 con un `50-cloud-init.conf` que
+  permite contraseñas: sin llave, sigue igual con el aviso; con llave,
+  `sshd -T` muestra `passwordauthentication no`; `unattended-upgrade --dry-run`
+  encuentra los parches.
+- *Descartado:* fail2ban. Sin contraseñas, los intentos por SSH no tienen qué
+  adivinar; solo bajaría el ruido del registro. La API ya tiene su propio
+  límite de intentos de inicio de sesión.
 
 ---
 

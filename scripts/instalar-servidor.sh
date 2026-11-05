@@ -2,10 +2,11 @@
 # Deja la aplicación funcionando en un servidor Ubuntu nuevo, con HTTPS. Se corre como root desde la
 # carpeta del proyecto, en dos partes o de una vez:
 #   bash scripts/instalar-servidor.sh preparar    sin preguntas: swap, Docker, firewall (22, 80, 443),
-#                                                 el .env con claves generadas y la compilación
-#                                                 de las imágenes (la parte larga)
-#   bash scripts/instalar-servidor.sh completar   interactiva: la contraseña del Administrador y los
-#                                                 contenedores
+#                                                 parches de seguridad automáticos, SSH solo con
+#                                                 llave, el .env con claves generadas y la
+#                                                 compilación de las imágenes (la parte larga)
+#   bash scripts/instalar-servidor.sh completar   interactiva: la contraseña del Administrador, los
+#                                                 contenedores y el respaldo diario
 #   bash scripts/instalar-servidor.sh             las dos
 # Variable opcional: TIENDA_DOMINIO (por defecto, la IP en sslip.io). El correo, el nombre y el apellido del
 # Administrador los pide la parte completar. Se puede volver a correr. Las credenciales de Gmail y de Libélula no las pide: se
@@ -47,6 +48,39 @@ preparar() {
   paso "Firewall: solo SSH, HTTP y HTTPS"
   ufw allow OpenSSH >/dev/null && ufw allow 80/tcp >/dev/null && ufw allow 443/tcp >/dev/null
   ufw --force enable >/dev/null && ufw status | head -8
+
+  paso "Actualizaciones de seguridad automáticas"
+  # Ubuntu instala cada día los parches de seguridad (solo esos: los de «-security», lo que trae el paquete por
+  # defecto). Si uno pide reiniciar (el kernel), reinicia a las 08:30 UTC, las 04:30 en Bolivia: después del
+  # respaldo, y Docker vuelve a levantar la tienda sola (restart: unless-stopped). docs/decisiones.md → «Servidor»
+  command -v unattended-upgrade >/dev/null || { apt-get update -qq && apt-get install -y -qq unattended-upgrades >/dev/null; }
+  cat > /etc/apt/apt.conf.d/20auto-upgrades <<'APT'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT
+  cat > /etc/apt/apt.conf.d/52tienda-reinicio <<'APT'
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-Time "08:30";
+APT
+  echo "Listo: parches de seguridad cada día; reinicio, si hace falta, a las 04:30 de Bolivia"
+
+  paso "SSH solo con llave"
+  # Sin contraseñas por SSH: los intentos de adivinarla, que llegan a cualquier servidor público, no tienen qué
+  # probar. Solo si root ya tiene una llave autorizada; si no, se quedaría sin poder entrar. El archivo empieza con 10:
+  # en sshd vale el primer valor, y así gana al 50-cloud-init.conf de algunos proveedores, que las vuelve a permitir
+  if grep -Eqs '^(ssh|ecdsa|sk)-' /root/.ssh/authorized_keys; then
+    cat > /etc/ssh/sshd_config.d/10-tienda.conf <<'SSH'
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin prohibit-password
+SSH
+    # Con la configuración revisada antes: una línea mala dejaría a sshd sin arrancar
+    sshd -t && { systemctl reload ssh 2>/dev/null || systemctl reload sshd; }
+    echo "Listo: SSH solo con llave (la sesión abierta sigue)"
+  else
+    echo "AVISO: root no tiene una llave SSH autorizada (/root/.ssh/authorized_keys): SSH sigue aceptando contraseña."
+    echo "Autorizar una desde la PC (ssh-copy-id o el panel del proveedor) y volver a correr '$0 preparar'."
+  fi
 
   paso "Configuración (.env)"
   [ -f .env ] || cp .env.example .env
