@@ -102,6 +102,12 @@ Las del backend corren contra H2 en memoria (perfil `test`); las del frontend,
 con Vitest sobre jsdom. Ninguna necesita MySQL ni un navegador. Las mismas
 corren en GitHub Actions en cada PR (`.github/workflows/pruebas.yml`).
 
+**Cobertura:** `./mvnw test` deja el informe del backend en
+`backend/target/site/jacoco/index.html`; `npx ng test --watch=false --coverage`,
+el del frontend en `frontend/coverage/frontend/index.html`. En el CI, los
+porcentajes salen en el resumen de cada corrida y los informes completos quedan
+como artefactos (`cobertura-backend`, `cobertura-frontend`) por 14 días.
+
 ### De extremo a extremo
 
 ```bash

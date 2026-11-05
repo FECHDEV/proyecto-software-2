@@ -30,6 +30,11 @@ updates:
           - "@angular-devkit/*"
           - "@schematics/angular"
         update-types: [minor, patch]
+      # vitest y su cobertura piden la misma versión entre sí: juntos, también en las mayores
+      vitest:
+        patterns:
+          - vitest
+          - "@vitest/*"
       parches-y-menores:
         update-types: [minor, patch]
 
