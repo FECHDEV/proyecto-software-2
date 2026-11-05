@@ -95,11 +95,13 @@ CORS en desarrollo.
 
 ```bash
 cd backend  && ./mvnw test
-cd frontend && npx ng test --watch=false && npx ng build
+cd frontend && npx ng test --watch=false && npm run lint && npx ng build
 ```
 
 Las del backend corren contra H2 en memoria (perfil `test`); las del frontend,
-con Vitest sobre jsdom. Ninguna necesita MySQL ni un navegador. Las mismas
+con Vitest sobre jsdom. `npm run lint` revisa el código y las plantillas del
+frontend con ESLint (angular-eslint), también la accesibilidad. Ninguna
+necesita MySQL ni un navegador. Las mismas
 corren en GitHub Actions en cada PR (`.github/workflows/pruebas.yml`).
 
 **Cobertura:** `./mvnw test` deja el informe del backend en

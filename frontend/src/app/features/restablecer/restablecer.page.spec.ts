@@ -10,7 +10,7 @@ import { RestablecerPage } from './restablecer.page';
 
 class AutenticacionFalsa {
   respuesta: Promise<void> = Promise.resolve();
-  llamadas: Array<{ token: string; contrasena: string }> = [];
+  llamadas: { token: string; contrasena: string }[] = [];
 
   restablecerContrasena(token: string, contrasena: string): Promise<void> {
     this.llamadas.push({ token, contrasena });
@@ -25,7 +25,7 @@ function rechaza(codigo: string, status: number, errores?: ErrorApi['errores']):
 describe('RestablecerPage', () => {
   let fijo: ComponentFixture<RestablecerPage>;
   let autenticacion: AutenticacionFalsa;
-  let navegaciones: Array<{ ruta: unknown[]; extras?: NavigationExtras }>;
+  let navegaciones: { ruta: unknown[]; extras?: NavigationExtras }[];
   let token: string | null;
 
   async function preparar() {

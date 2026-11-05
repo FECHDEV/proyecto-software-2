@@ -68,6 +68,8 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      # ESLint primero: tarda segundos y avisa antes que las pruebas (decisiones.md → «ESLint»)
+      - run: npm run lint
       - run: npx ng test --watch=false --coverage
       - name: Cobertura
         run: |

@@ -59,11 +59,11 @@ class ProductosFalso {
   id: Signal<number | null> | null = null;
   respuesta: Promise<Producto> = Promise.resolve(TALADRO);
   creados: DatosDeProducto[] = [];
-  editados: Array<{ id: number; datos: DatosDeProducto }> = [];
-  subidas: Array<{ id: number; archivo: File }> = [];
-  ordenes: Array<{ id: number; imagenes: readonly string[] }> = [];
+  editados: { id: number; datos: DatosDeProducto }[] = [];
+  subidas: { id: number; archivo: File }[] = [];
+  ordenes: { id: number; imagenes: readonly string[] }[] = [];
   quitadas: string[] = [];
-  modelosSubidos: Array<{ id: number; archivo: File }> = [];
+  modelosSubidos: { id: number; archivo: File }[] = [];
   modelosQuitados: number[] = [];
 
   producto(id: Signal<number | null>) {

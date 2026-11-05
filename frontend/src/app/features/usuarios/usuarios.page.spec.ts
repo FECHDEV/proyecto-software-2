@@ -62,9 +62,9 @@ class UsuariosFalso {
   recurso = new RecursoFalso();
   filtros: Signal<FiltrosDeUsuarios> | null = null;
   respuesta: Promise<UsuarioResumen> = Promise.resolve(ANA);
-  cambiosDeRol: Array<{ id: number; rol: Rol }> = [];
-  cambiosDeEstado: Array<{ id: number; estado: EstadoCuenta }> = [];
-  cambiosDeTipo: Array<{ id: number; tipo: TipoCliente }> = [];
+  cambiosDeRol: { id: number; rol: Rol }[] = [];
+  cambiosDeEstado: { id: number; estado: EstadoCuenta }[] = [];
+  cambiosDeTipo: { id: number; tipo: TipoCliente }[] = [];
 
   listado(filtros: Signal<FiltrosDeUsuarios>) {
     this.filtros = filtros;
@@ -612,7 +612,7 @@ describe('UsuariosPage', () => {
   // HU-05 RF-12
   it('cada fila queda deshabilitada hasta que termina su propia operación', async () => {
     const LUIS: UsuarioResumen = { ...ANA, idUsuario: 8, nombre: 'Luis', correo: 'luis@mail.com', estado: 'DESACTIVADA' };
-    const terminar: Array<(usuario: UsuarioResumen) => void> = [];
+    const terminar: ((usuario: UsuarioResumen) => void)[] = [];
     await abrir('/usuarios', (falso) =>
       falso.recurso.value.set(pagina([{ ...ANA, estado: 'DESACTIVADA' }, LUIS, ADMIN])),
     );

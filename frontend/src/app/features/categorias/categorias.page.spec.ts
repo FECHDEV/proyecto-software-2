@@ -40,9 +40,9 @@ class CategoriasFalso {
   recurso = new RecursoFalso();
   respuesta: Promise<CategoriaGestion> = Promise.resolve(JARDIN);
   creadas: DatosDeCategoria[] = [];
-  editadas: Array<{ id: number; datos: DatosDeCategoria }> = [];
-  visibilidades: Array<{ id: number; visible: boolean }> = [];
-  imagenes: Array<{ id: number; archivo: File }> = [];
+  editadas: { id: number; datos: DatosDeCategoria }[] = [];
+  visibilidades: { id: number; visible: boolean }[] = [];
+  imagenes: { id: number; archivo: File }[] = [];
   borradas: number[] = [];
 
   gestion() {

@@ -26,7 +26,7 @@ import { LucideArrowLeft, LucideCircleSlash, LucideTriangleAlert } from '@lucide
 import { InventarioService } from '../../core/api/inventario.service';
 import { mensajeDeError, mensajeDelRechazo, primerMensaje } from '../../core/api/mensajes-error';
 import { ConCambiosSinGuardar, SALIR_SIN_GUARDAR } from '../../core/guards/cambios-sin-guardar.guard';
-import { comoError, comoErrorApi, ErrorApi } from '../../core/modelos/error-api';
+import { comoError, comoErrorApi } from '../../core/modelos/error-api';
 import {
 	DECIMALES_DE_UNIDAD,
 	descripcionDeMovimiento,

@@ -145,7 +145,7 @@ Una historia está terminada cuando:
 
 - **cada RF tiene su prueba**, verificado contra el código;
 - **las suites completas están en verde**: `./mvnw test`, `npx ng test
-  --watch=false` y `npx ng build` sin avisos;
+  --watch=false`, `npm run lint` y `npx ng build` sin avisos;
 - pasó las **revisiones antes del PR** (abajo), con los hallazgos corregidos o
   descartados con motivo;
 - tuvo **prueba manual** de sus escenarios, confirmada por quien la pidió;

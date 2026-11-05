@@ -6,7 +6,7 @@ import { comoErrorApi } from '../../core/modelos/error-api';
 
 import { InventarioService } from '../../core/api/inventario.service';
 import { mensajeDeError } from '../../core/api/mensajes-error';
-import { FiltrosDeInventario, ProductoEnInventario } from '../../core/modelos/inventario';
+import { FiltrosDeInventario } from '../../core/modelos/inventario';
 import { unidadPara } from '../../core/modelos/producto';
 import { cantidad } from '../../shared/formato/precios';
 import { idDeLaUrl } from '../../shared/navegacion/id-de-la-url';

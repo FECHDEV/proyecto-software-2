@@ -101,9 +101,9 @@ class InventarioFalso {
   });
   id: Signal<number | null> | null = null;
   respuesta: Promise<ProductoEnInventario> = Promise.resolve({ ...TALADRO, stock: 13, stockBajo: false });
-  entradas: Array<{ id: number; cantidad: number; nota: string }> = [];
-  ajustes: Array<{ id: number; contada: number; motivo: MotivoAjuste; nota: string }> = [];
-  minimos: Array<{ id: number; minimo: number | null }> = [];
+  entradas: { id: number; cantidad: number; nota: string }[] = [];
+  ajustes: { id: number; contada: number; motivo: MotivoAjuste; nota: string }[] = [];
+  minimos: { id: number; minimo: number | null }[] = [];
 
   // La pantalla pide el producto primero y el historial después
   productoPedido(id: Signal<number | null>) {

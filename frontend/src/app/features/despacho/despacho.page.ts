@@ -9,7 +9,6 @@ import {
 	EstadoDeDespacho,
 	ESTADOS_DE_DESPACHO,
 	FiltrosDeDespacho,
-	PedidoEnDespacho,
 } from '../../core/modelos/despacho';
 import { comoErrorApi } from '../../core/modelos/error-api';
 import { NOMBRES_DE_ESTADO, TONO_DE_ESTADO } from '../../core/modelos/pedido';

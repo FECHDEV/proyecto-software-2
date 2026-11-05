@@ -11,6 +11,8 @@ import { LucideEye, LucideEyeOff } from '@lucide/angular';
 //     <button appVerContrasena [campo]="clave"></button>
 //   </div>
 @Component({
+	// Un atributo sobre el <button> nativo y no un elemento propio: el botón es el que recibe el foco y el clic
+	// eslint-disable-next-line @angular-eslint/component-selector
 	selector: 'button[appVerContrasena]',
 	imports: [LucideEye, LucideEyeOff],
 	changeDetection: ChangeDetectionStrategy.OnPush,

@@ -30,7 +30,7 @@ describe('erroresInterceptor', () => {
   let http: HttpClient;
   let servidor: HttpTestingController;
   let sesion: SesionService;
-  let navegaciones: Array<{ ruta: string; extras?: NavigationExtras }>;
+  let navegaciones: { ruta: string; extras?: NavigationExtras }[];
 
   beforeEach(() => {
     localStorage.clear();
