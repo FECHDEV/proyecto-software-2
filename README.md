@@ -199,8 +199,10 @@ En un Ubuntu nuevo, con el repositorio clonado en `/opt/tienda` y como root:
 bash scripts/instalar-servidor.sh preparar   # sin preguntas; compila las imágenes
 ```
 
-Crea swap, instala Docker, activa el firewall (22, 80 y 443), arma el `.env` con
-claves generadas y compila las imágenes. Después, **desde la PC** (Git Bash en
+Crea swap, instala Docker, activa el firewall (22, 80 y 443), activa los parches
+de seguridad automáticos (reinicia a las 04:30 si alguno lo pide), deja SSH solo
+con llave, si root ya tiene una autorizada, arma el `.env` con claves generadas y
+compila las imágenes. Después, **desde la PC** (Git Bash en
 Windows), con la llave SSH ya autorizada en el servidor:
 
 ```bash
