@@ -33,6 +33,25 @@ jobs:
           java-version: '21'
           cache: maven
       - run: ./mvnw -B test
+      # Cobertura sin mínimo obligatorio (decisiones.md → «Cobertura de las pruebas»): el porcentaje en el resumen
+      # de la corrida y el informe completo como artefacto
+      - name: Cobertura
+        run: |
+          python3 - target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import csv, sys
+          filas = list(csv.DictReader(open(sys.argv[1])))
+          print("### Cobertura del backend\n\n| | Cubierto |\n|---|---|")
+          for clave, nombre in (("LINE", "Líneas"), ("BRANCH", "Ramas"), ("METHOD", "Métodos")):
+              cubierto = sum(int(f[clave + "_COVERED"]) for f in filas)
+              total = cubierto + sum(int(f[clave + "_MISSED"]) for f in filas)
+              porcentaje = f"{100 * cubierto / total:.1f}".replace(".", ",")
+              print(f"| {nombre} | {porcentaje} % ({cubierto}/{total}) |")
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cobertura-backend
+          path: backend/target/site/jacoco/
+          retention-days: 14
 
   frontend:
     name: Frontend (Angular)
@@ -49,7 +68,19 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      - run: npx ng test --watch=false
+      - run: npx ng test --watch=false --coverage
+      - name: Cobertura
+        run: |
+          {
+            echo '### Cobertura del frontend'; echo; echo '| | Cubierto |'; echo '|---|---|'
+            jq -r '.total | [["Líneas", .lines], ["Ramas", .branches], ["Funciones", .functions]][]
+              | "| \(.[0]) | \(.[1].pct | tostring | sub("\\."; ",")) % (\(.[1].covered)/\(.[1].total)) |"' coverage/frontend/coverage-summary.json
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cobertura-frontend
+          path: frontend/coverage/frontend/
+          retention-days: 14
       - run: npx ng build
 
   # El camino principal en el navegador (registro → catálogo → carrito → pedido → pago simulado → mis pedidos)

@@ -13,7 +13,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 ## Índice
 
-- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api) · [Respaldos](#respaldos) · [Servidor](#servidor)
+- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api) · [Respaldos](#respaldos) · [Servidor](#servidor) · [Cobertura de las pruebas](#cobertura-de-las-pruebas)
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios) · [Política de contenido](#política-de-contenido)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend)
@@ -312,6 +312,29 @@ mínimo de seguridad, además del firewall (22, 80 y 443):
 - *Descartado:* fail2ban. Sin contraseñas, los intentos por SSH no tienen qué
   adivinar; solo bajaría el ruido del registro. La API ya tiene su propio
   límite de intentos de inicio de sesión.
+
+### Cobertura de las pruebas
+
+*05/11/2026.* **JaCoCo** en el backend (`jacoco-maven-plugin`, en cada
+`./mvnw test`) y **`@vitest/coverage-v8`** en el frontend
+(`ng test --coverage`). El CI corre las dos y muestra los porcentajes de líneas,
+ramas y métodos o funciones en el resumen de la corrida. Los informes completos
+quedan como artefactos por 14 días.
+
+- **Sin mínimo obligatorio:** el porcentaje muestra qué falta probar, pero no
+  bloquea un PR. Un mínimo empuja a escribir pruebas para llegar al número, no
+  para cubrir los casos de la historia. Las pruebas siguen saliendo de los RF
+  y de los casos límite (`docs/flujo-sdd.md`).
+- **Al empezar** (05/11/2026): backend 97,1 % de las líneas y 89,9 % de las
+  ramas (774 pruebas); frontend 95,4 % de las líneas y 89,7 % de las ramas
+  (898 pruebas).
+- **Lo que no se cuenta:** el código que genera Lombok, que en la versión del
+  proyecto (1.18.48) lo marca con `@Generated` sin configurar nada, y JaCoCo lo
+  salta; en el frontend, los `*.spec-helper.ts`, que son ayudas de las pruebas
+  (`coverageExclude` en `angular.json`).
+- **`vitest` y `@vitest/coverage-v8` van juntos:** cada uno pide la misma versión
+  que el otro. Dependabot los sube en un grupo propio, también en las versiones
+  mayores.
 
 ---
 
