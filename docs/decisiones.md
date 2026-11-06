@@ -17,7 +17,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios) · [Política de contenido](#política-de-contenido)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend) · [ESLint](#eslint)
-- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Exportar reportes](#exportar-reportes) · [Catálogo de demostración](#catálogo-de-demostración) · [Fotos achicadas](#fotos-achicadas)
+- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Exportar reportes](#exportar-reportes) · [Catálogo de demostración](#catálogo-de-demostración) · [Fotos achicadas](#fotos-achicadas) · [Venta en tienda](#venta-en-tienda)
 
 ---
 
@@ -100,7 +100,7 @@ en modo MySQL (perfil `test`), sin Testcontainers.
 Hibernate creaba `pedido.estado` como `enum(...)` de MySQL, y `ddl-auto=update`
 no cambia una columna que ya existe: un estado nuevo («Entregado») fallaba en
 MySQL y pasaba en H2. Se mapea con `@JdbcTypeCode(SqlTypes.VARCHAR)` y, al
-arrancar, `EstadoPedidoAlArrancar` pasa la columna a `varchar(15)` solo si en
+arrancar, `EstadoPedidoAlArrancar` (desde HU-23, `PedidoAlArrancar`) pasa la columna a `varchar(15)` solo si en
 MySQL sigue siendo `enum`. Es un cambio de tipo puntual, no una migración: si
 hiciera falta otro, se vuelve a decidir acá. En una base nueva Hibernate crea
 además un `check` con los estados de ahora, que `ddl-auto=update` tampoco
@@ -1077,7 +1077,9 @@ movimientos registrados.
 *19/10/2026 (HU-12).* **Dos movimientos más, sin cargarlos a mano:**
 «Reserva por pedido» resta al confirmar un pedido y «Liberación por pedido»
 suma al cancelarlo o al vencer, los dos con el número de pedido y a nombre
-del cliente. El stock sigue sin quedar negativo.
+del cliente. El stock sigue sin quedar negativo. *05/11/2026 (HU-23):* en una
+venta del mostrador, a nombre de quien vendió o anuló, y la pantalla los
+llama «Venta en tienda» y «Anulación de venta».
 
 **Motivo:** el ajuste por cantidad contada es lo que hace quien cuenta un
 estante; el historial inmutable deja rastro de cada cambio; costos y
@@ -1229,7 +1231,9 @@ retira en la tienda.
   ascendente). Por eso la confirmación lee los pedidos pendientes sin
   bloquearlos: en MySQL, un `SELECT … FOR UPDATE` que no encuentra filas
   bloquea el hueco del índice y traba a dos clientes que confirman a la vez.
-  El pago (HU-13) y el despacho (HU-17) siguen la misma regla.
+  El pago (HU-13) y el despacho (HU-17) siguen la misma regla. *05/11/2026
+  (HU-23):* la venta del mostrador es la excepción, y bloquea primero el
+  pedido (ver «Venta en tienda»).
 
 - *21/10/2026 (HU-14).* **Mis pedidos:** la lista de todos los pedidos del
   Cliente, el más nuevo primero y de a 10 por página, con el pedido que espera
@@ -1336,7 +1340,7 @@ después de los 30 minutos del pedido.
 - **Margen** solo con las líneas que tienen costo guardado; lo vendido sin
   costo se muestra aparte.
 - **Pedidos perdidos:** los vencidos y cancelados entre los confirmados del
-  período. La proporción de vendidos no cuenta los que esperan el pago ni los
+  período; *05/11/2026 (HU-23):* solo los pedidos en línea. La proporción de vendidos no cuenta los que esperan el pago ni los
   «Pago a devolver», que se pagaron pero no fueron venta (revisión de código).
 - **Sin venderse:** productos activos con stock, por días desde la última
   venta o desde el alta, con el dinero inmovilizado (stock × costo, o × precio
@@ -1445,3 +1449,66 @@ el detalle elige con `srcset`; la galería a pantalla completa, el original.
 **Motivo:** la tarjeta mostraba a 300 px fotos de hasta 2 MB; con la versión
 de 400 baja unos 30 kB. Guardar el original cuesta disco, pero no pierde
 calidad ni obliga a pedirle al Administrador que vuelva a subir las fotos.
+
+### Venta en tienda
+
+*05/11/2026 (HU-23, entrevista con Fabio).* El Empleado y el Administrador
+registran en el sistema lo que se vende en el mostrador del local: los
+productos, las cantidades y el cobro. El stock baja en el momento y la venta
+cuenta en los reportes junto con las en línea.
+
+- **Efectivo o QR.** En efectivo, el Empleado anota lo recibido y el sistema
+  calcula el cambio; la venta queda hecha en el acto. **Cambia la regla de
+  `CLAUDE.md` → «Pago»:** el efectivo lo confirma quien recibe el dinero, no
+  el sistema de pago. Con QR se usa `IPago` como en línea y se confirma
+  consultando.
+- **QR en el mostrador:** la venta queda «Pendiente de pago» con el stock
+  reservado y el QR en la pantalla, y vence a los **10 minutos** (en línea son
+  30: el cliente está parado enfrente). El Empleado puede cancelarla, por
+  ejemplo para cobrar en efectivo. El pago tardío y «Pago a devolver», como
+  en línea.
+- **Comprador:** «Consumidor final» por defecto. Si la persona tiene cuenta
+  de Cliente activa, el Empleado la busca por correo y la venta aparece en
+  sus pedidos y en los reportes de clientes. Sin pedirle el correo
+  verificado: está en persona.
+- **Anular:** solo el Administrador, solo ventas en efectivo del mismo día
+  (hora de Bolivia) y con un motivo. El stock vuelve, la venta queda
+  «Anulado», no se borra y no cuenta en los reportes. Una venta con QR no se
+  anula: el dinero está en el sistema de pago y su devolución va fuera del
+  sistema, como «Pago a devolver».
+- **Comprobante:** la página de la venta se imprime con el navegador en
+  formato de ticket, con «No válido como factura» (sin SIAT).
+- **Reportes:** todos suman las dos ventas, con un filtro «Canal» (todos, en
+  línea, en tienda) que respetan Excel y PDF; el resumen reparte por canal y
+  por medio de pago.
+- *05/11/2026 (`/sdd:analizar`, decisión de Fabio).* **Si el sistema de pago
+  no genera el QR,** la venta se cancela en el acto y el stock vuelve; las
+  líneas quedan en la pantalla para cobrar con QR de nuevo (otra venta) o en
+  efectivo. Sin «Reintentar QR» sobre la misma venta.
+- *05/11/2026 (`/sdd:analizar`, decisión de Fabio).* **«Pedidos perdidos»
+  cuenta solo los pedidos en línea:** una venta del mostrador con QR que se
+  cancela para cobrar en efectivo, o que vence, no es una venta perdida.
+- **En «Mis pedidos»,** la venta del mostrador aparece recién pagada
+  (entregada, pagada por pago tardío, con pago a devolver o anulada); nunca
+  pendiente, cancelada ni vencida, que no fueron una compra del Cliente.
+- **Orden de bloqueo:** una venta del mostrador bloquea el pedido, después su
+  cobro y después los productos por id ascendente, y **nunca al cliente**: es
+  la excepción a «todo lo que cambia un pedido bloquea antes la fila de su
+  cliente» («Pedidos»). No toca el carrito ni el pedido en línea del cliente,
+  y lo de en línea solo bloquea pedidos en línea de su cliente, así que ningún
+  camino espera en círculo.
+- **Movimientos del stock:** la venta usa la «Reserva por pedido» y la
+  anulación, la «Liberación por pedido», a nombre de quien vendió o anuló; la
+  pantalla los nombra «Venta en tienda» y «Anulación de venta».
+- **Sin cierre de caja** en esta historia: el efectivo del día se ve en los
+  reportes; el arqueo, en otra historia si hay tiempo.
+- **Lo que no cambia:** precio de hoy, sin rebajas (los descuentos siguen
+  fuera, ver «Reportes»); solo productos activos; el stock nunca queda
+  negativo, y si el sistema dice que no alcanza pero está en el estante, se
+  corrige primero con un ajuste del inventario.
+
+**Motivo:** la tienda tiene un local y un solo inventario: una venta del
+mostrador que no se registra deja el stock y los reportes desfasados, y la
+tienda puede vender en línea algo que ya se llevaron. El efectivo es como se
+paga en el mostrador de una ferretería; anular solo con el Administrador, el
+mismo día y con motivo, evita que quien cobró borre su propia venta.

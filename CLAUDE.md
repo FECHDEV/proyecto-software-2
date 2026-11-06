@@ -42,7 +42,8 @@ de asumir.
   se configuran permisos individuales:
   - **Cliente:** compra (catálogo, carrito, sus pedidos).
   - **Administrador:** usuarios, roles y todo lo de la tienda.
-  - **Empleado:** pedidos, despacho e inventario.
+  - **Empleado:** pedidos, despacho, inventario y ventas en el mostrador
+    (*05/11/2026*, HU-23).
   - **Contador:** reportes y dinero, solo lectura.
 - Todo usuario que se registra por sí mismo obtiene rol **Cliente**. Los demás
   roles los asigna un Administrador sobre un usuario ya registrado.
@@ -68,7 +69,9 @@ de asumir.
 - El nombre del proveedor aparece **solo** en su adaptador y en su
   configuración; nunca en entidades, servicios, controladores ni en la API.
 - El pago se confirma consultando al sistema de pago, nunca por lo que muestre
-  o diga el cliente.
+  o diga el cliente. *05/11/2026 (HU-23):* la excepción es el **efectivo en
+  el mostrador**, que confirma el Empleado que recibe el dinero; con QR en el
+  mostrador se consulta como siempre.
 
 ### Correos
 - Recuperación de contraseña.
