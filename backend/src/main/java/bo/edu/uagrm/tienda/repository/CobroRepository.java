@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import bo.edu.uagrm.tienda.entity.Canal;
 import bo.edu.uagrm.tienda.entity.Cobro;
 import bo.edu.uagrm.tienda.entity.EstadoCobro;
 import jakarta.persistence.LockModeType;
@@ -28,8 +29,8 @@ public interface CobroRepository extends JpaRepository<Cobro, Long> {
 	// de la base. Vacío si ya se procesó (RF-11)
 	@Query("""
 			select new bo.edu.uagrm.tienda.repository.CobroRepository$CobroAConciliar(
-				c.idCobro, c.referencia, c.pedido.idPedido, c.pedido.usuario.idUsuario)
-			from Cobro c where c.idCobro = :idCobro and c.estado = bo.edu.uagrm.tienda.entity.EstadoCobro.PENDIENTE""")
+				c.idCobro, c.referencia, p.idPedido, u.idUsuario, p.canal)
+			from Cobro c join c.pedido p left join p.usuario u where c.idCobro = :idCobro and c.estado = bo.edu.uagrm.tienda.entity.EstadoCobro.PENDIENTE""")
 	Optional<CobroAConciliar> datosParaConciliar(@Param("idCobro") Long idCobro);
 
 	// El aviso del sistema de pago llega con nuestra referencia (RF-10)
@@ -43,6 +44,11 @@ public interface CobroRepository extends JpaRepository<Cobro, Long> {
 			order by c.idCobro""")
 	List<Long> idsPorConciliar(@Param("desde") LocalDateTime desde);
 
-	record CobroAConciliar(Long idCobro, String referencia, Long idPedido, Long idUsuario) {
+	// idUsuario es nulo en una venta del mostrador a consumidor final (HU-23)
+	record CobroAConciliar(Long idCobro, String referencia, Long idPedido, Long idUsuario, Canal canal) {
+
+		public boolean enTienda() {
+			return canal == Canal.TIENDA;
+		}
 	}
 }

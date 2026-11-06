@@ -3,6 +3,7 @@ package bo.edu.uagrm.tienda.service.exportar;
 import org.springframework.stereotype.Service;
 
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.PeriodoResponse;
+import bo.edu.uagrm.tienda.entity.Canal;
 import bo.edu.uagrm.tienda.entity.TipoCliente;
 import bo.edu.uagrm.tienda.service.ReporteCompleto;
 import bo.edu.uagrm.tienda.service.ReportesService;
@@ -18,10 +19,10 @@ public class ExportacionDeReportes {
 	private final ExportadorExcel exportadorExcel;
 	private final ExportadorPdf exportadorPdf;
 
-	public ArchivoExportado exportar(String formato, String desde, String hasta, TipoCliente tipo, String dias,
-			Long idUsuario) {
+	public ArchivoExportado exportar(String formato, String desde, String hasta, TipoCliente tipo, Canal canal,
+			String dias, Long idUsuario) {
 		FormatoExportacion elegido = FormatoExportacion.de(formato);
-		ReporteCompleto reporte = reportesService.completo(desde, hasta, tipo, dias, idUsuario);
+		ReporteCompleto reporte = reportesService.completo(desde, hasta, tipo, canal, dias, idUsuario);
 		byte[] contenido = elegido == FormatoExportacion.XLSX ? exportadorExcel.exportar(reporte)
 				: exportadorPdf.exportar(reporte);
 		PeriodoResponse periodo = reporte.ventas().periodo();

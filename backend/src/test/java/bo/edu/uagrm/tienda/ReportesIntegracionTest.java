@@ -473,4 +473,92 @@ class ReportesIntegracionTest {
 		// El resumen de ventas ya no los calcula (/code-review, ronda 2)
 		assertThat(ventas(contador, OCTUBRE)).bodyJson().doesNotHavePath("$.perdidos");
 	}
+
+	// --- HU-23: la venta del mostrador en los reportes ---
+
+	// Una venta del mostrador de 50 × piezas, cobrada a esa hora; comprador null es el consumidor final
+	private Pedido enTienda(Usuario comprador, bo.edu.uagrm.tienda.entity.MedioPago medio, LocalDateTime pago,
+			int piezas) {
+		Pedido venta = Pedido.enTienda(comprador, personal, medio,
+				medio == bo.edu.uagrm.tienda.entity.MedioPago.EFECTIVO ? new BigDecimal("10000") : null,
+				pago.minusMinutes(1), java.time.Duration.ofMinutes(10));
+		venta.agregarLinea(pieza, new BigDecimal(piezas));
+		venta.cobrarEnTienda(pago);
+		return pedidoRepository.save(venta);
+	}
+
+	// HU-23 RF-21: las ventas del mostrador suman con las en línea; una anulada no suma
+	@Test
+	void cuentaLasVentasDelMostradorYNoLasAnuladas() throws Exception {
+		pagado(ana, dia(10, 5, 10, 0), 2);
+		enTienda(null, bo.edu.uagrm.tienda.entity.MedioPago.EFECTIVO, dia(10, 6, 10, 0), 3);
+		Pedido anulada = enTienda(null, bo.edu.uagrm.tienda.entity.MedioPago.EFECTIVO, dia(10, 7, 10, 0), 4);
+		anulada.anular(personal, "Error", dia(10, 7, 10, 5));
+		pedidoRepository.save(anulada);
+
+		MvcTestResult resultado = ventas(contador, OCTUBRE);
+
+		assertThat(resultado).hasStatus(HttpStatus.OK);
+		assertThat(resultado).bodyJson().extractingPath("$.actual.ingresos").isEqualTo(250.0);
+		assertThat(resultado).bodyJson().extractingPath("$.actual.pedidos").isEqualTo(2);
+	}
+
+	// HU-23 RF-22: el canal filtra todas las secciones; el resumen reparte por canal y por medio de pago
+	@Test
+	void filtraPorCanalYRepartePorMedio() throws Exception {
+		pagado(ana, dia(10, 5, 10, 0), 2);
+		enTienda(null, bo.edu.uagrm.tienda.entity.MedioPago.EFECTIVO, dia(10, 6, 10, 0), 3);
+		enTienda(beto, bo.edu.uagrm.tienda.entity.MedioPago.QR, dia(10, 6, 11, 0), 1);
+
+		MvcTestResult enTienda = ventas(contador, OCTUBRE + "&canal=TIENDA");
+		assertThat(enTienda).bodyJson().extractingPath("$.actual.ingresos").isEqualTo(200.0);
+		assertThat(enTienda).bodyJson().extractingPath("$.actual.pedidos").isEqualTo(2);
+		assertThat(numeros(enTienda, "$.porCategoria[*].ingresos")).containsExactly(200.0);
+		assertThat(ventas(contador, OCTUBRE + "&canal=EN_LINEA")).bodyJson().extractingPath("$.actual.ingresos")
+				.isEqualTo(100.0);
+		// Un canal que no existe es «todos»
+		assertThat(ventas(contador, OCTUBRE + "&canal=xx")).bodyJson().extractingPath("$.actual.ingresos")
+				.isEqualTo(300.0);
+
+		MvcTestResult todos = ventas(contador, OCTUBRE);
+		assertThat(todos).bodyJson().extractingPath("$.porCanal[*].canal").asArray()
+				.containsExactly("EN_LINEA", "TIENDA");
+		assertThat(numeros(todos, "$.porCanal[*].ingresos")).containsExactly(100.0, 200.0);
+		assertThat(todos).bodyJson().extractingPath("$.porMedio[*].medio").asArray().containsExactly("EFECTIVO", "QR");
+		// En línea siempre se paga con QR
+		assertThat(numeros(todos, "$.porMedio[*].ingresos")).containsExactly(150.0, 150.0);
+		assertThat(numeros(todos, "$.porMedio[*].pedidos")).containsExactly(1.0, 2.0);
+	}
+
+	// HU-23 (decisiones de la historia): el consumidor final cuenta como «Público general»
+	@Test
+	void elConsumidorFinalCuentaComoPublicoGeneral() throws Exception {
+		enTienda(null, bo.edu.uagrm.tienda.entity.MedioPago.EFECTIVO, dia(10, 6, 10, 0), 3);
+
+		MvcTestResult todos = ventas(contador, OCTUBRE);
+
+		assertThat(numeros(todos, "$.porTipo[?(@.tipo == 'PUBLICO_GENERAL')].ingresos")).containsExactly(150.0);
+		assertThat(ventas(contador, OCTUBRE + "&tipo=PUBLICO_GENERAL")).bodyJson().extractingPath("$.actual.ingresos")
+				.isEqualTo(150.0);
+		assertThat(ventas(contador, OCTUBRE + "&tipo=CONTRATISTA")).bodyJson().extractingPath("$.actual.ingresos")
+				.isEqualTo(0.0);
+	}
+
+	// HU-23 RF-21: «pedidos perdidos» cuenta solo los de en línea; una venta del mostrador cancelada no es uno
+	@Test
+	void unaVentaDelMostradorCanceladaNoEsPedidoPerdido() throws Exception {
+		Pedido perdido = confirmado(ana, dia(10, 5, 10, 0), pieza, 2);
+		perdido.cancelar(dia(10, 5, 10, 10));
+		pedidoRepository.save(perdido);
+		Pedido cancelada = Pedido.enTienda(null, personal, bo.edu.uagrm.tienda.entity.MedioPago.QR, null,
+				dia(10, 6, 10, 0), java.time.Duration.ofMinutes(10));
+		cancelada.agregarLinea(pieza, new BigDecimal(3));
+		cancelada.cancelar(dia(10, 6, 10, 2));
+		pedidoRepository.save(cancelada);
+
+		MvcTestResult resumen = perdidos(OCTUBRE);
+		assertThat(resumen).bodyJson().extractingPath("$.cantidad").isEqualTo(1);
+		assertThat(resumen).bodyJson().extractingPath("$.importe").isEqualTo(100.0);
+		assertThat(perdidos(OCTUBRE + "&canal=TIENDA")).bodyJson().extractingPath("$.cantidad").isEqualTo(0);
+	}
 }

@@ -14,12 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 import bo.edu.uagrm.tienda.dto.PaginaResponse;
 import bo.edu.uagrm.tienda.dto.PedidoDespachoResponse;
 import bo.edu.uagrm.tienda.dto.PedidoDespachoResumenResponse;
+import bo.edu.uagrm.tienda.entity.Canal;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.Pedido;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.exception.PedidoNoEncontradoException;
 import bo.edu.uagrm.tienda.exception.PedidoNoEntregableException;
 import bo.edu.uagrm.tienda.repository.PedidoRepository;
+import bo.edu.uagrm.tienda.repository.PedidoRepository.DuenoDelPedido;
 import bo.edu.uagrm.tienda.repository.PedidoRepository.FilaDeDespacho;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,8 +44,11 @@ public class DespachoService {
 	// TODOS, sin filtro. Del texto cuentan los primeros 100 caracteres, sin tildes ni mayúsculas; si son solo dígitos,
 	// también busca ese número. No vence pedidos: eso lo hace la tarea de cada minuto
 	@Transactional(readOnly = true)
-	public PaginaResponse<PedidoDespachoResumenResponse> lista(String estado, String texto, int pagina) {
+	public PaginaResponse<PedidoDespachoResumenResponse> lista(String estado, String canal, String texto, int pagina) {
 		EstadoPedido filtro = TODOS.equals(estado) ? null : estadoOPagado(estado);
+		// Sin canal o con uno que no existe, todos (HU-23 RF-16)
+		Canal deCanal = Arrays.stream(Canal.values()).filter(valor -> valor.name().equals(canal)).findFirst()
+				.orElse(null);
 		// Sin los espacios de alrededor primero: no cuentan para el límite. Por caracteres completos: no parte un emoji
 		String limpio = texto == null ? null : texto.strip();
 		String recortado = limpio == null ? null
@@ -53,14 +58,15 @@ public class DespachoService {
 		Long numero = patron != null && recortado.strip().matches("\\d{1,18}") ? Long.valueOf(recortado.strip()) : null;
 		Sort orden = filtro == EstadoPedido.PAGADO ? Sort.by("pagado", "idPedido")
 				: Sort.by(Sort.Direction.DESC, "confirmado", "idPedido");
-		Page<FilaDeDespacho> filas = pedidoRepository.despacho(filtro, patron, numero,
+		Page<FilaDeDespacho> filas = pedidoRepository.despacho(filtro, deCanal, patron, numero,
 				PageRequest.of(Busquedas.paginaValida(pagina, POR_PAGINA), POR_PAGINA, orden));
 		if (filas.isEmpty() && filas.getTotalPages() > 0) { // después de la última, la última
-			filas = pedidoRepository.despacho(filtro, patron, numero,
+			filas = pedidoRepository.despacho(filtro, deCanal, patron, numero,
 					PageRequest.of(filas.getTotalPages() - 1, POR_PAGINA, orden));
 		}
 		return PaginaResponse.from(filas, fila -> new PedidoDespachoResumenResponse(fila.idPedido(), fila.estado(),
-				fila.confirmado(), fila.pagado(), fila.nombreRetira(), fila.cantidadProductos(), fila.total()));
+				fila.confirmado(), fila.pagado(), fila.nombreRetira(), fila.cantidadProductos(), fila.total(),
+				fila.canal()));
 	}
 
 	private static EstadoPedido estadoOPagado(String estado) {
@@ -76,13 +82,19 @@ public class DespachoService {
 
 	// Cliente y después pedido, como todo lo que cambia un pedido (decisiones.md → Pedidos). El id del cliente se lee
 	// sin bloqueo y sin cargar el pedido: una entidad ya leída no se vuelve a leer al bloquearla, y dos entregas a la vez
-	// la verían pagada. READ_COMMITTED como lo demás que cambia un pedido (decisiones.md → Pagos)
+	// la verían pagada. READ_COMMITTED como lo demás que cambia un pedido (decisiones.md → Pagos). Una venta del
+	// mostrador pagada tarde se bloquea ella primero, sin el cliente, que puede no existir (HU-23 RF-11)
 	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public PedidoDespachoResponse entregar(Long idPedido, Long idPersonal) {
-		Long idCliente = pedidoRepository.idClienteDelPedido(idPedido).orElseThrow(PedidoNoEncontradoException::new);
-		usuarioRepository.findConBloqueoByIdUsuario(idCliente).orElseThrow(PedidoNoEncontradoException::new);
-		Pedido pedido = pedidoRepository.findConBloqueoByIdPedidoAndUsuario_IdUsuario(idPedido, idCliente)
-				.orElseThrow(PedidoNoEncontradoException::new);
+		DuenoDelPedido dueno = pedidoRepository.duenoDelPedido(idPedido).orElseThrow(PedidoNoEncontradoException::new);
+		Pedido pedido;
+		if (dueno.canal() == Canal.TIENDA) {
+			pedido = pedidoRepository.findConBloqueoByIdPedido(idPedido).orElseThrow(PedidoNoEncontradoException::new);
+		} else {
+			usuarioRepository.findConBloqueoByIdUsuario(dueno.idUsuario()).orElseThrow(PedidoNoEncontradoException::new);
+			pedido = pedidoRepository.findConBloqueoByIdPedidoAndUsuario_IdUsuario(idPedido, dueno.idUsuario())
+					.orElseThrow(PedidoNoEncontradoException::new);
+		}
 		if (pedido.getEstado() != EstadoPedido.PAGADO) {
 			throw new PedidoNoEntregableException(); // RF-7: ya entregado, pendiente, cerrado o con pago a devolver
 		}

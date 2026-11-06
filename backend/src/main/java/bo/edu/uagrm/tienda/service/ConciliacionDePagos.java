@@ -76,9 +76,13 @@ public class ConciliacionDePagos {
 
 	private void aplicar(CobroAConciliar datos, ResultadoDelCobro resultado) {
 		LocalDateTime ahora = LocalDateTime.now(clock);
-		Usuario usuario = usuarioRepository.findConBloqueoByIdUsuario(datos.idUsuario()).orElseThrow();
-		Pedido pedido = pedidoRepository.findConBloqueoByIdPedidoAndUsuario_IdUsuario(datos.idPedido(),
-				datos.idUsuario()).orElseThrow();
+		// Una venta del mostrador se bloquea primero ella, sin el cliente, que puede no existir (HU-23; decisiones.md →
+		// Venta en tienda). En línea, el cliente y después el pedido, como siempre
+		Usuario usuario = datos.enTienda() ? null
+				: usuarioRepository.findConBloqueoByIdUsuario(datos.idUsuario()).orElseThrow();
+		Pedido pedido = datos.enTienda() ? pedidoRepository.findConBloqueoByIdPedido(datos.idPedido()).orElseThrow()
+				: pedidoRepository.findConBloqueoByIdPedidoAndUsuario_IdUsuario(datos.idPedido(), datos.idUsuario())
+						.orElseThrow();
 		Cobro cobro = cobroRepository.findConBloqueoByIdCobro(datos.idCobro()).orElseThrow();
 		if (cobro.getEstado() != EstadoCobro.PENDIENTE) {
 			return; // RF-11
@@ -93,10 +97,21 @@ public class ConciliacionDePagos {
 				cobro.registrarPago(fecha);
 				if (pedido.getEstado() == EstadoPedido.PENDIENTE_PAGO) {
 					// RF-5: la reserva queda como venta, sin otro movimiento. También si ya pasó la hora pero no
-					// venció: el pago llegó antes que el vencimiento (RF-7)
-					pedido.pagar(fecha);
+					// venció: el pago llegó antes que el vencimiento (RF-7). En el mostrador, el cliente se la lleva
+					// en el acto (HU-23 RF-8)
+					if (pedido.esEnTienda()) {
+						pedido.cobrarEnTienda(fecha);
+					} else {
+						pedido.pagar(fecha);
+					}
 				} else {
-					pedidoService.revivir(pedido, fecha, ahora); // RF-9
+					pedidoService.revivir(pedido, fecha, ahora); // RF-9; HU-23 RF-11
+				}
+				if (pedido.esEnTienda()) {
+					// Sin correos por la venta del mostrador: el cliente se lleva el comprobante (CLAUDE.md → Correos)
+					TrasElCommit.ejecutar(() -> log.info("Cobro {} pagado el {} (venta del mostrador {})",
+							datos.idCobro(), fecha, datos.idPedido()));
+					return;
 				}
 				// Dentro de la transacción: las líneas y la cuenta se leen acá, el envío corre sin sesión (HU-21)
 				CorreoDelPedido correo = CorreoDelPedido.de(pedido, usuario);

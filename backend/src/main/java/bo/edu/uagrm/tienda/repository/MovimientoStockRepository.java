@@ -9,7 +9,8 @@ import bo.edu.uagrm.tienda.entity.MovimientoStock;
 
 public interface MovimientoStockRepository extends JpaRepository<MovimientoStock, Long> {
 
-	// El historial muestra quién hizo cada movimiento: el usuario viene en la misma consulta
-	@EntityGraph(attributePaths = "usuario")
+	// El historial muestra quién hizo cada movimiento y, en un pedido, su canal y su estado (HU-23): el usuario y el
+	// pedido vienen en la misma consulta
+	@EntityGraph(attributePaths = { "usuario", "pedido" })
 	Page<MovimientoStock> findByProducto_IdProducto(Long idProducto, Pageable paginacion);
 }

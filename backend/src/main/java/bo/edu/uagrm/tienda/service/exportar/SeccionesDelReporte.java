@@ -17,6 +17,7 @@ import bo.edu.uagrm.tienda.dto.reportes.ResumenDePerdidos;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.PeriodoResponse;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.Totales;
+import bo.edu.uagrm.tienda.entity.Canal;
 import bo.edu.uagrm.tienda.entity.TipoCliente;
 import bo.edu.uagrm.tienda.entity.UnidadVenta;
 import bo.edu.uagrm.tienda.service.ReporteCompleto;
@@ -127,9 +128,18 @@ final class SeccionesDelReporte {
 				par("Período", rango(periodo.desde(), periodo.hasta())),
 				par("Comparado con", rango(periodo.anteriorDesde(), periodo.anteriorHasta())),
 				par("Tipo de cliente", reporte.tipo() == null ? "Todos" : tipo(reporte.tipo())),
+				// HU-23 RF-22
+				par("Canal", canal(reporte.canal())),
 				par("Sin venderse y clientes inactivos", "Más de %d días".formatted(reporte.dias())),
 				List.of(Celda.texto("Generado"), new FechaHora(reporte.generado())),
 				par("Exportado por", reporte.autor())), "");
+	}
+
+	private static String canal(Canal canal) {
+		if (canal == null) {
+			return "En línea y en tienda";
+		}
+		return canal == Canal.TIENDA ? "En tienda" : "En línea";
 	}
 
 	private static List<Celda> par(String dato, String valor) {

@@ -4,13 +4,15 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import bo.edu.uagrm.tienda.entity.Canal;
+import bo.edu.uagrm.tienda.entity.MedioPago;
 import bo.edu.uagrm.tienda.entity.TipoCliente;
 
 // GET /api/reportes/ventas (HU-18): el resumen del período, sin las listas ni los perdidos (que tienen lo suyo). Un
 // promedio o un porcentaje sin con qué dividir es nulo, igual que el margen si nada vendido tenía costo
 public record VentasResponse(PeriodoResponse periodo, Totales actual, Totales anterior, List<PorFecha> porFecha,
 		List<PorDiaSemana> porDiaSemana, List<PorHora> porHora, List<PorCategoria> porCategoria,
-		List<PorTipo> porTipo) {
+		List<PorTipo> porTipo, List<PorCanal> porCanal, List<PorMedio> porMedio) {
 
 	// agrupado: DIA o MES (RF-9)
 	public record PeriodoResponse(LocalDate desde, LocalDate hasta, LocalDate anteriorDesde, LocalDate anteriorHasta,
@@ -37,6 +39,14 @@ public record VentasResponse(PeriodoResponse periodo, Totales actual, Totales an
 
 	// RF-14
 	public record PorCategoria(String categoria, BigDecimal ingresos, long pedidos, BigDecimal margen) {
+	}
+
+	// HU-23 RF-22: en línea y en el mostrador
+	public record PorCanal(Canal canal, BigDecimal ingresos, long pedidos) {
+	}
+
+	// HU-23 RF-22: efectivo y QR
+	public record PorMedio(MedioPago medio, BigDecimal ingresos, long pedidos) {
 	}
 
 	// RF-15

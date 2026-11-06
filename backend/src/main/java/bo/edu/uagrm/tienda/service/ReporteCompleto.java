@@ -9,11 +9,13 @@ import bo.edu.uagrm.tienda.dto.reportes.ProductoSinVenta;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoVendido;
 import bo.edu.uagrm.tienda.dto.reportes.ResumenDePerdidos;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse;
+import bo.edu.uagrm.tienda.entity.Canal;
 import bo.edu.uagrm.tienda.entity.TipoCliente;
 
 // Todo lo que se exporta (HU-19): las secciones de la pantalla con las listas enteras (RF-6, RF-7), los filtros con
-// que se pidió y quién lo pidió y cuándo (RF-5). tipo es nulo con todos los tipos
+// que se pidió y quién lo pidió y cuándo (RF-5). tipo es nulo con todos los tipos, y canal con los dos (HU-23 RF-22)
 public record ReporteCompleto(VentasResponse ventas, ResumenDePerdidos perdidos, List<ProductoVendido> masVendidos,
 		List<ProductoVendido> menosVendidos, List<ProductoSinVenta> sinVenta, List<ProductoPerdido> productosPerdidos,
-		List<ClienteInactivo> clientesInactivos, TipoCliente tipo, int dias, LocalDateTime generado, String autor) {
+		List<ClienteInactivo> clientesInactivos, TipoCliente tipo, Canal canal, int dias, LocalDateTime generado,
+		String autor) {
 }

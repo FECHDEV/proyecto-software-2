@@ -185,11 +185,11 @@ class ReportesExportarIntegracionTest {
 				.mapToObj(i -> producto("Producto %02d".formatted(i), String.valueOf(10 + i))).toList();
 		productos.forEach(producto -> pagado(ana, octubre(2), producto, 1));
 
-		ReporteCompleto reporte = reportesService.completo("2025-10-01", "2025-10-22", null, null, idAdmin());
+		ReporteCompleto reporte = reportesService.completo("2025-10-01", "2025-10-22", null, null, null, idAdmin());
 
 		assertThat(reporte.masVendidos()).hasSize(12);
 		assertThat(reporte.menosVendidos()).hasSize(12);
-		assertThat(reportesService.productos("2025-10-01", "2025-10-22", null, false, 0).contenido()).hasSize(10);
+		assertThat(reportesService.productos("2025-10-01", "2025-10-22", null, null, false, 0).contenido()).hasSize(10);
 	}
 
 	// HU-19 RF-6: las mismas cifras que los endpoints de la pantalla
@@ -200,12 +200,12 @@ class ReportesExportarIntegracionTest {
 		pagado(ana, octubre(2), llave, 5);
 		pagado(fede, octubre(3), taladro, 1);
 
-		ReporteCompleto reporte = reportesService.completo("2025-10-01", "2025-10-22", null, null, idAdmin());
+		ReporteCompleto reporte = reportesService.completo("2025-10-01", "2025-10-22", null, null, null, idAdmin());
 
-		assertThat(reporte.ventas()).isEqualTo(reportesService.ventas("2025-10-01", "2025-10-22", null));
-		assertThat(reporte.perdidos()).isEqualTo(reportesService.resumenDePerdidos("2025-10-01", "2025-10-22", null));
+		assertThat(reporte.ventas()).isEqualTo(reportesService.ventas("2025-10-01", "2025-10-22", null, null));
+		assertThat(reporte.perdidos()).isEqualTo(reportesService.resumenDePerdidos("2025-10-01", "2025-10-22", null, null));
 		assertThat(reporte.masVendidos())
-				.isEqualTo(reportesService.productos("2025-10-01", "2025-10-22", null, false, 0).contenido());
+				.isEqualTo(reportesService.productos("2025-10-01", "2025-10-22", null, null, false, 0).contenido());
 		assertThat(reporte.masVendidos()).extracting(ProductoVendido::nombre).containsExactly("Taladro", "Llave");
 		assertThat(reporte.autor()).isNotBlank();
 		assertThat(reporte.generado()).isNotNull();
@@ -219,7 +219,7 @@ class ReportesExportarIntegracionTest {
 		pagado(ana, ahora.minusDays(45), medio, 1);
 		pagado(fede, ahora.minusDays(70), viejo, 1);
 
-		ReporteCompleto reporte = reportesService.completo(null, null, TipoCliente.CONTRATISTA, "60", idAdmin());
+		ReporteCompleto reporte = reportesService.completo(null, null, TipoCliente.CONTRATISTA, null, "60", idAdmin());
 
 		assertThat(reporte.dias()).isEqualTo(60);
 		assertThat(reporte.tipo()).isEqualTo(TipoCliente.CONTRATISTA);
@@ -322,5 +322,27 @@ class ReportesExportarIntegracionTest {
 
 		assertThat(archivo).hasHeader(HttpHeaders.CONTENT_DISPOSITION,
 				"attachment; filename=\"reporte-ventas-%s-a-%s.xlsx\"".formatted(hoy.withDayOfMonth(1), hoy));
+	}
+
+	// HU-23 RF-22: el Excel y el PDF dicen con qué canal se pidieron
+	@Test
+	void elExcelYElPdfNombranElCanal() throws Exception {
+		String admin = token(ADMIN, CLAVE_ADMIN);
+
+		MvcTestResult excel = exportar(admin, "formato=xlsx&desde=2025-10-01&hasta=2025-10-22&canal=TIENDA");
+		assertThat(excel).hasStatus(HttpStatus.OK);
+		try (Workbook libro = new XSSFWorkbook(new ByteArrayInputStream(excel.getResponse().getContentAsByteArray()))) {
+			DataFormatter formateador = new DataFormatter();
+			List<String> textos = new java.util.ArrayList<>();
+			for (Row fila : libro.getSheet("Resumen")) {
+				fila.forEach(celda -> textos.add(formateador.formatCellValue(celda)));
+			}
+			assertThat(textos).containsSequence("Canal", "En tienda");
+		}
+		MvcTestResult pdf = exportar(admin, "formato=pdf&desde=2025-10-01&hasta=2025-10-22");
+		assertThat(pdf).hasStatus(HttpStatus.OK);
+		try (PdfReader lector = new PdfReader(pdf.getResponse().getContentAsByteArray())) {
+			assertThat(new PdfTextExtractor(lector).getTextFromPage(1)).contains("Canal").contains("En línea y en tienda");
+		}
 	}
 }

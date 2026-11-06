@@ -110,6 +110,16 @@ class PedidoIntegracionTest {
 	@Autowired
 	private JdbcTemplate jdbc;
 
+	// HU-23: las ventas del mostrador de prueba, con el simulador de pago
+	@Autowired
+	private bo.edu.uagrm.tienda.repository.CobroRepository cobroRepository;
+
+	@Autowired
+	private bo.edu.uagrm.tienda.service.pago.IPago iPago;
+
+	@Autowired
+	private org.springframework.transaction.PlatformTransactionManager transacciones;
+
 	private String admin;
 	private String ana;
 	private String beto;
@@ -137,6 +147,7 @@ class PedidoIntegracionTest {
 		reloj.reiniciar();
 		lineaRepository.deleteAll();
 		movimientoRepository.deleteAll();
+		cobroRepository.deleteAll();
 		pedidoRepository.deleteAll();
 		productoRepository.deleteAll();
 		categoriaRepository.deleteAll();
@@ -884,6 +895,43 @@ class PedidoIntegracionTest {
 			hilos.shutdown();
 		}
 	}
+
+	// --- HU-23: la venta del mostrador no se mezcla con lo de en línea ---
+
+	private Long ventaConQrDeAna() {
+		return new VentasDePrueba(pedidoRepository, productoRepository, usuarioRepository, movimientoRepository,
+				cobroRepository, iPago, reloj, transacciones).conQr("ana.hu12@mail.com", ADMIN, Map.of(cable, "3"));
+	}
+
+	// HU-23 (casos límite): una venta del mostrador con QR esperando el pago no es el pedido pendiente del Cliente:
+	// confirma en línea igual, y al pasar la hora leer su carrito no vence la venta ni le devuelve sus líneas
+	@Test
+	void unaVentaDelMostradorPendienteNoBloqueaElPedidoEnLineaDelCliente() throws Exception {
+		Long venta = ventaConQrDeAna();
+		agregar(ana, martillo, "1");
+
+		assertThat(confirmar(ana, "85.50")).hasStatus(HttpStatus.CREATED);
+
+		reloj.avanzar(Duration.ofMinutes(11));
+		MvcTestResult carrito = get(CARRITO, ana);
+		assertThat(carrito).hasStatus(HttpStatus.OK);
+		assertThat(carrito).bodyJson().extractingPath("$.lineas").asArray().isEmpty();
+		assertThat(estado(venta.intValue())).isEqualTo(EstadoPedido.PENDIENTE_PAGO);
+	}
+
+	// HU-23 RF-23: el Cliente no ve, no paga ni cancela una venta del mostrador sin pagar, aunque esté a su nombre
+	@Test
+	void elClienteNoPagaNiCancelaUnaVentaDelMostrador() throws Exception {
+		Integer venta = ventaConQrDeAna().intValue();
+
+		assertThat(get(PEDIDOS + "/{id}", ana, venta)).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(post(PEDIDOS + "/{id}/cobro", ana, "", venta)).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(post(PEDIDOS + "/{id}/cobro/consulta", ana, "", venta)).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(cancelar(ana, venta)).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(estado(venta)).isEqualTo(EstadoPedido.PENDIENTE_PAGO);
+		assertThat(stock(cable)).isEqualTo(97.0);
+	}
+
 
 	// Arranca en la hora real y avanza solo cuando la prueba lo pide. En microsegundos, como el de la aplicación
 	// (ClockConfig)

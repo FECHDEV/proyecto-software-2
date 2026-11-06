@@ -17,6 +17,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
+import bo.edu.uagrm.tienda.entity.Canal;
 import bo.edu.uagrm.tienda.entity.Categoria;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.LineaPedido;
@@ -26,6 +27,7 @@ import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.TipoMovimiento;
 import bo.edu.uagrm.tienda.entity.UnidadVenta;
 import bo.edu.uagrm.tienda.entity.Usuario;
+import bo.edu.uagrm.tienda.service.PedidoService;
 
 // HU-12: los pedidos, sus líneas copiadas y los movimientos de la reserva
 @DataJpaTest
@@ -106,8 +108,10 @@ class PedidoRepositoryTest {
 		Long id = pedido(ana, AHORA).getIdPedido();
 		em.flush();
 
-		assertThat(pedidoRepository.findByIdPedidoAndUsuario_IdUsuario(id, ana.getIdUsuario())).isPresent();
-		assertThat(pedidoRepository.findByIdPedidoAndUsuario_IdUsuario(id, beto.getIdUsuario())).isEmpty();
+		assertThat(pedidoRepository.findByIdPedidoAndUsuario_IdUsuarioAndCanal(id, ana.getIdUsuario(), Canal.EN_LINEA))
+				.isPresent();
+		assertThat(pedidoRepository.findByIdPedidoAndUsuario_IdUsuarioAndCanal(id, beto.getIdUsuario(), Canal.EN_LINEA))
+				.isEmpty();
 		assertThat(pedidoRepository.findConBloqueoByIdPedidoAndUsuario_IdUsuario(id, beto.getIdUsuario())).isEmpty();
 	}
 
@@ -122,7 +126,8 @@ class PedidoRepositoryTest {
 		em.flush();
 
 		assertThat(pedidoRepository.findByEstadoAndVenceLessThanEqual(EstadoPedido.PENDIENTE_PAGO, AHORA))
-				.containsExactly(new PedidoRepository.PedidoAVencer(vencido.getIdPedido(), ana.getIdUsuario()));
+				.containsExactly(new PedidoRepository.PedidoAVencer(vencido.getIdPedido(), ana.getIdUsuario(),
+						Canal.EN_LINEA));
 	}
 
 	// HU-12 RF-12: cancelar y vencer solo desde «Pendiente de pago»
@@ -172,7 +177,8 @@ class PedidoRepositoryTest {
 		em.flush();
 		em.clear();
 
-		var filas = pedidoRepository.misPedidos(ana.getIdUsuario(), PageRequest.of(0, 10));
+		var filas = pedidoRepository.misPedidos(ana.getIdUsuario(), PedidoService.VISIBLES_EN_TIENDA,
+				PageRequest.of(0, 10));
 
 		assertThat(filas.getTotalElements()).isEqualTo(2);
 		assertThat(filas.getContent()).extracting(PedidoRepository.FilaDePedido::idPedido,

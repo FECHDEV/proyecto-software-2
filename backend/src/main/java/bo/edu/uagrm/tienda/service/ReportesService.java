@@ -35,14 +35,18 @@ import bo.edu.uagrm.tienda.dto.reportes.ResumenDePerdidos;
 import bo.edu.uagrm.tienda.dto.reportes.UltimaVentaFila;
 import bo.edu.uagrm.tienda.dto.reportes.VentaFila;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse;
+import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.PorCanal;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.PorCategoria;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.PorDiaSemana;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.PorFecha;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.PorHora;
+import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.PorMedio;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.PorTipo;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.Totales;
+import bo.edu.uagrm.tienda.entity.Canal;
 import bo.edu.uagrm.tienda.entity.EstadoCuenta;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
+import bo.edu.uagrm.tienda.entity.MedioPago;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.Rol;
 import bo.edu.uagrm.tienda.entity.TipoCliente;
@@ -76,33 +80,34 @@ public class ReportesService {
 	private final Clock clock;
 
 	@Transactional(readOnly = true)
-	public VentasResponse ventas(String desde, String hasta, TipoCliente tipo) {
-		return ventas(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo);
+	public VentasResponse ventas(String desde, String hasta, TipoCliente tipo, Canal canal) {
+		return ventas(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo, canal);
 	}
 
-	private VentasResponse ventas(Periodo periodo, TipoCliente tipo) {
+	// canal nulo: los dos (HU-23 RF-22)
+	private VentasResponse ventas(Periodo periodo, TipoCliente tipo, Canal canal) {
 		Periodo anterior = periodo.anterior();
-		List<VentaFila> ventas = pagados(periodo, tipo);
-		List<VentaFila> todosLosTipos = tipo == null ? ventas : pagados(periodo, null);
+		List<VentaFila> ventas = pagados(periodo, tipo, canal);
+		List<VentaFila> todosLosTipos = tipo == null ? ventas : pagados(periodo, null, canal);
 		return new VentasResponse(
 				new VentasResponse.PeriodoResponse(periodo.desde(), periodo.hasta(), anterior.desde(), anterior.hasta(),
 						periodo.porMes() ? "MES" : "DIA"),
-				totales(periodo, tipo, ventas), totales(anterior, tipo, pagados(anterior, tipo)),
-				porFecha(periodo, ventas), porDiaSemana(ventas), porHora(ventas), porCategoria(periodo, tipo),
-				porTipo(todosLosTipos));
+				totales(periodo, tipo, canal, ventas), totales(anterior, tipo, canal, pagados(anterior, tipo, canal)),
+				porFecha(periodo, ventas), porDiaSemana(ventas), porHora(ventas), porCategoria(periodo, tipo, canal),
+				porTipo(todosLosTipos), porCanal(ventas), porMedio(ventas));
 	}
 
 	// RF-11: los vendidos, inactivos incluidos, de mayor a menor importe. RF-12 (menos): los activos, con lo que
 	// vendieron o 0, de menor a mayor. A igual importe, por nombre
 	@Transactional(readOnly = true)
-	public PaginaResponse<ProductoVendido> productos(String desde, String hasta, TipoCliente tipo, boolean menos,
-			int pagina) {
-		return paginar(productos(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo, menos), pagina);
+	public PaginaResponse<ProductoVendido> productos(String desde, String hasta, TipoCliente tipo, Canal canal,
+			boolean menos, int pagina) {
+		return paginar(productos(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo, canal, menos), pagina);
 	}
 
-	private List<ProductoVendido> productos(Periodo periodo, TipoCliente tipo, boolean menos) {
+	private List<ProductoVendido> productos(Periodo periodo, TipoCliente tipo, Canal canal, boolean menos) {
 		Map<Long, LineasFila> vendidos = reportesRepository
-				.lineasPorProducto(VENDIDOS, periodo.inicio(), periodo.fin(), tipo).stream()
+				.lineasPorProducto(VENDIDOS, periodo.inicio(), periodo.fin(), tipo, canal).stream()
 				.collect(Collectors.toMap(LineasFila::idProducto, Function.identity()));
 		List<Producto> productos = menos ? productoRepository.findByActivoTrue()
 				: productoRepository.findAllById(vendidos.keySet());
@@ -166,13 +171,14 @@ public class ReportesService {
 
 	// RF-18: por importe perdido, de mayor a menor
 	@Transactional(readOnly = true)
-	public PaginaResponse<ProductoPerdido> perdidos(String desde, String hasta, TipoCliente tipo, int pagina) {
-		return paginar(productosPerdidos(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo), pagina);
+	public PaginaResponse<ProductoPerdido> perdidos(String desde, String hasta, TipoCliente tipo, Canal canal,
+			int pagina) {
+		return paginar(productosPerdidos(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo, canal), pagina);
 	}
 
-	private List<ProductoPerdido> productosPerdidos(Periodo periodo, TipoCliente tipo) {
+	private List<ProductoPerdido> productosPerdidos(Periodo periodo, TipoCliente tipo, Canal canal) {
 		Map<Long, PerdidoFila> perdidos = reportesRepository
-				.perdidosPorProducto(PERDIDOS, periodo.inicio(), periodo.fin(), tipo).stream()
+				.perdidosPorProducto(PERDIDOS, periodo.inicio(), periodo.fin(), tipo, canal).stream()
 				.collect(Collectors.toMap(PerdidoFila::idProducto, Function.identity()));
 		return productoRepository.findAllById(perdidos.keySet()).stream().map(producto -> {
 			PerdidoFila fila = perdidos.get(producto.getIdProducto());
@@ -186,14 +192,16 @@ public class ReportesService {
 	// que la pantalla (RF-6, RF-7). El autor es quien lo pide (RF-5). El reloj se lee una vez: cerca de la medianoche,
 	// todo el archivo es del mismo día (/code-review)
 	@Transactional(readOnly = true)
-	public ReporteCompleto completo(String desde, String hasta, TipoCliente tipo, String dias, Long idUsuario) {
+	public ReporteCompleto completo(String desde, String hasta, TipoCliente tipo, Canal canal, String dias,
+			Long idUsuario) {
 		int minimo = dias(dias);
 		LocalDateTime ahora = LocalDateTime.now(clock);
 		Periodo periodo = Periodo.de(desde, hasta, ahora.toLocalDate());
 		Usuario autor = usuarioRepository.findById(idUsuario).orElseThrow(UsuarioNoEncontradoException::new);
-		return new ReporteCompleto(ventas(periodo, tipo), perdidos(periodo, tipo), productos(periodo, tipo, false),
-				productos(periodo, tipo, true), sinVenta(minimo, ahora), productosPerdidos(periodo, tipo),
-				clientes(comprasHasta(minimo, tipo, ahora)), tipo, minimo, ahora,
+		return new ReporteCompleto(ventas(periodo, tipo, canal), perdidos(periodo, tipo, canal),
+				productos(periodo, tipo, canal, false), productos(periodo, tipo, canal, true), sinVenta(minimo, ahora),
+				productosPerdidos(periodo, tipo, canal), clientes(comprasHasta(minimo, tipo, ahora)), tipo, canal,
+				minimo, ahora,
 				autor.getNombre() + " " + autor.getApellido());
 	}
 
@@ -236,18 +244,20 @@ public class ReportesService {
 				numero, POR_PAGINA, filas.size(), paginas);
 	}
 
-	private List<VentaFila> pagados(Periodo periodo, TipoCliente tipo) {
-		return reportesRepository.pagados(VENDIDOS, periodo.inicio(), periodo.fin(), tipo);
+	private List<VentaFila> pagados(Periodo periodo, TipoCliente tipo, Canal canal) {
+		return reportesRepository.pagados(VENDIDOS, periodo.inicio(), periodo.fin(), tipo, canal);
 	}
 
 	// RF-6 a RF-8
-	private Totales totales(Periodo periodo, TipoCliente tipo, List<VentaFila> ventas) {
+	private Totales totales(Periodo periodo, TipoCliente tipo, Canal canal, List<VentaFila> ventas) {
 		BigDecimal ingresos = sumar(ventas, VentaFila::total);
-		List<LineasFila> lineas = reportesRepository.lineasPorProducto(VENDIDOS, periodo.inicio(), periodo.fin(), tipo);
+		List<LineasFila> lineas = reportesRepository.lineasPorProducto(VENDIDOS, periodo.inicio(), periodo.fin(), tipo,
+				canal);
 		BigDecimal sinCosto = sumar(lineas, LineasFila::sinCosto);
 		BigDecimal conCosto = sumar(lineas, LineasFila::importe).subtract(sinCosto);
 		BigDecimal margen = margen(sumar(lineas, LineasFila::margen), conCosto);
-		List<VentaFila> devoluciones = reportesRepository.pagados(A_DEVOLVER, periodo.inicio(), periodo.fin(), tipo);
+		List<VentaFila> devoluciones = reportesRepository.pagados(A_DEVOLVER, periodo.inicio(), periodo.fin(), tipo,
+				canal);
 		return new Totales(ingresos, ventas.size(), promedio(ingresos, ventas.size()), margen,
 				margen == null ? null : porcentaje(margen, conCosto), sinCosto, devoluciones.size(),
 				sumar(devoluciones, VentaFila::total));
@@ -295,8 +305,9 @@ public class ReportesService {
 	}
 
 	// RF-14
-	private List<PorCategoria> porCategoria(Periodo periodo, TipoCliente tipo) {
-		List<CategoriaFila> filas = reportesRepository.porCategoria(VENDIDOS, periodo.inicio(), periodo.fin(), tipo);
+	private List<PorCategoria> porCategoria(Periodo periodo, TipoCliente tipo, Canal canal) {
+		List<CategoriaFila> filas = reportesRepository.porCategoria(VENDIDOS, periodo.inicio(), periodo.fin(), tipo,
+				canal);
 		return filas.stream()
 				.map(fila -> new PorCategoria(fila.categoria(), fila.importe().setScale(2), fila.pedidos(),
 						margen(fila.margen(), fila.importe().subtract(fila.sinCosto()))))
@@ -315,20 +326,40 @@ public class ReportesService {
 		return resultado;
 	}
 
+	// HU-23 RF-22: los dos canales, en el orden del enum, también sin ventas
+	private static List<PorCanal> porCanal(List<VentaFila> ventas) {
+		Acumulado[] canales = acumular(Canal.values().length, ventas, venta -> venta.canal().ordinal());
+		List<PorCanal> resultado = new ArrayList<>();
+		for (Canal canal : Canal.values()) {
+			resultado.add(new PorCanal(canal, canales[canal.ordinal()].ingresos, canales[canal.ordinal()].pedidos));
+		}
+		return resultado;
+	}
+
+	// HU-23 RF-22: efectivo y QR; en línea siempre es QR
+	private static List<PorMedio> porMedio(List<VentaFila> ventas) {
+		Acumulado[] medios = acumular(MedioPago.values().length, ventas, venta -> venta.medioDePago().ordinal());
+		List<PorMedio> resultado = new ArrayList<>();
+		for (MedioPago medio : MedioPago.values()) {
+			resultado.add(new PorMedio(medio, medios[medio.ordinal()].ingresos, medios[medio.ordinal()].pedidos));
+		}
+		return resultado;
+	}
+
 	// RF-17, solo las cifras de los perdidos: la sección de perdidos no necesita el resumen entero
 	@Transactional(readOnly = true)
-	public ResumenDePerdidos resumenDePerdidos(String desde, String hasta, TipoCliente tipo) {
-		return perdidos(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo);
+	public ResumenDePerdidos resumenDePerdidos(String desde, String hasta, TipoCliente tipo, Canal canal) {
+		return perdidos(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo, canal);
 	}
 
 	// RF-17: los que esperan el pago todavía no se vendieron ni se perdieron, y un pago a devolver se pagó pero no
 	// se vendió (se devuelve fuera del sistema): ninguno de los dos cuenta en la proporción
-	private ResumenDePerdidos perdidos(Periodo periodo, TipoCliente tipo) {
+	private ResumenDePerdidos perdidos(Periodo periodo, TipoCliente tipo, Canal canal) {
 		long confirmados = 0;
 		long vendidos = 0;
 		long perdidos = 0;
 		BigDecimal importe = CERO;
-		for (EstadoFila fila : reportesRepository.confirmadosPorEstado(periodo.inicio(), periodo.fin(), tipo)) {
+		for (EstadoFila fila : reportesRepository.confirmadosPorEstado(periodo.inicio(), periodo.fin(), tipo, canal)) {
 			if (fila.estado() == EstadoPedido.PENDIENTE_PAGO || fila.estado() == EstadoPedido.PAGO_A_DEVOLVER) {
 				continue;
 			}
