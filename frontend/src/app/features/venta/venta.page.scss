@@ -98,6 +98,18 @@ h2 {
 
 	.cantidad {
 		grid-area: cantidad;
+
+		// Como el carrito: entra 999,99 entero (DESIGN.md → Inputs: «Cantidad con − y +»)
+		input {
+			width: 5rem;
+			padding: var(--app-espacio-2) var(--app-espacio-1);
+			font-variant-numeric: tabular-nums;
+			text-align: center;
+		}
+
+		input[aria-invalid='true'] {
+			border: 2px solid var(--app-error);
+		}
 	}
 
 	.subtotal {
@@ -243,8 +255,9 @@ h2 {
 }
 
 @media (max-width: 560px) {
+	// La segunda columna, del ancho del subtotal: con la de «Quitar» (44 px) el importe se cortaba
 	.linea {
-		grid-template-columns: minmax(0, 1fr) var(--app-area-tocable);
+		grid-template-columns: minmax(0, 1fr) max-content;
 		grid-template-areas:
 			'nombre quitar'
 			'precio quitar'

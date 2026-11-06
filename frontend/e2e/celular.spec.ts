@@ -1,6 +1,6 @@
 import { expect, Page, test } from '@playwright/test';
 
-import { clienteNuevo, registrar, revisarAccesibilidad } from './apoyo';
+import { administrador, clienteNuevo, iniciarSesion, registrar, revisarAccesibilidad } from './apoyo';
 
 // En un celular (proyecto «celular» de playwright.config.ts): la tienda entra en el ancho y se puede comprar
 async function sinScrollHorizontal(page: Page): Promise<void> {
@@ -34,3 +34,23 @@ test('desde el celular se registra y agrega al carrito', async ({ page }) => {
   await expect(page.getByText('Verifique su correo para confirmar el pedido.')).toBeVisible();
   await sinScrollHorizontal(page);
 });
+
+// HU-23: en el mostrador también se vende desde un celular: «Nueva venta» y el comprobante entran en el ancho
+test('desde el celular se vende en el mostrador', async ({ page }) => {
+  const { correo, contrasena } = administrador();
+  await iniciarSesion(page, correo, contrasena);
+
+  await page.goto('/ventas/nueva');
+  await page.getByLabel('Buscar producto').fill('martillo');
+  await page.locator('button.resultado').filter({ hasText: 'Martillo de uña' }).click();
+  await expect(page.locator('.linea')).toHaveCount(1);
+  await sinScrollHorizontal(page);
+  await revisarAccesibilidad(page);
+
+  await page.getByLabel('Recibido en efectivo (Bs)').fill('100');
+  await page.getByRole('button', { name: 'Cobrar en efectivo' }).click();
+  await expect(page.locator('.ticket')).toContainText('No válido como factura');
+  await sinScrollHorizontal(page);
+  await revisarAccesibilidad(page);
+});
+
