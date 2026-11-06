@@ -1,11 +1,19 @@
 import { AVISOS_DE_LINEA } from './carrito';
+import type { Canal } from './venta';
 import { Pagina } from './pagina';
 import { UnidadVenta } from './producto';
 
 // Espejo de PedidoResponse, LineaPedidoResponse, RetiroResponse, CobroResponse y CancelacionResponse del
-// backend (HU-12, HU-13). ENTREGADO: el personal lo entregó (HU-17)
+// backend (HU-12, HU-13). ENTREGADO: el personal lo entregó (HU-17). ANULADO: una venta del mostrador anulada (HU-23)
 
-export type EstadoDePedido = 'PENDIENTE_PAGO' | 'PAGADO' | 'CANCELADO' | 'VENCIDO' | 'PAGO_A_DEVOLVER' | 'ENTREGADO';
+export type EstadoDePedido =
+	| 'PENDIENTE_PAGO'
+	| 'PAGADO'
+	| 'CANCELADO'
+	| 'VENCIDO'
+	| 'PAGO_A_DEVOLVER'
+	| 'ENTREGADO'
+	| 'ANULADO';
 
 export const NOMBRES_DE_ESTADO: Record<EstadoDePedido, string> = {
 	PENDIENTE_PAGO: 'Pendiente de pago',
@@ -14,6 +22,7 @@ export const NOMBRES_DE_ESTADO: Record<EstadoDePedido, string> = {
 	VENCIDO: 'Vencido',
 	PAGO_A_DEVOLVER: 'Pago a devolver',
 	ENTREGADO: 'Entregado',
+	ANULADO: 'Anulado',
 };
 
 // El color del chip de cada estado (HU-14 RF-3). «Entregado» neutro: el verde
@@ -25,6 +34,7 @@ export const TONO_DE_ESTADO: Record<EstadoDePedido, string> = {
 	CANCELADO: 'tono-neutro',
 	VENCIDO: 'tono-neutro',
 	ENTREGADO: 'tono-neutro',
+	ANULADO: 'tono-neutro',
 };
 
 // Dónde y cuándo retirar (RF-17); null si no está configurado
@@ -48,8 +58,9 @@ export interface Pedido {
 	estado: EstadoDePedido;
 	lineas: LineaDePedido[];
 	total: number;
-	nombreRetira: string;
-	telefonoRetira: string;
+	// null en una venta del mostrador, que no tiene datos de retiro (HU-23 RF-17)
+	nombreRetira: string | null;
+	telefonoRetira: string | null;
 	nota: string | null;
 	confirmado: string;
 	vence: string;
@@ -62,6 +73,8 @@ export interface Pedido {
 	cobro: Cobro | null;
 	// Cuándo lo retiraron; null si no (HU-17 RF-10)
 	entregado: string | null;
+	// TIENDA: una venta del mostrador a nombre del Cliente (HU-23 RF-17)
+	canal: Canal;
 }
 
 // El QR que el Cliente paga y, si el sistema de pago la da, su página de pago.
@@ -81,6 +94,7 @@ export interface PedidoResumen {
 	cantidadProductos: number;
 	total: number;
 	segundosParaPagar: number;
+	canal: Canal;
 }
 
 // El que espera el pago aparte, para mostrarlo arriba (RF-2), y la página
@@ -112,6 +126,8 @@ export type MotivoDeRechazo = 'AGOTADO' | 'NO_DISPONIBLE' | 'CANTIDAD_INVALIDA' 
 export interface LineaRechazada {
 	idProducto: number;
 	motivo: MotivoDeRechazo;
+	// Solo en la venta del mostrador: el personal ya ve el stock (HU-23 RF-12)
+	disponible?: number;
 }
 
 export const AVISOS_DE_RECHAZO: Record<MotivoDeRechazo, string> = {

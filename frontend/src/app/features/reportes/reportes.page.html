@@ -41,7 +41,7 @@
 </nav>
 
 @if (usaPeriodo() || usaTipo()) {
-  <form class="filtros" aria-label="Período y tipo de cliente" (submit)="$event.preventDefault()">
+  <form class="filtros" aria-label="Período, tipo de cliente y canal" (submit)="$event.preventDefault()">
     @if (usaPeriodo()) {
       <div class="atajos" role="group" aria-label="Período">
         @for (atajo of atajos; track atajo.valor) {
@@ -87,6 +87,18 @@
           <option value="" [selected]="filtros().tipo === null">Todos los clientes</option>
           @for (tipo of tipos; track tipo) {
             <option [value]="tipo" [selected]="filtros().tipo === tipo">{{ nombresDeTipo[tipo] }}</option>
+          }
+        </select>
+      </div>
+    }
+    <!-- HU-23 RF-22 -->
+    @if (usaCanal()) {
+      <div class="campo">
+        <label for="filtro-canal">Canal</label>
+        <select id="filtro-canal" name="canal" (change)="alElegirCanal($any($event.target).value)">
+          <option value="" [selected]="filtros().canal === null">En línea y en tienda</option>
+          @for (canal of canales; track canal) {
+            <option [value]="canal" [selected]="filtros().canal === canal">{{ nombresDeCanal[canal] }}</option>
           }
         </select>
       </div>

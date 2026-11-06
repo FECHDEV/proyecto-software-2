@@ -29,6 +29,7 @@ const PENDIENTE: Pedido = {
   cobro: null,
   retiro: { direccion: 'Av. Principal 123, Montero', horario: null },
   entregado: null,
+  canal: 'EN_LINEA',
 };
 
 // Con el QR generado (HU-13), como lo devuelve el simulador
@@ -570,5 +571,29 @@ describe('PedidoPage', () => {
     await abrir();
 
     expect(pantalla().querySelector('a[href="/mis-pedidos"]')?.textContent?.trim()).toBe('Mis pedidos');
+  });
+
+  // HU-23 RF-17: la compra en el mostrador dice «En tienda», sin datos de retiro; la anulada lo dice
+  it('ventaEnTiendaSinDatosDeRetiro', async () => {
+    const enTienda: Pedido = {
+      ...PENDIENTE,
+      estado: 'ENTREGADO',
+      canal: 'TIENDA',
+      nombreRetira: null,
+      telefonoRetira: null,
+      segundosParaPagar: 0,
+      pagado: '2026-11-05T10:01:00',
+      entregado: '2026-11-05T10:01:00',
+    };
+    await abrir('/mis-pedidos/12', (falso) => falso.recurso.value.set(enTienda));
+
+    expect(texto()).toContain('Lo compró en la tienda el 05/11/2026 a las 10:01.');
+    expect(texto()).toContain('Lo compró en el mostrador de la tienda.');
+    expect(texto()).not.toContain('Se retira en la tienda');
+    expect(botonCancelar()).toBeUndefined();
+
+    await abrir('/mis-pedidos/12', (falso) => falso.recurso.value.set({ ...enTienda, estado: 'ANULADO' }));
+    expect(texto()).toContain('Anulado');
+    expect(texto()).toContain('La tienda anuló esta compra.');
   });
 });

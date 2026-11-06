@@ -18,6 +18,7 @@ function fila(cambios: Partial<PedidoEnDespacho>): PedidoEnDespacho {
     nombreRetira: 'José Pérez',
     cantidadProductos: 2,
     total: 213,
+    canal: 'EN_LINEA',
     ...cambios,
   };
 }
@@ -105,7 +106,7 @@ describe('DespachoPage', () => {
   it('de entrada filtra Pagado', async () => {
     await abrir(pagina([fila({})]));
 
-    expect(despacho.filtros!()).toEqual({ estado: 'PAGADO', texto: '', pagina: 0 });
+    expect(despacho.filtros!()).toEqual({ estado: 'PAGADO', canal: 'TODOS', texto: '', pagina: 0 });
     expect(selectorDeEstado().value).toBe('PAGADO');
     const opciones = Array.from(selectorDeEstado().options).map((opcion) => opcion.textContent?.trim());
     expect(opciones).toEqual([
@@ -115,6 +116,7 @@ describe('DespachoPage', () => {
       'Pago a devolver',
       'Cancelado',
       'Vencido',
+      'Anulado',
       'Todos',
     ]);
   });
@@ -127,7 +129,7 @@ describe('DespachoPage', () => {
     selectorDeEstado().dispatchEvent(new Event('change'));
     await harness.fixture.whenStable();
     expect(url()).toBe('/pedidos?estado=TODOS');
-    expect(despacho.filtros!()).toEqual({ estado: 'TODOS', texto: '', pagina: 0 });
+    expect(despacho.filtros!()).toEqual({ estado: 'TODOS', canal: 'TODOS', texto: '', pagina: 0 });
 
     vi.useFakeTimers();
     const busqueda = pantalla().querySelector<HTMLInputElement>('input[type="search"]')!;
@@ -172,7 +174,7 @@ describe('DespachoPage', () => {
   it('una dirección que no sirve muestra lo más cercano', async () => {
     await abrir(pagina([fila({})]), '/pedidos?estado=xx&pagina=-3');
 
-    expect(despacho.filtros!()).toEqual({ estado: 'PAGADO', texto: '', pagina: 0 });
+    expect(despacho.filtros!()).toEqual({ estado: 'PAGADO', canal: 'TODOS', texto: '', pagina: 0 });
     expect(selectorDeEstado().value).toBe('PAGADO');
   });
 
@@ -209,5 +211,26 @@ describe('DespachoPage', () => {
     reintentar!.click();
 
     expect(despacho.recurso.reload).toHaveBeenCalled();
+  });
+
+  // HU-23 RF-16: el canal filtra, va a la dirección, y una venta del mostrador dice «En tienda» en vez de quien retira
+  it('filtraYMuestraElCanal', async () => {
+    await abrir(pagina([fila({ idPedido: 31, canal: 'TIENDA', nombreRetira: null, estado: 'ENTREGADO' }), fila({})]));
+
+    const filas = Array.from(pantalla().querySelectorAll('.fila'));
+    expect(filas[0].querySelector('.retira')?.textContent?.trim()).toBe('En tienda');
+    expect(filas[1].querySelector('.retira')?.textContent?.trim()).toBe('José Pérez');
+
+    const canal = pantalla().querySelector<HTMLSelectElement>('#filtro-canal')!;
+    expect(Array.from(canal.options).map((opcion) => opcion.textContent?.trim())).toEqual([
+      'Todos',
+      'En línea',
+      'En tienda',
+    ]);
+    canal.value = 'TIENDA';
+    canal.dispatchEvent(new Event('change'));
+    await harness.fixture.whenStable();
+    expect(url()).toBe('/pedidos?canal=TIENDA');
+    expect(despacho.filtros!().canal).toBe('TIENDA');
   });
 });

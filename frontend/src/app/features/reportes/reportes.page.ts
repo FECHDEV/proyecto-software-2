@@ -8,6 +8,7 @@ import { mensajeDeError } from '../../core/api/mensajes-error';
 import { comoError } from '../../core/modelos/error-api';
 
 import {
+	CANALES,
 	Atajo,
 	ATAJOS,
 	consultaDeReportes,
@@ -19,6 +20,7 @@ import {
 	SECCIONES,
 } from '../../core/modelos/reportes';
 import { NOMBRES_DE_TIPO, TIPOS_DE_CLIENTE } from '../../core/modelos/usuario';
+import { NOMBRES_DE_CANAL } from '../../core/modelos/venta';
 import { descargarArchivo } from '../../shared/descarga/descargar-archivo';
 import { ReportesClientes } from './reportes-clientes';
 import { ReportesPerdidos } from './reportes-perdidos';
@@ -68,6 +70,8 @@ export class ReportesPage {
 	protected readonly atajos = ATAJOS;
 	protected readonly tipos = TIPOS_DE_CLIENTE;
 	protected readonly nombresDeTipo = NOMBRES_DE_TIPO;
+	protected readonly canales = CANALES;
+	protected readonly nombresDeCanal = NOMBRES_DE_CANAL;
 	protected readonly atajoActivo = computed(() => {
 		const { desde, hasta } = this.filtros();
 		return ATAJOS.find((atajo) => {
@@ -78,6 +82,8 @@ export class ReportesPage {
 	// «Sin venderse» no depende del período ni del tipo; «Clientes», del período
 	protected readonly usaPeriodo = computed(() => !['sin-venta', 'clientes'].includes(this.filtros().seccion));
 	protected readonly usaTipo = computed(() => this.filtros().seccion !== 'sin-venta');
+	// HU-23 RF-22: el canal filtra lo que se vendió y lo perdido; «Sin venderse» y «Clientes» no dependen de él
+	protected readonly usaCanal = computed(() => ['resumen', 'productos', 'perdidos'].includes(this.filtros().seccion));
 
 	constructor() {
 		// Un período que no servía se lee como lo más cercano (RF-3): la dirección
@@ -129,6 +135,10 @@ export class ReportesPage {
 		this.filtrar({ tipo: TIPOS_DE_CLIENTE.find((tipo) => tipo === valor) ?? null });
 	}
 
+	protected alElegirCanal(valor: string): void {
+		this.filtrar({ canal: CANALES.find((canal) => canal === valor) ?? null });
+	}
+
 	// Lo que cambia una sección (orden, días, página). Cambiar un filtro cambia
 	// la lista entera: se vuelve a la primera página
 	protected alCambiarSeccion(cambios: Partial<FiltrosDeReportes>): void {
@@ -159,6 +169,7 @@ function mismosFiltros(a: FiltrosDeReportes, b: FiltrosDeReportes): boolean {
 		a.desde === b.desde &&
 		a.hasta === b.hasta &&
 		a.tipo === b.tipo &&
+		a.canal === b.canal &&
 		a.orden === b.orden &&
 		a.dias === b.dias &&
 		a.pagina === b.pagina

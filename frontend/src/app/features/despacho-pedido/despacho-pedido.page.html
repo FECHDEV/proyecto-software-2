@@ -41,6 +41,29 @@
     </section>
 
     <div class="lateral">
+      <!-- HU-23 RF-16: una venta del mostrador no tiene a quien retira: el canal, el cobro y quién vendió -->
+      @if (ficha.canal === 'TIENDA') {
+        <section class="datos" aria-labelledby="titulo-mostrador">
+          <h2 id="titulo-mostrador">Venta en tienda</h2>
+          <dl>
+            <div>
+              <dt>Pago</dt>
+              <dd>{{ ficha.medioPago ? nombresDeMedio[ficha.medioPago] : '' }}</dd>
+            </div>
+            <div>
+              <dt>Vendió</dt>
+              <dd>{{ ficha.vendidoPor }}</dd>
+            </div>
+            @if (ficha.anulado) {
+              <div>
+                <dt>Anulada</dt>
+                <dd>{{ fecha(ficha.anulado) }} a las {{ hora(ficha.anulado) }} por {{ ficha.anuladoPor }}: {{ ficha.motivoAnulacion }}</dd>
+              </div>
+            }
+          </dl>
+          <a class="salida" [routerLink]="['/ventas', ficha.idPedido]">Ver el comprobante</a>
+        </section>
+      } @else {
       <section class="datos" aria-labelledby="titulo-retira">
         <h2 id="titulo-retira">Quién lo retira</h2>
         <dl>
@@ -60,6 +83,7 @@
           }
         </dl>
       </section>
+      }
 
       @if (puedeEntregar()) {
         <button
@@ -77,12 +101,14 @@
         <dl>
           <div>
             <dt>Cliente</dt>
-            <dd>{{ ficha.clienteNombre }}</dd>
+            <dd>{{ ficha.clienteNombre ?? 'Consumidor final' }}</dd>
           </div>
-          <div>
-            <dt>Correo</dt>
-            <dd>{{ ficha.clienteCorreo }}</dd>
-          </div>
+          @if (ficha.clienteCorreo) {
+            <div>
+              <dt>Correo</dt>
+              <dd>{{ ficha.clienteCorreo }}</dd>
+            </div>
+          }
           <div>
             <dt>Pedido</dt>
             <dd>{{ fecha(ficha.confirmado) }} a las {{ hora(ficha.confirmado) }}</dd>

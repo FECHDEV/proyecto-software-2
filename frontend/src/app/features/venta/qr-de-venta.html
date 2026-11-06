@@ -1,0 +1,46 @@
+<p class="indicacion">
+  Que el cliente escanee el código con la app de su banco. La pantalla se actualiza sola cuando llega el pago.
+</p>
+@if (venta().cobro; as cobro) {
+  <app-codigo-qr [valor]="cobro.codigoQr" [etiqueta]="'Código QR para pagar la venta N.º ' + venta().idPedido" />
+  <p class="tiempo" role="timer">Quedan {{ reloj(segundos()) }}</p>
+  @if (aviso()) {
+    <p class="estado" role="status">{{ aviso() }}</p>
+  }
+  <div class="acciones">
+    <button type="button" class="secundario" (click)="yaPago.emit()">Ya pagó</button>
+    <button
+      type="button"
+      class="secundario"
+      [attr.aria-disabled]="cancelando() ? 'true' : null"
+      (click)="cancelar.emit()"
+    >
+      Cancelar venta
+    </button>
+  </div>
+  @if (cobro.simulador) {
+    <div class="pruebas" role="group" aria-labelledby="titulo-pruebas">
+      <p id="titulo-pruebas">Herramienta de pruebas: el pago no es real</p>
+      <div class="acciones">
+        <button
+          type="button"
+          class="secundario"
+          [attr.aria-disabled]="simulando() ? 'true' : null"
+          (click)="simular.emit('PAGADO')"
+        >
+          Simular pago
+        </button>
+        <button
+          type="button"
+          class="secundario"
+          [attr.aria-disabled]="simulando() ? 'true' : null"
+          (click)="simular.emit('ERROR')"
+        >
+          Simular error
+        </button>
+      </div>
+    </div>
+  }
+} @else {
+  <p class="estado" role="status">Esperando el QR del sistema de pago…</p>
+}

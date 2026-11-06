@@ -27,6 +27,7 @@ const PEDIDO: Pedido = {
   pagado: null,
   cobro: null,
   entregado: null,
+  canal: 'EN_LINEA',
 };
 
 const VACIO: Carrito = { lineas: [], total: 0, cantidadLineas: 0, idPedidoPendiente: null, correoVerificado: true };

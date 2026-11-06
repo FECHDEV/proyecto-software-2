@@ -32,14 +32,14 @@ export interface ArchivoExportado {
 export class ReportesService {
 	private readonly http = inject(HttpClient);
 
-	// HU-19: todo el reporte en un archivo, con el período, el tipo y los días de
+	// HU-19: todo el reporte en un archivo, con el período, el tipo, el canal y los días de
 	// la pantalla en cualquier sección (RF-2). Es una acción, no una lectura: con
 	// HttpClient. Si falla, rechaza con el ErrorApi, como las escrituras
 	async exportar(filtros: FiltrosDeReportes, formato: FormatoDeExportacion): Promise<ArchivoExportado> {
 		try {
 			const respuesta = await firstValueFrom(
 				this.http.get(`${REPORTES}/exportar`, {
-					params: { formato, ...periodo(filtros), ...tipo(filtros), dias: filtros.dias },
+					params: { formato, ...periodo(filtros), ...tipo(filtros), ...canal(filtros), dias: filtros.dias },
 					responseType: 'blob',
 					observe: 'response',
 				}),
@@ -57,7 +57,7 @@ export class ReportesService {
 	ventas(filtros: Signal<FiltrosDeReportes>): HttpResourceRef<VentasDelPeriodo | undefined> {
 		return httpResource<VentasDelPeriodo>(() => ({
 			url: `${REPORTES}/ventas`,
-			params: { ...periodo(filtros()), ...tipo(filtros()) },
+			params: { ...periodo(filtros()), ...tipo(filtros()), ...canal(filtros()) },
 		}));
 	}
 
@@ -69,6 +69,7 @@ export class ReportesService {
 				params: {
 					...periodo(actuales),
 					...tipo(actuales),
+					...canal(actuales),
 					...(actuales.orden === 'MENOS' ? { orden: 'MENOS' } : {}),
 					...pagina(actuales),
 				},
@@ -93,14 +94,14 @@ export class ReportesService {
 	resumenDePerdidos(filtros: Signal<FiltrosDeReportes>): HttpResourceRef<ResumenDePerdidos | undefined> {
 		return httpResource<ResumenDePerdidos>(() => ({
 			url: `${REPORTES}/perdidos/resumen`,
-			params: { ...periodo(filtros()), ...tipo(filtros()) },
+			params: { ...periodo(filtros()), ...tipo(filtros()), ...canal(filtros()) },
 		}));
 	}
 
 	perdidos(filtros: Signal<FiltrosDeReportes>): HttpResourceRef<Pagina<ProductoPerdido> | undefined> {
 		return httpResource<Pagina<ProductoPerdido>>(() => ({
 			url: `${REPORTES}/perdidos`,
-			params: { ...periodo(filtros()), ...tipo(filtros()), ...pagina(filtros()) },
+			params: { ...periodo(filtros()), ...tipo(filtros()), ...canal(filtros()), ...pagina(filtros()) },
 		}));
 	}
 }
@@ -127,6 +128,11 @@ function periodo(filtros: FiltrosDeReportes): Record<string, string> {
 
 function tipo(filtros: FiltrosDeReportes): Record<string, string> {
 	return filtros.tipo === null ? {} : { tipo: filtros.tipo };
+}
+
+// HU-23 RF-22: sin canal, los dos. Clientes inactivos y sin venderse no dependen del canal
+function canal(filtros: FiltrosDeReportes): Record<string, string> {
+	return filtros.canal === null ? {} : { canal: filtros.canal };
 }
 
 function pagina(filtros: FiltrosDeReportes): Record<string, number> {

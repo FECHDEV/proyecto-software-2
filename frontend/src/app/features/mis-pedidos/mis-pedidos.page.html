@@ -33,7 +33,13 @@
           <a class="fila" [routerLink]="['/mis-pedidos', pedido.idPedido]">
             <span class="numero">Pedido N.º&nbsp;{{ pedido.idPedido }}</span>
             <span [class]="'estado ' + tono[pedido.estado]">{{ nombresDeEstado[pedido.estado] }}</span>
-            <span class="detalle">{{ fecha(pedido.confirmado) }} · {{ productos(pedido.cantidadProductos) }}</span>
+            <span class="detalle">
+              {{ fecha(pedido.confirmado) }} · {{ productos(pedido.cantidadProductos) }}
+              <!-- HU-23 RF-17 -->
+              @if (pedido.canal === 'TIENDA') {
+                · En tienda
+              }
+            </span>
             <span class="total">{{ precio(pedido.total) }}</span>
           </a>
         </li>

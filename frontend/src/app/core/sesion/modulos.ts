@@ -16,6 +16,8 @@ export const ROLES_DE = {
 	pedidos: PERSONAL,
 	// HU-18 RF-1: el Empleado no
 	reportes: ['ADMINISTRADOR', 'CONTADOR'],
+	// HU-23 RF-23, RF-24: registran el Empleado y el Administrador; el Contador ve el comprobante desde Pedidos
+	ventas: ['ADMINISTRADOR', 'EMPLEADO'],
 } as const satisfies Record<string, readonly Rol[]>;
 
 export type Modulo = keyof typeof ROLES_DE;

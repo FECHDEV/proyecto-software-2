@@ -23,4 +23,5 @@ export class PanelPage {
 	// Los roles de cada módulo, en core/sesion/modulos.ts
 	protected readonly esPersonal = computed(() => puedeEntrar(this.sesion.rol(), 'inventario'));
 	protected readonly veReportes = computed(() => puedeEntrar(this.sesion.rol(), 'reportes'));
+	protected readonly vende = computed(() => puedeEntrar(this.sesion.rol(), 'ventas'));
 }

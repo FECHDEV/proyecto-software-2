@@ -117,6 +117,14 @@ export function ventas(cambios: Partial<VentasDelPeriodo> = {}): VentasDelPeriod
       { tipo: 'TALLER', ingresos: 0, pedidos: 0, promedio: null },
       { tipo: 'EMPRESA', ingresos: 0, pedidos: 0, promedio: null },
     ],
+    porCanal: [
+      { canal: 'EN_LINEA', ingresos: 600, pedidos: 3 },
+      { canal: 'TIENDA', ingresos: 0, pedidos: 0 },
+    ],
+    porMedio: [
+      { medio: 'EFECTIVO', ingresos: 0, pedidos: 0 },
+      { medio: 'QR', ingresos: 600, pedidos: 3 },
+    ],
     ...cambios,
   };
 }

@@ -16,6 +16,7 @@ function resumen(cambios: Partial<PedidoResumen>): PedidoResumen {
     cantidadProductos: 2,
     total: 213,
     segundosParaPagar: 0,
+    canal: 'EN_LINEA',
     ...cambios,
   };
 }
@@ -226,5 +227,14 @@ describe('MisPedidosPage', () => {
     await harness.fixture.whenStable();
 
     expect(TestBed.inject(Router).url).toBe('/mis-pedidos?pagina=1');
+  });
+
+  // HU-23 RF-17: una compra en el mostrador dice «En tienda»
+  it('ventaEnTiendaSinDatosDeRetiro', async () => {
+    await abrir(lista([resumen({ idPedido: 31, estado: 'ENTREGADO', canal: 'TIENDA' }), resumen({ idPedido: 12 })]));
+
+    const filas = Array.from(pantalla().querySelectorAll<HTMLAnchorElement>('a.fila'));
+    expect(filas[0].textContent).toContain('En tienda');
+    expect(filas[1].textContent).not.toContain('En tienda');
   });
 });

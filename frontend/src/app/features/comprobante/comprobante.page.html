@@ -1,0 +1,133 @@
+@if (noEncontrada()) {
+  <div class="no-encontrada">
+    <h1>No encontramos esa venta</h1>
+    <a class="secundario" routerLink="/pedidos">Ver los pedidos</a>
+  </div>
+} @else if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+  </div>
+} @else if (venta(); as venta) {
+  <div class="acciones solo-pantalla">
+    <button type="button" class="principal" (click)="imprimir()"><span>Imprimir</span></button>
+    @if (vende()) {
+      <a class="secundario" routerLink="/ventas/nueva">Nueva venta</a>
+    }
+    <a class="secundario" [routerLink]="['/pedidos', venta.idPedido]">Ver en Pedidos</a>
+    @if (esAdministrador() && venta.anulable) {
+      <button type="button" class="secundario" (click)="pedirAnulacion()">Anular venta</button>
+    }
+  </div>
+
+  @if (errorDeAnulacion()) {
+    <p class="aviso solo-pantalla" role="alert">{{ errorDeAnulacion() }}</p>
+  }
+
+  <!-- RF-15: el ticket, lo único que sale al imprimir -->
+  <article class="ticket" aria-labelledby="titulo-ticket">
+    <header>
+      <p class="marca" translate="no">{{ marca.nombre }}</p>
+      <h1 id="titulo-ticket">Venta N.º&nbsp;{{ venta.idPedido }}</h1>
+      <p>{{ fechaYHora(venta.pagado ?? venta.confirmado) }}</p>
+      @if (venta.estado !== 'ENTREGADO') {
+        <p [class]="'estado ' + tono[venta.estado]">{{ nombresDeEstado[venta.estado] }}</p>
+      }
+    </header>
+
+    <dl class="datos">
+      <div>
+        <dt>Cliente</dt>
+        <dd>{{ venta.comprador?.nombre ?? 'Consumidor final' }}</dd>
+      </div>
+      <div>
+        <dt>Atendió</dt>
+        <dd>{{ venta.vendidoPor }}</dd>
+      </div>
+    </dl>
+
+    <table>
+      <caption class="solo-lectores">Productos de la venta</caption>
+      <thead>
+        <tr>
+          <th scope="col">Producto</th>
+          <th scope="col" class="numero">Importe</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (linea of venta.lineas; track linea.idProducto) {
+          <tr>
+            <td>
+              <span class="producto">{{ linea.nombre }}</span>
+              <span class="detalle">
+                {{ cantidad(linea.cantidad) }} {{ unidadPara(linea.unidad, linea.cantidad) }} × {{ precio(linea.precio) }}
+              </span>
+            </td>
+            <td class="numero">{{ precio(linea.subtotal) }}</td>
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr class="total">
+          <th scope="row">Total</th>
+          <td class="numero">{{ precio(venta.total) }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Pago</th>
+          <td class="numero">{{ nombresDeMedio[venta.medio] }}</td>
+        </tr>
+        @if (venta.recibido !== null) {
+          <tr>
+            <th scope="row">Recibido</th>
+            <td class="numero">{{ precio(venta.recibido) }}</td>
+          </tr>
+        }
+        @if (venta.cambio !== null) {
+          <tr>
+            <th scope="row">Cambio</th>
+            <td class="numero">{{ precio(venta.cambio) }}</td>
+          </tr>
+        }
+      </tfoot>
+    </table>
+
+    @if (venta.anulado) {
+      <p class="anulacion">
+        Anulada el {{ fechaYHora(venta.anulado) }} por {{ venta.anuladoPor }}: {{ venta.motivoAnulacion }}
+      </p>
+    }
+
+    <p class="leyenda">No válido como factura</p>
+  </article>
+
+  <!-- RF-18: el motivo, obligatorio. Cancelar recibe el foco al abrir: es la opción segura -->
+  <dialog #dialogo class="solo-pantalla" aria-labelledby="titulo-anular">
+    <form (submit)="$event.preventDefault(); anular()">
+      <h2 id="titulo-anular">Anular la venta N.º&nbsp;{{ venta.idPedido }}</h2>
+      <p>El stock vuelve y la venta deja de contar en los reportes. No se puede deshacer.</p>
+      <div class="campo">
+        <label for="motivo">Motivo</label>
+        <textarea
+          id="motivo"
+          rows="3"
+          [attr.maxlength]="maximoMotivo"
+          [value]="motivo()"
+          [attr.aria-invalid]="errorDelMotivo() ? 'true' : null"
+          [attr.aria-describedby]="errorDelMotivo() ? 'error-motivo' : null"
+          (input)="motivo.set($any($event.target).value)"
+        ></textarea>
+        @if (errorDelMotivo()) {
+          <p class="error-campo" id="error-motivo" role="alert">{{ errorDelMotivo() }}</p>
+        }
+      </div>
+      <div class="botones">
+        <button type="button" class="secundario" autofocus (click)="cerrarDialogo()">Cancelar</button>
+        <button type="submit" class="principal" [attr.aria-disabled]="anulando() ? 'true' : null">
+          <span>Anular venta</span>
+        </button>
+      </div>
+    </form>
+  </dialog>
+} @else {
+  <p class="cargando" role="status">Cargando la venta…</p>
+}

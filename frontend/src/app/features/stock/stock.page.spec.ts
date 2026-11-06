@@ -42,6 +42,8 @@ const MOVIMIENTOS: Movimiento[] = [
     idPedido: null,
     contado: null,
     comprometido: null,
+    canal: null,
+    estadoPedido: null,
   },
   {
     idMovimiento: 1,
@@ -55,6 +57,8 @@ const MOVIMIENTOS: Movimiento[] = [
     idPedido: null,
     contado: null,
     comprometido: null,
+    canal: null,
+    estadoPedido: null,
   },
 ];
 

@@ -18,6 +18,7 @@ import { mensajeDeError } from '../../core/api/mensajes-error';
 import { FichaDePedido } from '../../core/modelos/despacho';
 import { comoError, comoErrorApi } from '../../core/modelos/error-api';
 import { LineaDePedido, NOMBRES_DE_ESTADO, TONO_DE_ESTADO } from '../../core/modelos/pedido';
+import { NOMBRES_DE_MEDIO } from '../../core/modelos/venta';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
 import { fechaCorta, horaCorta } from '../../shared/formato/fechas';
@@ -69,6 +70,7 @@ export class DespachoPedidoPage {
 
 	protected readonly nombresDeEstado = NOMBRES_DE_ESTADO;
 	protected readonly tono = TONO_DE_ESTADO;
+	protected readonly nombresDeMedio = NOMBRES_DE_MEDIO;
 	protected readonly precio = precio;
 	protected readonly cantidad = cantidad;
 	protected readonly fecha = fechaCorta;

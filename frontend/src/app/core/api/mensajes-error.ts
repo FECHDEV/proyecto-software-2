@@ -56,6 +56,9 @@ const MENSAJES: Record<string, string> = {
 	PEDIDO_NO_ENTREGABLE: 'Este pedido ya no se puede entregar: otra persona lo entregó o cambió de estado.',
 	PEDIDO_NO_ENCONTRADO: 'No encontramos ese pedido.',
 	COBRO_NO_DISPONIBLE: 'No pudimos generar el cobro. Intente de nuevo en un momento.',
+	// HU-23
+	VENTA_NO_ENCONTRADA: 'No encontramos esa venta.',
+	VENTA_NO_ANULABLE: 'Esta venta ya no se puede anular: solo una en efectivo y del día.',
 	COBRO_NO_ENCONTRADO: 'Este pedido no tiene un cobro pendiente.',
 	SIN_CONEXION: 'No pudimos conectar con el servidor. Intente de nuevo.',
 	ERROR_SERVIDOR: 'El servidor tuvo un problema. Vuelva a intentarlo en un momento.',

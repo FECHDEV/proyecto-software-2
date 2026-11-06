@@ -21,10 +21,16 @@ const FICHA: FichaDePedido = {
   entregadoPor: 'Eva Paz',
   clienteNombre: 'Ana Paz',
   clienteCorreo: 'ana@mail.com',
+  canal: 'EN_LINEA',
+  medioPago: null,
+  vendidoPor: null,
+  anulado: null,
+  anuladoPor: null,
+  motivoAnulacion: null,
 };
 
 const PAGINA = { contenido: [], pagina: 0, tamano: 10, totalElementos: 0, totalPaginas: 0 };
-const DE_ENTRADA: FiltrosDeDespacho = { estado: 'PAGADO', texto: '', pagina: 0 };
+const DE_ENTRADA: FiltrosDeDespacho = { estado: 'PAGADO', canal: 'TODOS', texto: '', pagina: 0 };
 
 // HU-17: llamadas a /api/despacho/pedidos
 describe('DespachoService', () => {
@@ -47,7 +53,7 @@ describe('DespachoService', () => {
     expect(deEntrada.request.params.keys()).toEqual([]);
     deEntrada.flush(PAGINA);
 
-    TestBed.runInInjectionContext(() => servicio.lista(signal({ estado: 'TODOS', texto: ' josé ', pagina: 2 })));
+    TestBed.runInInjectionContext(() => servicio.lista(signal<FiltrosDeDespacho>({ estado: 'TODOS', canal: 'TODOS', texto: ' josé ', pagina: 2 })));
     TestBed.tick();
     const conFiltros = http.expectOne((pedido) => pedido.url === '/api/despacho/pedidos');
     expect(conFiltros.request.params.get('estado')).toBe('TODOS');

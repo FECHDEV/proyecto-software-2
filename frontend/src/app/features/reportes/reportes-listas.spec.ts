@@ -14,6 +14,7 @@ const FILTROS: FiltrosDeReportes = {
   desde: '2026-10-01',
   hasta: '2026-10-22',
   tipo: null,
+  canal: null,
   orden: 'MAS',
   dias: 30,
   pagina: 0,

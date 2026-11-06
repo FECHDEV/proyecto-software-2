@@ -1,5 +1,7 @@
 import { cantidad } from '../../shared/formato/precios';
 import { UnidadVenta } from './producto';
+import type { EstadoDePedido } from './pedido';
+import type { Canal } from './venta';
 
 // Espejo de InventarioResponse, MovimientoResponse y de los pedidos de InventarioController (HU-08)
 
@@ -64,9 +66,12 @@ export interface Movimiento {
 	// Solo en los ajustes desde el 27/10/2026: lo contado en el estante y lo comprometido (HU-08 RF-17)
 	contado: number | null;
 	comprometido: number | null;
+	// Solo con pedido: TIENDA es una venta del mostrador, y su estado dice si se anuló (HU-23)
+	canal: Canal | null;
+	estadoPedido: EstadoDePedido | null;
 }
 
-// Cómo se nombra cada movimiento en el historial (HU-08 RF-11, HU-12 RF-14)
+// Cómo se nombra cada movimiento en el historial (HU-08 RF-11, HU-12 RF-14, HU-23)
 export function descripcionDeMovimiento(movimiento: Movimiento): string {
 	switch (movimiento.tipo) {
 		case 'ENTRADA':
@@ -78,8 +83,16 @@ export function descripcionDeMovimiento(movimiento: Movimiento): string {
 				: `${motivo} · en el estante ${cantidad(movimiento.contado)}, comprometido ${cantidad(movimiento.comprometido)}`;
 		}
 		case 'RESERVA':
-			return `Reserva por pedido N.º ${movimiento.idPedido}`;
+			return movimiento.canal === 'TIENDA'
+				? `Venta en tienda N.º ${movimiento.idPedido}`
+				: `Reserva por pedido N.º ${movimiento.idPedido}`;
 		case 'LIBERACION':
+			// En el mostrador: la anulación, o el stock que volvió de un QR cancelado o vencido (HU-23)
+			if (movimiento.canal === 'TIENDA') {
+				return movimiento.estadoPedido === 'ANULADO'
+					? `Anulación de venta N.º ${movimiento.idPedido}`
+					: `Liberación por venta en tienda N.º ${movimiento.idPedido}`;
+			}
 			return `Liberación por pedido N.º ${movimiento.idPedido}`;
 	}
 }

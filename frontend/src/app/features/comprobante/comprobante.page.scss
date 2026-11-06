@@ -1,0 +1,249 @@
+// El comprobante de la venta del mostrador (HU-23 RF-15): en pantalla, una
+// placa de lona como las de la tienda; al imprimir, un ticket de 80 mm en
+// negro sobre blanco, sin el encabezado ni los botones (los esconde
+// styles.scss con .solo-pantalla y el encabezado de la aplicación)
+@use '../../../styles/controles';
+
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-6);
+}
+
+.acciones {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-3);
+	align-items: center;
+}
+
+a.secundario {
+	display: inline-flex;
+	align-items: center;
+	text-decoration: none;
+}
+
+.principal {
+	min-height: var(--app-area-tocable);
+	padding: 0 var(--app-espacio-6);
+	border: 0;
+	background: var(--app-ambar);
+	color: var(--app-sobre-ambar);
+	font-family: var(--app-familia-titulos);
+	font-size: 20px;
+	font-weight: 800;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: background-color var(--app-transicion);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.principal:hover:not([aria-disabled='true']) {
+		background: var(--app-ambar-fuerte);
+	}
+}
+
+.ticket {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-4);
+	width: min(100%, 420px);
+	padding: var(--app-espacio-6);
+	border-radius: var(--app-radio);
+	background: var(--app-lona) var(--app-textura-cruda);
+	background-blend-mode: soft-light;
+	color: var(--app-sobre-lona);
+
+	header {
+		display: flex;
+		flex-direction: column;
+		gap: var(--app-espacio-1);
+		padding-bottom: var(--app-espacio-3);
+		border-bottom: 2px dashed color-mix(in srgb, var(--app-sobre-lona) 40%, transparent);
+		text-align: center;
+
+		p {
+			margin: 0;
+		}
+	}
+
+	h1 {
+		margin: 0;
+		font-size: 24px;
+	}
+
+	.marca {
+		font-family: var(--app-familia-titulos);
+		font-size: 22px;
+		font-weight: 800;
+		text-transform: uppercase;
+	}
+
+	.estado {
+		align-self: center;
+		padding: var(--app-espacio-1) var(--app-espacio-3);
+		border: 2px solid currentColor;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+}
+
+.datos {
+	display: grid;
+	gap: var(--app-espacio-2);
+	margin: 0;
+
+	div {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--app-espacio-3);
+	}
+
+	dt {
+		font-weight: 600;
+	}
+
+	dd {
+		margin: 0;
+		overflow-wrap: anywhere;
+		text-align: right;
+	}
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+	font-variant-numeric: tabular-nums;
+}
+
+th,
+td {
+	padding: var(--app-espacio-1) 0;
+	text-align: left;
+	vertical-align: top;
+}
+
+thead th {
+	border-bottom: 1px solid color-mix(in srgb, var(--app-sobre-lona) 40%, transparent);
+	font-size: 12px;
+	text-transform: uppercase;
+}
+
+.numero {
+	text-align: right;
+	white-space: nowrap;
+}
+
+.producto {
+	display: block;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.detalle {
+	display: block;
+	color: var(--app-sobre-lona-suave);
+}
+
+tfoot tr:first-child th,
+tfoot tr:first-child td {
+	padding-top: var(--app-espacio-3);
+	border-top: 2px dashed color-mix(in srgb, var(--app-sobre-lona) 40%, transparent);
+}
+
+.total th,
+.total td {
+	font-size: 18px;
+	font-weight: 800;
+}
+
+.anulacion {
+	margin: 0;
+	padding: var(--app-espacio-2);
+	border: 2px solid currentColor;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.leyenda {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-align: center;
+	text-transform: uppercase;
+}
+
+.no-encontrada {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-4);
+	align-items: flex-start;
+
+	h1 {
+		margin: 0;
+	}
+}
+
+dialog {
+	width: min(100% - 2 * var(--app-espacio-4), 480px);
+	padding: var(--app-espacio-6);
+	border: 1px solid var(--app-borde);
+	border-radius: var(--app-radio);
+	background: var(--app-superficie);
+	color: var(--app-texto);
+
+	&::backdrop {
+		background: color-mix(in srgb, var(--app-fondo) 70%, transparent);
+	}
+
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--app-espacio-4);
+	}
+
+	h2,
+	p {
+		margin: 0;
+	}
+
+	textarea {
+		font: inherit;
+		font-size: 14px;
+		padding: var(--app-espacio-2) var(--app-espacio-3);
+		border: 1px solid var(--app-borde-control);
+		border-radius: var(--app-radio-control);
+		background: var(--app-fondo);
+		color: var(--app-texto);
+		resize: vertical;
+	}
+}
+
+.error-campo {
+	margin: 0;
+	color: var(--app-error);
+	font-size: 14px;
+}
+
+.botones {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: var(--app-espacio-3);
+}
+
+// Al imprimir: solo el ticket, en negro sobre blanco y del ancho de un rollo de 80 mm
+@media print {
+	.ticket {
+		width: 72mm;
+		padding: 0;
+		background: none;
+		color: var(--app-impresion-tinta);
+	}
+
+	.detalle {
+		color: var(--app-impresion-tinta);
+	}
+}

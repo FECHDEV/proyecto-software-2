@@ -1,0 +1,46 @@
+// El QR de la venta del mostrador (HU-23 RF-7 a RF-9), con los controles del panel
+@use '../../../styles/controles';
+
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-4);
+	align-items: flex-start;
+}
+
+.indicacion,
+.estado {
+	margin: 0;
+	font-size: 14px;
+}
+
+.tiempo {
+	margin: 0;
+	font-family: var(--app-familia-titulos);
+	font-size: 28px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+}
+
+.acciones {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-3);
+}
+
+// Como en el pago en línea: la herramienta de pruebas se distingue del cobro real con la costura punteada
+.pruebas {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-2);
+	padding: var(--app-espacio-3);
+	border: 1px dashed var(--app-borde-control);
+
+	p {
+		margin: 0;
+		color: var(--app-texto-suave);
+		font-size: 12px;
+		font-weight: 600;
+		text-transform: uppercase;
+	}
+}

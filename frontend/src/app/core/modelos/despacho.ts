@@ -1,4 +1,5 @@
 import { EstadoDePedido, LineaDePedido } from './pedido';
+import { Canal, MedioPago } from './venta';
 
 // Espejo de PedidoDespachoResumenResponse y PedidoDespachoResponse del backend (HU-17)
 
@@ -13,21 +14,28 @@ export const ESTADOS_DE_DESPACHO: readonly EstadoDeDespacho[] = [
 	'PAGO_A_DEVOLVER',
 	'CANCELADO',
 	'VENCIDO',
+	'ANULADO',
 	'TODOS',
 ];
 
+// TODOS no filtra (HU-23 RF-16)
+export type CanalDeDespacho = Canal | 'TODOS';
+export const CANALES_DE_DESPACHO: readonly CanalDeDespacho[] = ['TODOS', 'EN_LINEA', 'TIENDA'];
+
 export interface FiltrosDeDespacho {
 	estado: EstadoDeDespacho;
+	canal: CanalDeDespacho;
 	texto: string;
 	pagina: number;
 }
 
 // Lo que filtra, para la dirección y para la API: «Pagado» es lo de entrada y
-// no viaja, como el texto vacío y la primera página
+// no viaja, como todos los canales, el texto vacío y la primera página
 export function consultaDeDespacho(filtros: FiltrosDeDespacho): Record<string, string | number> {
 	const texto = filtros.texto.trim();
 	return {
 		...(filtros.estado === 'PAGADO' ? {} : { estado: filtros.estado }),
+		...(filtros.canal === 'TODOS' ? {} : { canal: filtros.canal }),
 		...(texto === '' ? {} : { texto }),
 		...(filtros.pagina > 0 ? { pagina: filtros.pagina } : {}),
 	};
@@ -39,9 +47,11 @@ export interface PedidoEnDespacho {
 	estado: EstadoDePedido;
 	confirmado: string;
 	pagado: string | null;
-	nombreRetira: string;
+	// null en una venta del mostrador (HU-23 RF-16)
+	nombreRetira: string | null;
 	cantidadProductos: number;
 	total: number;
+	canal: Canal;
 }
 
 // La ficha (RF-4). entregadoPor: nombre y apellido de quien registró la entrega
@@ -50,13 +60,21 @@ export interface FichaDePedido {
 	estado: EstadoDePedido;
 	lineas: LineaDePedido[];
 	total: number;
-	nombreRetira: string;
-	telefonoRetira: string;
+	nombreRetira: string | null;
+	telefonoRetira: string | null;
 	nota: string | null;
 	confirmado: string;
 	pagado: string | null;
 	entregado: string | null;
 	entregadoPor: string | null;
-	clienteNombre: string;
-	clienteCorreo: string;
+	// null en el consumidor final de una venta del mostrador
+	clienteNombre: string | null;
+	clienteCorreo: string | null;
+	// Solo en el mostrador (HU-23 RF-16): el medio, quién vendió y la anulación
+	canal: Canal;
+	medioPago: MedioPago | null;
+	vendidoPor: string | null;
+	anulado: string | null;
+	anuladoPor: string | null;
+	motivoAnulacion: string | null;
 }

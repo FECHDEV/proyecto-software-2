@@ -119,6 +119,17 @@ describe('rutas', () => {
     expect(await navegarComo(null, '/reportes')).toBe('/inicio-sesion?destino=%2Freportes');
   });
 
+  // HU-23 RF-23 (casos límite): «Nueva venta» es del Empleado y el Administrador; el comprobante, del personal
+  it('nuevaVentaSoloConElRol', async () => {
+    expect(await navegarComo('EMPLEADO', '/ventas/nueva')).toBe('/ventas/nueva');
+    expect(await navegarComo('ADMINISTRADOR', '/ventas/nueva')).toBe('/ventas/nueva');
+    expect(await navegarComo('CONTADOR', '/ventas/nueva')).toBe('/panel');
+    expect(await navegarComo('CLIENTE', '/ventas/nueva')).toBe('/');
+    expect(await navegarComo(null, '/ventas/nueva')).toBe('/inicio-sesion?destino=%2Fventas%2Fnueva');
+    expect(await navegarComo('CONTADOR', '/ventas/31')).toBe('/ventas/31');
+    expect(await navegarComo('CLIENTE', '/ventas/31')).toBe('/');
+  });
+
   // HU-17 RF-9: los pedidos de todos son del personal; el Cliente tiene los suyos en Mis pedidos
   it('pedidos es del personal', async () => {
     expect(await navegarComo('EMPLEADO', '/pedidos')).toBe('/pedidos');
