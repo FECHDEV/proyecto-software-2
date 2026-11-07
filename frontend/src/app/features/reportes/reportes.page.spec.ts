@@ -235,4 +235,23 @@ describe('ReportesPage', () => {
       (URL as unknown as Record<string, unknown>)[nombre] = original;
     }
   }
+
+  // HU-23 RF-22: el canal cambia la dirección, viaja en la descarga y solo está donde filtra
+  it('elCanalFiltraYViajaEnLaDescarga', async () => {
+    espiarDescargas();
+    await abrir('/reportes?seccion=productos&pagina=1');
+
+    await cambiar('filtro-canal', 'TIENDA');
+
+    expect(url()).toBe('/reportes?seccion=productos&canal=TIENDA');
+    expect(reportes.filtros!().canal).toBe('TIENDA');
+    boton('Excel').click();
+    await harness.fixture.whenStable();
+    expect(reportes.exportar).toHaveBeenCalledWith(expect.objectContaining({ canal: 'TIENDA' }), 'xlsx');
+
+    await abrir('/reportes?seccion=clientes');
+    expect(pantalla().querySelector('#filtro-canal')).toBeNull();
+    await abrir('/reportes?seccion=sin-venta');
+    expect(pantalla().querySelector('#filtro-canal')).toBeNull();
+  });
 });

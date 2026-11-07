@@ -149,6 +149,9 @@ class PagoIntegracionTest {
 	@Autowired
 	private UsuarioRepository usuarioRepository;
 
+	@Autowired
+	private org.springframework.transaction.PlatformTransactionManager transacciones;
+
 	private String admin;
 	private String ana;
 	private String beto;
@@ -1022,5 +1025,56 @@ class PagoIntegracionTest {
 		} finally {
 			hilos.shutdown();
 		}
+	}
+
+	// --- HU-23: la venta del mostrador ---
+
+	private VentasDePrueba ventas() {
+		return new VentasDePrueba(pedidoRepository, productoRepository, usuarioRepository, movimientoRepository,
+				cobroRepository, simulador, reloj, transacciones);
+	}
+
+	// HU-23 RF-8 y decisiones de la historia: pagada a tiempo, queda entregada y no sale ningún correo; también la del
+	// consumidor final, que no tiene cuenta
+	@Test
+	void elPagoDeUnaVentaDelMostradorNoMandaCorreo() throws Exception {
+		Long deAna = ventas().conQr("ana.hu13@mail.com", ADMIN, java.util.Map.of(martillo, "1"));
+		Long sinCuenta = ventas().conQr(null, ADMIN, java.util.Map.of(cable, "2"));
+		for (Long venta : List.of(deAna, sinCuenta)) {
+			Cobro cobro = cobroPendiente(venta.intValue());
+			elBancoPaga(cobro);
+
+			conciliacion.conciliar(cobro.getIdCobro());
+
+			assertThat(estado(venta.intValue())).isEqualTo(EstadoPedido.ENTREGADO);
+		}
+		verify(notificador, never()).enviarPedidoPagado(any());
+		verify(notificador, never()).enviarPagoADevolver(any());
+		assertThat(stock(martillo)).isEqualTo(9.0);
+		assertThat(stock(cable)).isEqualTo(98.0);
+	}
+
+	// HU-23 RF-10, RF-11: vence a los 10 minutos sin tocar el carrito del cliente; el pago tardío la revive como
+	// «Pagado» (para entregar) y tampoco toca el carrito
+	@Test
+	void elPagoTardioDeUnaVentaDelMostradorNoTocaElCarrito() throws Exception {
+		agregar(ana, martillo, "1");
+		Long venta = ventas().conQr("ana.hu13@mail.com", ADMIN, java.util.Map.of(martillo, "2"));
+		Cobro cobro = cobroPendiente(venta.intValue());
+		reloj.avanzar(Duration.ofMinutes(11));
+		vencimiento.vencer();
+		assertThat(estado(venta.intValue())).isEqualTo(EstadoPedido.VENCIDO);
+		assertThat(stock(martillo)).isEqualTo(10.0);
+		assertThat(get(CARRITO, ana)).bodyJson().extractingPath("$.lineas[0].cantidad").isEqualTo(1.0);
+		elBancoPaga(cobro);
+
+		conciliacion.conciliar(cobro.getIdCobro());
+
+		assertThat(estado(venta.intValue())).isEqualTo(EstadoPedido.PAGADO);
+		assertThat(stock(martillo)).isEqualTo(8.0);
+		MvcTestResult carrito = get(CARRITO, ana);
+		assertThat(carrito).bodyJson().extractingPath("$.lineas[*].idProducto").asArray().containsExactly(martillo);
+		assertThat(carrito).bodyJson().extractingPath("$.lineas[0].cantidad").isEqualTo(1.0);
+		verify(notificador, never()).enviarPedidoPagado(any());
 	}
 }

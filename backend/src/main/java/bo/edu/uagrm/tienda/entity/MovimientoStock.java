@@ -97,8 +97,9 @@ public class MovimientoStock {
 	// Resta lo que el pedido reserva, a nombre del cliente (HU-12 RF-2)
 	public static MovimientoStock reserva(Producto producto, BigDecimal cantidad, BigDecimal stockResultante,
 			Pedido pedido, LocalDateTime fecha) {
+		// En el mostrador, a nombre de quien vendió (HU-23; decisiones.md → Inventario)
 		MovimientoStock movimiento = new MovimientoStock(producto, TipoMovimiento.RESERVA, null, cantidad.negate(),
-				stockResultante, pedido.getUsuario(), fecha, null);
+				stockResultante, pedido.responsable(), fecha, null);
 		movimiento.pedido = pedido;
 		return movimiento;
 	}
@@ -106,8 +107,14 @@ public class MovimientoStock {
 	// Devuelve lo reservado al cancelar o vencer el pedido (HU-12 RF-9, RF-10)
 	public static MovimientoStock liberacion(Producto producto, BigDecimal cantidad, BigDecimal stockResultante,
 			Pedido pedido, LocalDateTime fecha) {
+		return liberacion(producto, cantidad, stockResultante, pedido, fecha, pedido.responsable());
+	}
+
+	// La anulación de una venta del mostrador, a nombre del Administrador que la anuló (HU-23 RF-19)
+	public static MovimientoStock liberacion(Producto producto, BigDecimal cantidad, BigDecimal stockResultante,
+			Pedido pedido, LocalDateTime fecha, Usuario quien) {
 		MovimientoStock movimiento = new MovimientoStock(producto, TipoMovimiento.LIBERACION, null, cantidad,
-				stockResultante, pedido.getUsuario(), fecha, null);
+				stockResultante, Objects.requireNonNull(quien), fecha, null);
 		movimiento.pedido = pedido;
 		return movimiento;
 	}

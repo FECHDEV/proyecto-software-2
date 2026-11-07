@@ -39,6 +39,8 @@ const MODULOS: readonly { ruta: string; nombre: string; modulo: Modulo }[] = [
   { ruta: '/productos', nombre: 'Productos', modulo: 'productos' },
   { ruta: '/inventario', nombre: 'Inventario', modulo: 'inventario' },
   { ruta: '/pedidos', nombre: 'Pedidos', modulo: 'pedidos' },
+  // HU-23 RF-24
+  { ruta: '/ventas/nueva', nombre: 'Nueva venta', modulo: 'ventas' },
   { ruta: '/reportes', nombre: 'Reportes', modulo: 'reportes' },
 ];
 

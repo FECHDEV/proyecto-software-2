@@ -1,0 +1,115 @@
+// Los controles del panel que comparten las pantallas del personal: campos, el
+// botón secundario, los avisos y los estados vacíos (antes en _lista.scss, que
+// ahora los usa). Se incluye con @use desde el .scss de cada componente, así los
+// estilos siguen alcanzando solo a ese componente. Las pantallas sin tablas ni
+// paginación, como la venta del mostrador (HU-23), usan solo este: el de las
+// listas pasaba el presupuesto de estilos por componente. Todo sale de
+// _tokens.scss.
+
+.campo {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-1);
+	min-width: 0;
+}
+
+label {
+	font-family: var(--app-familia-texto);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--app-texto-suave);
+}
+
+input,
+select {
+	font: inherit;
+	font-size: 14px;
+	min-height: 44px;
+	padding: var(--app-espacio-2) var(--app-espacio-3);
+	border: 1px solid var(--app-borde-control);
+	border-radius: var(--app-radio-control);
+	background-color: var(--app-fondo);
+	color: var(--app-texto);
+	width: 100%;
+}
+
+.secundario {
+	font: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	min-height: 44px;
+	padding: var(--app-espacio-2) var(--app-espacio-4);
+	border: 1px solid var(--app-borde-control);
+	border-radius: var(--app-radio-control);
+	background: transparent;
+	color: var(--app-texto);
+	cursor: pointer;
+	transition: background-color var(--app-transicion), border-color var(--app-transicion);
+}
+
+.secundario:hover:not([disabled], [aria-disabled='true']) {
+	border-color: var(--app-texto-suave);
+	background: var(--app-superficie-alta);
+}
+
+.secundario[disabled],
+.secundario[aria-disabled='true'] {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.vacio,
+.cargando {
+	margin: 0;
+	color: var(--app-texto-suave);
+}
+
+div.vacio {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--app-espacio-3);
+}
+
+div.vacio p {
+	margin: 0;
+}
+
+.tarjeta-error {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--app-espacio-3);
+}
+
+.aviso {
+	margin: 0;
+	padding: var(--app-espacio-3);
+	border: 1px solid var(--app-error);
+	border-left-width: 4px;
+	border-radius: var(--app-radio-control);
+	background: var(--app-error-fondo);
+	color: var(--app-error);
+	font-size: 14px;
+}
+
+// Sin avisos, las regiones salen del flujo para no sumar un hueco, pero no se
+// ocultan: con display: none salen del árbol de accesibilidad y el lector de
+// pantalla podría no anunciar el aviso cuando aparece
+.avisos:not(:has(.aviso)) {
+	position: absolute;
+}
+
+.avisos {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-2);
+}
+
+.aviso.exito {
+	border-color: var(--app-exito);
+	background: var(--app-exito-fondo);
+	color: var(--app-exito);
+}

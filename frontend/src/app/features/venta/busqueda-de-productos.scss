@@ -1,0 +1,73 @@
+// La búsqueda de «Nueva venta» (HU-23 RF-1, RF-3), con los controles del panel. El bloque (superficie y borde) lo
+// pone la pantalla con la clase .bloque
+@use '../../../styles/controles';
+
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-4);
+}
+
+h2 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+}
+
+.resultados {
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-top: 1px solid var(--app-borde);
+}
+
+.resultado {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) max-content;
+	gap: var(--app-espacio-1) var(--app-espacio-3);
+	width: 100%;
+	min-height: var(--app-area-tocable);
+	padding: var(--app-espacio-3) var(--app-espacio-2);
+	border: 0;
+	border-bottom: 1px solid var(--app-borde);
+	background: transparent;
+	color: var(--app-texto);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition: background-color var(--app-transicion);
+
+	.nombre {
+		font-weight: 600;
+		overflow-wrap: anywhere;
+	}
+
+	.precio {
+		font-variant-numeric: tabular-nums;
+		text-align: right;
+	}
+
+	.disponible {
+		grid-column: 1 / -1;
+		color: var(--app-texto-suave);
+		font-size: 14px;
+	}
+
+	// Sin stock: además del texto, la costura punteada (estado por forma, no por color)
+	.sin-stock {
+		text-decoration: underline dotted;
+	}
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.resultado:hover:not([aria-disabled='true']) {
+		background: var(--app-superficie-alta);
+	}
+}
+
+.resultado[aria-disabled='true'] {
+	cursor: not-allowed;
+	opacity: 0.5;
+}

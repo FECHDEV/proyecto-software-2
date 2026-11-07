@@ -18,6 +18,7 @@ import bo.edu.uagrm.tienda.dto.reportes.ProductoSinVenta;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoVendido;
 import bo.edu.uagrm.tienda.dto.reportes.ResumenDePerdidos;
 import bo.edu.uagrm.tienda.dto.reportes.VentasResponse;
+import bo.edu.uagrm.tienda.entity.Canal;
 import bo.edu.uagrm.tienda.entity.TipoCliente;
 import bo.edu.uagrm.tienda.service.ReportesService;
 import bo.edu.uagrm.tienda.service.exportar.ExportacionDeReportes;
@@ -37,16 +38,19 @@ public class ReportesController {
 
 	@GetMapping("/ventas")
 	public VentasResponse ventas(@RequestParam(required = false) String desde,
-			@RequestParam(required = false) String hasta, @RequestParam(required = false) TipoCliente tipo) {
-		return reportesService.ventas(desde, hasta, tipo);
+			@RequestParam(required = false) String hasta, @RequestParam(required = false) TipoCliente tipo,
+			@RequestParam(required = false) String canal) {
+		return reportesService.ventas(desde, hasta, tipo, Canal.deTexto(canal));
 	}
 
 	// orden=MENOS son los menos vendidos (RF-12); cualquier otro, los más vendidos (RF-11)
 	@GetMapping("/productos")
 	public PaginaResponse<ProductoVendido> productos(@RequestParam(required = false) String desde,
 			@RequestParam(required = false) String hasta, @RequestParam(required = false) TipoCliente tipo,
-			@RequestParam(required = false) String orden, @RequestParam(required = false) String pagina) {
-		return reportesService.productos(desde, hasta, tipo, "MENOS".equals(orden), Paginas.numeroDePagina(pagina));
+			@RequestParam(required = false) String canal, @RequestParam(required = false) String orden,
+			@RequestParam(required = false) String pagina) {
+		return reportesService.productos(desde, hasta, tipo, Canal.deTexto(canal), "MENOS".equals(orden),
+				Paginas.numeroDePagina(pagina));
 	}
 
 	@GetMapping("/sin-venta")
@@ -64,24 +68,26 @@ public class ReportesController {
 	// Las cifras de los pedidos perdidos, sin el resumen entero (RF-17)
 	@GetMapping("/perdidos/resumen")
 	public ResumenDePerdidos resumenDePerdidos(@RequestParam(required = false) String desde,
-			@RequestParam(required = false) String hasta, @RequestParam(required = false) TipoCliente tipo) {
-		return reportesService.resumenDePerdidos(desde, hasta, tipo);
+			@RequestParam(required = false) String hasta, @RequestParam(required = false) TipoCliente tipo,
+			@RequestParam(required = false) String canal) {
+		return reportesService.resumenDePerdidos(desde, hasta, tipo, Canal.deTexto(canal));
 	}
 
 	@GetMapping("/perdidos")
 	public PaginaResponse<ProductoPerdido> perdidos(@RequestParam(required = false) String desde,
 			@RequestParam(required = false) String hasta, @RequestParam(required = false) TipoCliente tipo,
-			@RequestParam(required = false) String pagina) {
-		return reportesService.perdidos(desde, hasta, tipo, Paginas.numeroDePagina(pagina));
+			@RequestParam(required = false) String canal, @RequestParam(required = false) String pagina) {
+		return reportesService.perdidos(desde, hasta, tipo, Canal.deTexto(canal), Paginas.numeroDePagina(pagina));
 	}
 
 	// HU-19: todo el reporte en un archivo, como descarga (RF-4). no-store porque trae datos de clientes (RF-8)
 	@GetMapping("/exportar")
 	public ResponseEntity<byte[]> exportar(@RequestParam(required = false) String formato,
 			@RequestParam(required = false) String desde, @RequestParam(required = false) String hasta,
-			@RequestParam(required = false) TipoCliente tipo, @RequestParam(required = false) String dias,
-			@AuthenticationPrincipal Long idUsuario) {
-		ArchivoExportado archivo = exportacionDeReportes.exportar(formato, desde, hasta, tipo, dias, idUsuario);
+			@RequestParam(required = false) TipoCliente tipo, @RequestParam(required = false) String canal,
+			@RequestParam(required = false) String dias, @AuthenticationPrincipal Long idUsuario) {
+		ArchivoExportado archivo = exportacionDeReportes.exportar(formato, desde, hasta, tipo, Canal.deTexto(canal), dias,
+				idUsuario);
 		return ResponseEntity.ok().contentType(MediaType.parseMediaType(archivo.tipoDeContenido()))
 				.header(HttpHeaders.CONTENT_DISPOSITION,
 						ContentDisposition.attachment().filename(archivo.nombre()).build().toString())

@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { ReportesService } from '../../core/api/reportes.service';
 import { FiltrosDeReportes, Totales, VentasDelPeriodo } from '../../core/modelos/reportes';
 import { NOMBRES_DE_TIPO } from '../../core/modelos/usuario';
+import { NOMBRES_DE_CANAL, NOMBRES_DE_MEDIO } from '../../core/modelos/venta';
 import { fechaCorta } from '../../shared/formato/fechas';
 import { cantidad, precio } from '../../shared/formato/precios';
 import { comparacion, hora, NOMBRES_DE_DIA, nombreDelMes, porcentaje } from './formato';
@@ -83,6 +84,22 @@ export class ReportesResumen {
 			pedidos: fila.pedidos,
 			ingresos: fila.ingresos,
 			extra: fila.promedio === null ? '' : precio(fila.promedio),
+		})),
+	);
+
+	// HU-23 RF-22: los ingresos por canal y por medio de pago
+	protected readonly porCanal = computed<FilaDeVentas[]>(() =>
+		(this.ventas()?.porCanal ?? []).map((fila) => ({
+			etiqueta: NOMBRES_DE_CANAL[fila.canal],
+			pedidos: fila.pedidos,
+			ingresos: fila.ingresos,
+		})),
+	);
+	protected readonly porMedio = computed<FilaDeVentas[]>(() =>
+		(this.ventas()?.porMedio ?? []).map((fila) => ({
+			etiqueta: NOMBRES_DE_MEDIO[fila.medio],
+			pedidos: fila.pedidos,
+			ingresos: fila.ingresos,
 		})),
 	);
 

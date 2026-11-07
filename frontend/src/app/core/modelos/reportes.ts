@@ -1,5 +1,9 @@
 import { UnidadVenta } from './producto';
 import { TipoCliente, TIPOS_DE_CLIENTE } from './usuario';
+import { Canal, MedioPago } from './venta';
+
+// Los canales del selector, en el orden del backend (HU-23 RF-22)
+export const CANALES: readonly Canal[] = ['EN_LINEA', 'TIENDA'];
 
 // Espejo de los DTO de /api/reportes (HU-18) y la lectura de la dirección de /reportes
 
@@ -27,6 +31,8 @@ export interface FiltrosDeReportes {
 	hasta: string;
 	// null son todos los tipos
 	tipo: TipoCliente | null;
+	// null son los dos canales (HU-23 RF-22)
+	canal: Canal | null;
 	orden: Orden;
 	dias: Dias;
 	pagina: number;
@@ -83,6 +89,7 @@ export function leerConsultaDeReportes(
 	const { desde, hasta, ajustado } = leerPeriodo(valor('desde'), valor('hasta'), hoy);
 	const seccion = SECCIONES.find((cada) => cada.valor === valor('seccion'))?.valor ?? 'resumen';
 	const tipo = TIPOS_DE_CLIENTE.find((cada) => cada === valor('tipo')) ?? null;
+	const canal = CANALES.find((cada) => cada === valor('canal')) ?? null;
 	const dias = DIAS.find((cada) => String(cada) === valor('dias')) ?? 30;
 	const pagina = valor('pagina');
 	return {
@@ -91,6 +98,7 @@ export function leerConsultaDeReportes(
 			desde,
 			hasta,
 			tipo,
+			canal,
 			orden: valor('orden') === 'MENOS' ? 'MENOS' : 'MAS',
 			dias,
 			pagina: pagina !== null && /^\d{1,6}$/.test(pagina) ? Number(pagina) : 0,
@@ -100,7 +108,7 @@ export function leerConsultaDeReportes(
 }
 
 // Solo lo que filtra queda en la dirección: lo de entrada (el resumen de este
-// mes, todos los tipos, los más vendidos, 30 días, la primera página) no
+// mes, todos los tipos y canales, los más vendidos, 30 días, la primera página) no
 export function consultaDeReportes(filtros: FiltrosDeReportes, hoy: string): Record<string, string | number> {
 	const esteMes = periodoDeAtajo('mes', hoy);
 	const mismoPeriodo = filtros.desde === esteMes.desde && filtros.hasta === esteMes.hasta;
@@ -108,6 +116,7 @@ export function consultaDeReportes(filtros: FiltrosDeReportes, hoy: string): Rec
 		...(filtros.seccion === 'resumen' ? {} : { seccion: filtros.seccion }),
 		...(mismoPeriodo ? {} : { desde: filtros.desde, hasta: filtros.hasta }),
 		...(filtros.tipo === null ? {} : { tipo: filtros.tipo }),
+		...(filtros.canal === null ? {} : { canal: filtros.canal }),
 		...(filtros.orden === 'MAS' ? {} : { orden: filtros.orden }),
 		...(filtros.dias === 30 ? {} : { dias: filtros.dias }),
 		...(filtros.pagina > 0 ? { pagina: filtros.pagina } : {}),
@@ -183,6 +192,9 @@ export interface VentasDelPeriodo {
 	porHora: { hora: number; ingresos: number; pedidos: number }[];
 	porCategoria: { categoria: string; ingresos: number; pedidos: number; margen: number | null }[];
 	porTipo: { tipo: TipoCliente; ingresos: number; pedidos: number; promedio: number | null }[];
+	// HU-23 RF-22: los dos canales y los dos medios, también sin ventas
+	porCanal: { canal: Canal; ingresos: number; pedidos: number }[];
+	porMedio: { medio: MedioPago; ingresos: number; pedidos: number }[];
 }
 
 // GET /api/reportes/perdidos/resumen. confirmados no cuenta los que siguen esperando el pago ni los pagos a

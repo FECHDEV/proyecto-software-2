@@ -1,0 +1,41 @@
+<h2 id="titulo-buscar">Productos</h2>
+<div class="campo">
+  <label for="buscar-producto">Buscar producto</label>
+  <input
+    id="buscar-producto"
+    type="search"
+    autocomplete="off"
+    spellcheck="false"
+    maxlength="100"
+    placeholder="Nombre del producto…"
+    [value]="textoBuscado()"
+    [readOnly]="bloqueada()"
+    (input)="alBuscar($any($event.target).value)"
+  />
+</div>
+@if (resultados.hasValue()) {
+  @if (resultados.value()!.length === 0) {
+    <p class="vacio" role="status">No hay productos a la venta con ese nombre.</p>
+  } @else {
+    <ul class="resultados" aria-label="Resultados de la búsqueda">
+      @for (producto of resultados.value()!; track producto.idProducto) {
+        <li>
+          <button
+            type="button"
+            class="resultado"
+            [attr.aria-disabled]="bloqueada() ? 'true' : null"
+            (click)="tocar(producto)"
+          >
+            <span class="nombre">{{ producto.nombre }}</span>
+            <span class="precio">{{ precio(producto.precio) }} / {{ unidadPara(producto.unidad, 1) }}</span>
+            <span class="disponible" [class.sin-stock]="producto.disponible === 0">
+              Disponible: {{ disponible(producto) }}
+            </span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+} @else if (resultados.error()) {
+  <p class="aviso" role="alert">No se pudo buscar. Revise la conexión y escriba de nuevo.</p>
+}

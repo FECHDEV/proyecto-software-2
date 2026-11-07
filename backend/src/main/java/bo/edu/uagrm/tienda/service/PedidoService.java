@@ -6,11 +6,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -31,6 +33,7 @@ import bo.edu.uagrm.tienda.dto.PaginaResponse;
 import bo.edu.uagrm.tienda.dto.PedidoResponse;
 import bo.edu.uagrm.tienda.dto.PedidoResumenResponse;
 import bo.edu.uagrm.tienda.dto.RetiroResponse;
+import bo.edu.uagrm.tienda.entity.Canal;
 import bo.edu.uagrm.tienda.entity.Cobro;
 import bo.edu.uagrm.tienda.entity.EstadoCobro;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
@@ -70,6 +73,9 @@ import lombok.RequiredArgsConstructor;
 public class PedidoService {
 
 	public static final Duration VIGENCIA = Duration.ofMinutes(30);
+	// Lo que el Cliente ve de una venta del mostrador a su nombre: solo ya pagada (HU-23 RF-17)
+	public static final Set<EstadoPedido> VISIBLES_EN_TIENDA = EnumSet.of(EstadoPedido.ENTREGADO, EstadoPedido.PAGADO,
+			EstadoPedido.PAGO_A_DEVOLVER, EstadoPedido.ANULADO);
 	static final int POR_PAGINA = 10;
 
 	private final PedidoRepository pedidoRepository;
@@ -102,8 +108,8 @@ public class PedidoService {
 		// bloquearlos: todo lo que cambia un pedido bloquea antes al cliente, y en MySQL un SELECT … FOR UPDATE sin
 		// filas bloquea el hueco del índice y traba las confirmaciones de dos clientes a la vez
 		List<Pedido> vencidos = new ArrayList<>();
-		for (Pedido pendiente : pedidoRepository.findByUsuario_IdUsuarioAndEstadoOrderByIdPedido(idUsuario,
-				EstadoPedido.PENDIENTE_PAGO)) {
+		for (Pedido pendiente : pedidoRepository.findByUsuario_IdUsuarioAndCanalAndEstadoOrderByIdPedido(idUsuario,
+				Canal.EN_LINEA, EstadoPedido.PENDIENTE_PAGO)) {
 			// Tampoco uno que pasó la hora pero espera la consulta de su cobro (HU-13 RF-7)
 			if (!puedeVencer(pendiente, ahora)) {
 				throw new PedidoPendienteException(pendiente.getIdPedido());
@@ -151,7 +157,7 @@ public class PedidoService {
 	public PedidoResponse ver(Long idUsuario, Long idPedido) {
 		LocalDateTime ahora = LocalDateTime.now(clock);
 		vencerSiCorresponde(idUsuario);
-		Pedido pedido = pedidoRepository.findByIdPedidoAndUsuario_IdUsuario(idPedido, idUsuario)
+		Pedido pedido = pedidoRepository.visibleParaElCliente(idPedido, idUsuario, VISIBLES_EN_TIENDA)
 				.orElseThrow(PedidoNoEncontradoException::new);
 		return respuesta(pedido, ahora);
 	}
@@ -182,8 +188,8 @@ public class PedidoService {
 	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public void vencerSiCorresponde(Long idUsuario) {
 		LocalDateTime ahora = LocalDateTime.now(clock);
-		if (pedidoRepository.existsByUsuario_IdUsuarioAndEstadoAndVenceLessThanEqual(idUsuario,
-				EstadoPedido.PENDIENTE_PAGO, ahora)) {
+		if (pedidoRepository.existsByUsuario_IdUsuarioAndCanalAndEstadoAndVenceLessThanEqual(idUsuario,
+				Canal.EN_LINEA, EstadoPedido.PENDIENTE_PAGO, ahora)) {
 			bloquearCliente(idUsuario);
 			vencerLosDelCliente(idUsuario, ahora);
 		}
@@ -197,18 +203,21 @@ public class PedidoService {
 	public MisPedidosResponse misPedidos(Long idUsuario, int pagina) {
 		vencerSiCorresponde(idUsuario);
 		LocalDateTime ahora = LocalDateTime.now(clock);
-		Page<FilaDePedido> filas = pedidoRepository.misPedidos(idUsuario,
+		Page<FilaDePedido> filas = pedidoRepository.misPedidos(idUsuario, VISIBLES_EN_TIENDA,
 				PageRequest.of(Busquedas.paginaValida(pagina, POR_PAGINA), POR_PAGINA));
 		if (filas.isEmpty() && filas.getTotalPages() > 0) {
-			filas = pedidoRepository.misPedidos(idUsuario, PageRequest.of(filas.getTotalPages() - 1, POR_PAGINA));
+			filas = pedidoRepository.misPedidos(idUsuario, VISIBLES_EN_TIENDA,
+					PageRequest.of(filas.getTotalPages() - 1, POR_PAGINA));
 		}
 		// RF-2: el que espera el pago (también uno con la hora pasada y el cobro sin consultar, HU-13 RF-7)
 		PedidoResumenResponse pendiente = pedidoRepository
-				.findByUsuario_IdUsuarioAndEstadoOrderByIdPedido(idUsuario, EstadoPedido.PENDIENTE_PAGO).stream()
+				.findByUsuario_IdUsuarioAndCanalAndEstadoOrderByIdPedido(idUsuario, Canal.EN_LINEA,
+						EstadoPedido.PENDIENTE_PAGO)
+				.stream()
 				.findFirst().map(pedido -> PedidoResumenResponse.from(pedido, ahora)).orElse(null);
 		return new MisPedidosResponse(pendiente,
 				PaginaResponse.from(filas, fila -> PedidoResumenResponse.de(fila.idPedido(), fila.estado(),
-						fila.confirmado(), fila.cantidadProductos(), fila.total(), fila.vence(), ahora)));
+						fila.confirmado(), fila.cantidadProductos(), fila.total(), fila.vence(), fila.canal(), ahora)));
 	}
 
 	// Uno que ya pasó la hora no cuenta, aunque todavía no se haya vencido (las escrituras del carrito no vencen), salvo
@@ -219,7 +228,9 @@ public class PedidoService {
 	}
 
 	private Optional<Pedido> pendienteSinVencer(Long idUsuario, LocalDateTime ahora) {
-		return pedidoRepository.findByUsuario_IdUsuarioAndEstadoOrderByIdPedido(idUsuario, EstadoPedido.PENDIENTE_PAGO)
+		return pedidoRepository
+				.findByUsuario_IdUsuarioAndCanalAndEstadoOrderByIdPedido(idUsuario, Canal.EN_LINEA,
+						EstadoPedido.PENDIENTE_PAGO)
 				.stream().filter(pedido -> !puedeVencer(pedido, ahora)).findFirst();
 	}
 
@@ -273,7 +284,10 @@ public class PedidoService {
 			movimientoRepository.save(MovimientoStock.reserva(producto, linea.getCantidad(), nuevo, pedido, ahora));
 		}
 		pedido.pagar(fechaPago);
-		restarDelCarrito(pedido);
+		// Una venta del mostrador no salió de ningún carrito ni volvió a él (HU-23 RF-11)
+		if (!pedido.esEnTienda()) {
+			restarDelCarrito(pedido);
+		}
 	}
 
 	// Vence si pasó la hora y, si tiene un cobro pendiente, el sistema de pago dijo después de la hora que no estaba
@@ -301,14 +315,15 @@ public class PedidoService {
 
 	// Uno como mucho (RF-5); la lista no lo da por supuesto
 	private List<Pedido> pendientesBloqueados(Long idUsuario) {
-		return pedidoRepository.findConBloqueoByUsuario_IdUsuarioAndEstadoOrderByIdPedido(idUsuario,
-				EstadoPedido.PENDIENTE_PAGO);
+		return pedidoRepository.findConBloqueoByUsuario_IdUsuarioAndCanalAndEstadoOrderByIdPedido(idUsuario,
+				Canal.EN_LINEA, EstadoPedido.PENDIENTE_PAGO);
 	}
 
-	// Cliente y después pedido: el mismo orden que confirmar. De otro cliente o inexistente, 404 (RF-13)
+	// Cliente y después pedido: el mismo orden que confirmar. De otro cliente, inexistente o del mostrador, 404 (RF-13;
+	// HU-23 RF-23: una venta del mostrador la cancela o la cobra el personal)
 	private Pedido bloquear(Long idUsuario, Long idPedido) {
 		usuarioRepository.findConBloqueoByIdUsuario(idUsuario).orElseThrow(PedidoNoEncontradoException::new);
-		return pedidoRepository.findConBloqueoByIdPedidoAndUsuario_IdUsuario(idPedido, idUsuario)
+		return pedidoRepository.findConBloqueoByIdPedidoAndUsuario_IdUsuarioAndCanal(idPedido, idUsuario, Canal.EN_LINEA)
 				.orElseThrow(PedidoNoEncontradoException::new);
 	}
 

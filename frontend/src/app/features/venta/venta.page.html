@@ -1,0 +1,189 @@
+<h1>Nueva venta</h1>
+
+<div class="armado">
+  <div class="columna">
+    <!-- RF-1, RF-3: los productos que el catálogo vende, con lo que hay disponible -->
+    <app-busqueda-de-productos class="bloque" [bloqueada]="bloqueada()" (elegir)="agregar($event)" />
+
+    <!-- RF-2, RF-3: cada línea con su precio de hoy, la cantidad según la unidad y el subtotal -->
+    <section class="bloque" aria-labelledby="titulo-lineas">
+      <h2 id="titulo-lineas">Venta</h2>
+      @if (avisoDeLineas()) {
+        <p class="aviso" role="alert">{{ avisoDeLineas() }}</p>
+      }
+      @if (lineas().length === 0) {
+        <p class="vacio">Busque un producto y tóquelo para agregarlo.</p>
+      } @else {
+        <ol class="lineas" aria-label="Productos de la venta">
+          @for (linea of lineas(); track linea.producto.idProducto; let i = $index) {
+            @let error = problema(linea);
+            @let rechazo = rechazos().get(linea.producto.idProducto);
+            <li class="linea" [class.marcada]="error || rechazo || pasaDelDisponible(linea)">
+              <p class="nombre">{{ linea.producto.nombre }}</p>
+              <p class="precio">{{ precio(linea.producto.precio) }} / {{ unidadPara(linea.producto.unidad, 1) }}</p>
+              <div class="cantidad">
+                <label class="solo-lectores" [for]="'cantidad-' + linea.producto.idProducto">
+                  Cantidad de {{ linea.producto.nombre }}
+                </label>
+                <app-paso-de-cantidad
+                  [de]="linea.producto.nombre"
+                  [puedeRestar]="!bloqueada() && conPaso(linea, -1) !== null"
+                  [puedeSumar]="!bloqueada() && conPaso(linea, 1) !== null"
+                  (restar)="pasar(i, -1)"
+                  (sumar)="pasar(i, 1)"
+                >
+                  <input
+                    [id]="'cantidad-' + linea.producto.idProducto"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    [value]="linea.texto"
+                    [readOnly]="bloqueada()"
+                    [attr.aria-invalid]="error || rechazo ? 'true' : null"
+                    [attr.aria-describedby]="'aviso-' + linea.producto.idProducto"
+                    (change)="cambiar(i, $any($event.target).value)"
+                  />
+                </app-paso-de-cantidad>
+              </div>
+              <p class="subtotal">
+                @if (subtotal(linea); as valor) {
+                  {{ precio(valor) }}
+                }
+              </p>
+              <button
+                type="button"
+                class="quitar"
+                [attr.aria-label]="'Quitar ' + linea.producto.nombre"
+                [attr.aria-disabled]="bloqueada() ? 'true' : null"
+                (click)="quitar(i)"
+              >
+                <svg lucideTrash2 aria-hidden="true"></svg>
+              </button>
+              <p class="aviso-linea" [id]="'aviso-' + linea.producto.idProducto" aria-live="polite">
+                @if (error) {
+                  {{ error }}
+                } @else if (rechazo) {
+                  {{ rechazo }}
+                } @else if (pasaDelDisponible(linea)) {
+                  Pide más de lo disponible: hay {{ disponible(linea.producto) }}.
+                }
+              </p>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+  </div>
+
+  <div class="columna">
+    <!-- RF-4: consumidor final de entrada, o una cuenta de Cliente buscada por correo -->
+    <section class="bloque" aria-labelledby="titulo-comprador">
+      <h2 id="titulo-comprador">Comprador</h2>
+      @if (comprador(); as cuenta) {
+        <p class="comprador">
+          <strong>{{ cuenta.nombre }}</strong>
+          <span>{{ cuenta.correo }}</span>
+        </p>
+        <button
+          type="button"
+          class="secundario"
+          [attr.aria-disabled]="bloqueada() ? 'true' : null"
+          (click)="aConsumidorFinal()"
+        >
+          Volver a consumidor final
+        </button>
+      } @else {
+        <p class="comprador"><strong>Consumidor final</strong></p>
+        <form class="buscar-comprador" (submit)="$event.preventDefault(); buscarComprador()">
+          <div class="campo">
+            <label for="correo-comprador">Correo del cliente, si tiene cuenta</label>
+            <input
+              id="correo-comprador"
+              type="email"
+              autocomplete="off"
+              spellcheck="false"
+              maxlength="254"
+              [value]="correo()"
+              [attr.aria-invalid]="errorDeComprador() ? 'true' : null"
+              [attr.aria-describedby]="errorDeComprador() ? 'error-comprador' : null"
+              (input)="correo.set($any($event.target).value)"
+            />
+          </div>
+          <button
+            type="submit"
+            class="secundario"
+            [attr.aria-disabled]="buscandoComprador() || bloqueada() ? 'true' : null"
+          >
+            Buscar
+          </button>
+        </form>
+        @if (errorDeComprador()) {
+          <p class="error-campo" id="error-comprador" role="alert">{{ errorDeComprador() }}</p>
+        }
+      }
+    </section>
+
+    <!-- RF-5 a RF-9: el total, y el cobro en efectivo o con QR -->
+    <section class="bloque cobro" aria-labelledby="titulo-cobro">
+      <h2 id="titulo-cobro">Cobro</h2>
+      <p class="total">Total <strong>{{ precio(total()) }}</strong></p>
+
+      @if (error()) {
+        <p class="aviso" role="alert">{{ error() }}</p>
+      }
+
+      @if (conQr(); as venta) {
+        <app-qr-de-venta
+          [venta]="venta"
+          [segundos]="segundos()"
+          [aviso]="avisoDelPago()"
+          [cancelando]="cancelando()"
+          [simulando]="simulando()"
+          (yaPago)="yaPago()"
+          (cancelar)="cancelarQr()"
+          (simular)="simular($event)"
+        />
+      } @else {
+        <form class="efectivo" (submit)="$event.preventDefault(); cobrarEnEfectivo()">
+          <div class="campo">
+            <label for="recibido">Recibido en efectivo (Bs)</label>
+            <input
+              id="recibido"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              [value]="recibido()"
+              [attr.aria-invalid]="errorDeRecibido() ? 'true' : null"
+              [attr.aria-describedby]="errorDeRecibido() ? 'error-recibido' : 'cambio'"
+              (input)="recibido.set($any($event.target).value)"
+            />
+          </div>
+          @if (errorDeRecibido()) {
+            <p class="error-campo" id="error-recibido" role="alert">{{ errorDeRecibido() }}</p>
+          }
+          <p class="cambio" id="cambio" aria-live="polite">
+            @if (cambio() !== null && cambio()! >= 0) {
+              Cambio <strong>{{ precio(cambio()!) }}</strong>
+            }
+          </p>
+          <button
+            type="submit"
+            class="principal"
+            [attr.aria-disabled]="puedeCobrar() ? null : 'true'"
+          >
+            <span>Cobrar en efectivo</span>
+          </button>
+        </form>
+        <button
+          type="button"
+          class="secundario con-qr"
+          [attr.aria-disabled]="puedeCobrar() ? null : 'true'"
+          (click)="cobrarConQr()"
+        >
+          Cobrar con QR
+        </button>
+        <p class="solo-lectores" role="status">@if (registrando()) {Registrando la venta…}</p>
+      }
+    </section>
+  </div>
+</div>

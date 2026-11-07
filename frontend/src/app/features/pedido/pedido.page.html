@@ -52,7 +52,10 @@
     <section class="cerrado" role="status" tabindex="-1">
       <p>
         <svg lucideCircleCheck aria-hidden="true"></svg>
-        @if (pedido.entregado) {
+        <!-- HU-23 RF-17: una compra en el mostrador se llevó en el acto -->
+        @if (pedido.canal === 'TIENDA' && pedido.entregado) {
+          Lo compró en la tienda el {{ fecha(pedido.entregado) }} a las {{ hora(pedido.entregado) }}.
+        } @else if (pedido.entregado) {
           Lo retiraron el {{ fecha(pedido.entregado) }} a las {{ hora(pedido.entregado) }}.
         } @else {
           Lo retiraron de la tienda.
@@ -65,6 +68,11 @@
         Su pago llegó cuando el pedido ya no estaba vigente y el stock ya no alcanzaba. La tienda le devolverá el
         dinero.
       </p>
+    </section>
+  } @else if (pedido.estado === 'ANULADO') {
+    <!-- HU-23 RF-17: una compra en el mostrador que la tienda anuló -->
+    <section class="cerrado" role="status" tabindex="-1">
+      <p>La tienda anuló esta compra.</p>
     </section>
   } @else {
     <section class="cerrado" role="status" tabindex="-1">
@@ -106,6 +114,13 @@
     </section>
 
     <div class="lateral">
+      @if (pedido.canal === 'TIENDA') {
+        <!-- HU-23 RF-17: comprado en el mostrador, sin datos de retiro -->
+        <section class="retiro" aria-labelledby="titulo-retiro">
+          <h2 id="titulo-retiro"><svg lucideStore aria-hidden="true"></svg>En tienda</h2>
+          <p>Lo compró en el mostrador de la tienda.</p>
+        </section>
+      } @else {
       <section class="retiro" aria-labelledby="titulo-retiro">
         <h2 id="titulo-retiro"><svg lucideStore aria-hidden="true"></svg>Se retira en la tienda</h2>
         <dl>
@@ -137,6 +152,7 @@
           }
         </dl>
       </section>
+      }
 
       @if (pedido.estado === 'PENDIENTE_PAGO') {
         <button

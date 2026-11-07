@@ -49,6 +49,15 @@
       </a>
     </li>
   }
+  <!-- HU-23 RF-24 -->
+  @if (vende()) {
+    <li>
+      <a class="acceso" routerLink="/ventas/nueva">
+        <span class="titulo">Nueva venta</span>
+        <span class="detalle">Lo que se vende en el mostrador: productos, cobro en efectivo o con QR y su comprobante.</span>
+      </a>
+    </li>
+  }
   @if (veReportes()) {
     <li>
       <a class="acceso" routerLink="/reportes">

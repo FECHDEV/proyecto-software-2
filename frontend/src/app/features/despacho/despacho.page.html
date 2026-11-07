@@ -11,6 +11,15 @@
   </div>
 
   <div class="campo">
+    <label for="filtro-canal">Canal</label>
+    <select id="filtro-canal" name="canal" (change)="alElegirCanal($any($event.target).value)">
+      @for (canal of canales; track canal) {
+        <option [value]="canal" [selected]="filtros().canal === canal">{{ nombreDelCanal(canal) }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="campo">
     <label for="filtro-texto">Buscar</label>
     <input
       id="filtro-texto"
@@ -44,7 +53,14 @@
           <a class="fila" [routerLink]="['/pedidos', pedido.idPedido]">
             <span class="numero">Pedido N.º&nbsp;{{ pedido.idPedido }}</span>
             <span [class]="'estado ' + tono[pedido.estado]">{{ nombresDeEstado[pedido.estado] }}</span>
-            <span class="retira">{{ pedido.nombreRetira }}</span>
+            <!-- Una venta del mostrador no tiene a quien retira: se lee su canal (HU-23 RF-16) -->
+            <span class="retira">
+              @if (pedido.canal === 'TIENDA') {
+                <span class="canal">{{ nombresDeCanal.TIENDA }}</span>
+              } @else {
+                {{ pedido.nombreRetira }}
+              }
+            </span>
             <span class="detalle">{{ fecha(pedido.confirmado) }} · {{ productos(pedido.cantidadProductos) }}</span>
             <span class="total">{{ precio(pedido.total) }}</span>
           </a>

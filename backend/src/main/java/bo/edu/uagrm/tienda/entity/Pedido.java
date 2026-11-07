@@ -1,6 +1,7 @@
 package bo.edu.uagrm.tienda.entity;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,7 +32,8 @@ import lombok.NoArgsConstructor;
 
 // Lo que un Cliente confirmó de su carrito, para retirar en la tienda (HU-12). Espera el pago hasta que se paga
 // (HU-13), vence a los 30 minutos o el cliente lo cancela; el stock lo reserva y lo devuelve PedidoService. Pagado, el
-// personal lo entrega a quien lo retira (HU-17)
+// personal lo entrega a quien lo retira (HU-17). Una venta del mostrador es un pedido de canal TIENDA (HU-23): sin
+// datos de retiro, con quien la vendió y, si es de consumidor final, sin cuenta del cliente
 @Entity
 @Table(name = "pedido", indexes = {
 		@Index(name = "idx_pedido_usuario_estado", columnList = "id_usuario, estado"),
@@ -48,11 +50,19 @@ public class Pedido {
 	@Column(name = "id_pedido")
 	private Long idPedido;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "id_usuario", nullable = false)
+	// El Cliente. Nulo solo en una venta del mostrador a consumidor final (HU-23 RF-4); una base de antes la tenía
+	// obligatoria y PedidoAlArrancar la cambia
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_usuario")
 	private Usuario usuario;
 
-	// varchar y no el enum de MySQL, que no admitía ENTREGADO (EstadoPedidoAlArrancar). En una base nueva Hibernate
+	// Nulo solo en un pedido de antes de HU-23, hasta que PedidoAlArrancar lo completa: varchar, como el estado
+	@Enumerated(EnumType.STRING)
+	@JdbcTypeCode(SqlTypes.VARCHAR)
+	@Column(length = 10)
+	private Canal canal;
+
+	// varchar y no el enum de MySQL, que no admitía ENTREGADO (PedidoAlArrancar). En una base nueva Hibernate
 	// crea además un check con los estados de ahora, que ddl-auto=update no cambia: un estado nuevo vuelve a pedir
 	// cambiar la columna (decisiones.md → Base de datos: sin migraciones)
 	@Enumerated(EnumType.STRING)
@@ -64,7 +74,8 @@ public class Pedido {
 	@Column(nullable = false, precision = 12, scale = 2)
 	private BigDecimal total = BigDecimal.ZERO;
 
-	@Column(name = "nombre_retira", nullable = false, length = 160)
+	// Los datos de retiro, solo en línea: en el mostrador el cliente se lleva lo comprado (HU-23)
+	@Column(name = "nombre_retira", length = 160)
 	private String nombreRetira;
 
 	// El nombre de quien retira sin tildes ni mayúsculas, para que la búsqueda del personal los ignore igual en H2 y en
@@ -72,7 +83,7 @@ public class Pedido {
 	@Column(name = "busqueda_retira", length = 160)
 	private String busquedaRetira;
 
-	@Column(name = "telefono_retira", nullable = false, length = 20)
+	@Column(name = "telefono_retira", length = 20)
 	private String telefonoRetira;
 
 	@Column(length = 200)
@@ -97,6 +108,29 @@ public class Pedido {
 	@JoinColumn(name = "id_entregado_por")
 	private Usuario entregadoPor;
 
+	// Solo en el mostrador (HU-23): cómo se cobró, cuánto se recibió en efectivo y quién la registró
+	@Enumerated(EnumType.STRING)
+	@JdbcTypeCode(SqlTypes.VARCHAR)
+	@Column(name = "medio_pago", length = 10)
+	private MedioPago medioPago;
+
+	@Column(precision = 12, scale = 2)
+	private BigDecimal recibido;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_vendido_por")
+	private Usuario vendidoPor;
+
+	// La anulación de una venta del mostrador (HU-23 RF-19)
+	private LocalDateTime anulado;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_anulado_por")
+	private Usuario anuladoPor;
+
+	@Column(name = "motivo_anulacion", length = 200)
+	private String motivoAnulacion;
+
 	@OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
 	@OrderBy("idLinea")
 	private List<LineaPedido> lineas = new ArrayList<>();
@@ -106,6 +140,7 @@ public class Pedido {
 			LocalDateTime confirmado, LocalDateTime vence) {
 		Pedido pedido = new Pedido();
 		pedido.usuario = Objects.requireNonNull(usuario);
+		pedido.canal = Canal.EN_LINEA;
 		pedido.estado = EstadoPedido.PENDIENTE_PAGO;
 		pedido.nombreRetira = nombreRetira.strip();
 		pedido.actualizarBusqueda();
@@ -113,6 +148,22 @@ public class Pedido {
 		pedido.nota = nota == null || nota.isBlank() ? null : nota.strip();
 		pedido.confirmado = Objects.requireNonNull(confirmado);
 		pedido.vence = Objects.requireNonNull(vence);
+		return pedido;
+	}
+
+	// Una venta del mostrador (HU-23 RF-6, RF-7): espera el cobro con la vigencia del mostrador. El comprador es nulo
+	// en el consumidor final; lo recibido, solo en efectivo, ya validado contra el total por quien la registra
+	public static Pedido enTienda(Usuario comprador, Usuario vendedor, MedioPago medio, BigDecimal recibido,
+			LocalDateTime ahora, Duration vigencia) {
+		Pedido pedido = new Pedido();
+		pedido.usuario = comprador;
+		pedido.canal = Canal.TIENDA;
+		pedido.estado = EstadoPedido.PENDIENTE_PAGO;
+		pedido.vendidoPor = Objects.requireNonNull(vendedor);
+		pedido.medioPago = Objects.requireNonNull(medio);
+		pedido.recibido = medio == MedioPago.EFECTIVO ? Objects.requireNonNull(recibido) : null;
+		pedido.confirmado = Objects.requireNonNull(ahora);
+		pedido.vence = ahora.plus(vigencia);
 		return pedido;
 	}
 
@@ -164,6 +215,44 @@ public class Pedido {
 		estado = EstadoPedido.ENTREGADO;
 		entregado = Objects.requireNonNull(fecha);
 		entregadoPor = Objects.requireNonNull(quien);
+	}
+
+	// HU-23 RF-6, RF-8: cobrada en el mostrador, el cliente se la lleva en el acto. Solo desde pendiente: quien la cobra
+	// lo revisa antes, con la venta bloqueada
+	public void cobrarEnTienda(LocalDateTime fecha) {
+		if (canal != Canal.TIENDA || estado != EstadoPedido.PENDIENTE_PAGO) {
+			throw new IllegalStateException("El pedido " + idPedido + " no es una venta del mostrador por cobrar");
+		}
+		estado = EstadoPedido.ENTREGADO;
+		pagado = Objects.requireNonNull(fecha);
+		entregado = fecha;
+		entregadoPor = vendidoPor;
+	}
+
+	// HU-23 RF-19, RF-20: solo una venta del mostrador en efectivo y entregada. Que sea del mismo día y que anule un
+	// Administrador lo revisa VentaTiendaService
+	public void anular(Usuario quien, String motivo, LocalDateTime fecha) {
+		if (canal != Canal.TIENDA || medioPago != MedioPago.EFECTIVO || estado != EstadoPedido.ENTREGADO) {
+			throw new IllegalStateException("El pedido " + idPedido + " no se puede anular");
+		}
+		estado = EstadoPedido.ANULADO;
+		anulado = Objects.requireNonNull(fecha);
+		anuladoPor = Objects.requireNonNull(quien);
+		motivoAnulacion = Objects.requireNonNull(motivo);
+	}
+
+	// HU-23 RF-5: el vuelto del efectivo; nulo con QR
+	public BigDecimal cambio() {
+		return recibido == null ? null : recibido.subtract(total);
+	}
+
+	// A nombre de quién quedan los movimientos del stock: quien vendió en el mostrador, el cliente en línea
+	public Usuario responsable() {
+		return canal == Canal.TIENDA ? vendidoPor : usuario;
+	}
+
+	public boolean esEnTienda() {
+		return canal == Canal.TIENDA;
 	}
 
 	public void actualizarBusqueda() {

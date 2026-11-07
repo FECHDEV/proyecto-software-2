@@ -121,6 +121,10 @@
 
 	// Iconos (Lucide)
 	--app-icono: 18px;
+
+	// El comprobante impreso (HU-23 RF-15): negro sobre blanco en los dos modos, como el papel de la impresora
+	--app-impresion-tinta: #000;
+	--app-impresion-papel: #fff;
 }
 
 // Modo claro: la lona clara pasa a ser el fondo. El amarillo sigue de relleno con

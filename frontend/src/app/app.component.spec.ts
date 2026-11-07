@@ -222,6 +222,7 @@ describe('AppComponent', () => {
         'Productos',
         'Inventario',
         'Pedidos',
+        'Nueva venta',
         'Reportes',
       ]);
       expect(enlacesDelMenu(fijo)[3].getAttribute('href')).toBe('/usuarios');
@@ -233,7 +234,14 @@ describe('AppComponent', () => {
     it('un empleado ve «Inicio», «Inventario» y «Pedidos»', async () => {
       const fijo = await en('/', 'EMPLEADO');
 
-      expect(nombres(enlacesDelMenu(fijo))).toEqual(['Inicio', 'Catálogo', 'Panel', 'Inventario', 'Pedidos']);
+      expect(nombres(enlacesDelMenu(fijo))).toEqual([
+        'Inicio',
+        'Catálogo',
+        'Panel',
+        'Inventario',
+        'Pedidos',
+        'Nueva venta',
+      ]);
       expect(enlacesDelMenu(fijo)[3].getAttribute('href')).toBe('/inventario');
       expect(enlacesDelMenu(fijo)[4].getAttribute('href')).toBe('/pedidos');
     });
@@ -244,6 +252,19 @@ describe('AppComponent', () => {
 
       expect(nombres(enlacesDelMenu(fijo))).toEqual(['Inicio', 'Catálogo', 'Panel', 'Inventario', 'Pedidos', 'Reportes']);
       expect(enlacesDelMenu(fijo)[5].getAttribute('href')).toBe('/reportes');
+    });
+
+    // HU-23 RF-24: «Nueva venta», para el Empleado y el Administrador; el Contador y el Cliente no la ven
+    it('nuevaVentaSoloParaEmpleadoYAdministrador', async () => {
+      for (const rol of ['EMPLEADO', 'ADMINISTRADOR'] as const) {
+        const fijo = await en('/', rol);
+        const nueva = enlacesDelMenu(fijo).find((enlace) => enlace.textContent?.trim() === 'Nueva venta');
+        expect(nueva?.getAttribute('href')).toBe('/ventas/nueva');
+      }
+      for (const rol of ['CONTADOR', 'CLIENTE'] as const) {
+        const fijo = await en('/', rol);
+        expect(nombres(enlacesDelMenu(fijo))).not.toContain('Nueva venta');
+      }
     });
 
     // HU-09 RF-16

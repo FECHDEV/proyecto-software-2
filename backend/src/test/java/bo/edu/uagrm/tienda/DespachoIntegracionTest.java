@@ -105,6 +105,13 @@ class DespachoIntegracionTest {
 	@Autowired
 	private UsuarioRepository usuarioRepository;
 
+	// HU-23: las ventas del mostrador de prueba
+	@Autowired
+	private org.springframework.transaction.PlatformTransactionManager transacciones;
+
+	@Autowired
+	private bo.edu.uagrm.tienda.service.VencimientoPedidos vencimiento;
+
 	private String admin;
 	private String ana;
 	private String empleado;
@@ -534,5 +541,62 @@ class DespachoIntegracionTest {
 		}
 		assertThat(get(DESPACHO + "/999999", empleado)).bodyJson().extractingPath("$.codigo")
 				.isEqualTo("PEDIDO_NO_ENCONTRADO");
+	}
+
+	// --- HU-23: la venta del mostrador en /pedidos ---
+
+	private VentasDePrueba ventas() {
+		return new VentasDePrueba(pedidoRepository, productoRepository, usuarioRepository, movimientoRepository,
+				cobroRepository, simulador, reloj, transacciones);
+	}
+
+	// HU-23 RF-16: el filtro de canal separa las ventas del mostrador de los pedidos en línea, y cada fila dice su canal
+	@Test
+	void filtraPorCanal() throws Exception {
+		Integer enLinea = pagado(ana, "Ana Paz");
+		reloj.avanzar(Duration.ofMinutes(1));
+		Integer enTienda = ventas().enEfectivo(null, "emp.hu17@mail.com", java.util.Map.of(martillo, "1")).intValue();
+
+		assertThat(ids(lista(empleado, "?estado=TODOS&canal=TIENDA"))).containsExactly(enTienda);
+		assertThat(ids(lista(empleado, "?estado=TODOS&canal=EN_LINEA"))).containsExactly(enLinea);
+		MvcTestResult todos = lista(empleado, "?estado=TODOS");
+		assertThat(ids(todos)).containsExactly(enTienda, enLinea);
+		assertThat(todos).bodyJson().extractingPath("$.contenido[*].canal").asArray()
+				.containsExactly("TIENDA", "EN_LINEA");
+		// Un canal que no existe es «todos» (HU-17 RF-12)
+		assertThat(ids(lista(empleado, "?estado=TODOS&canal=xx"))).containsExactly(enTienda, enLinea);
+	}
+
+	// HU-23 RF-16: la ficha de una venta del mostrador a consumidor final dice el canal, el medio y quién vendió
+	@Test
+	void laFichaDeUnaVentaDelMostradorSinComprador() throws Exception {
+		Integer venta = ventas().enEfectivo(null, "emp.hu17@mail.com", java.util.Map.of(martillo, "1")).intValue();
+
+		MvcTestResult ficha = get(DESPACHO + "/{id}", contador, venta);
+
+		assertThat(ficha).hasStatus(HttpStatus.OK);
+		assertThat(ficha).bodyJson().extractingPath("$.canal").isEqualTo("TIENDA");
+		assertThat(ficha).bodyJson().extractingPath("$.medioPago").isEqualTo("EFECTIVO");
+		assertThat(ficha).bodyJson().extractingPath("$.vendidoPor").isEqualTo("Eva Paz");
+		assertThat(ficha).bodyJson().extractingPath("$.clienteNombre").isNull();
+		assertThat(ficha).bodyJson().extractingPath("$.nombreRetira").isNull();
+		assertThat(ficha).bodyJson().extractingPath("$.estado").isEqualTo("ENTREGADO");
+	}
+
+	// HU-23 RF-11: una venta del mostrador sin comprador, pagada tarde, queda «Pagado» y se entrega desde /pedidos
+	@Test
+	void seEntregaUnaVentaDelMostradorPagadaTarde() throws Exception {
+		Integer venta = ventas().conQr(null, "emp.hu17@mail.com", java.util.Map.of(martillo, "2")).intValue();
+		var cobro = cobroRepository.findAll().stream()
+				.filter(c -> c.getPedido().getIdPedido().equals(Long.valueOf(venta))).findFirst().orElseThrow();
+		reloj.avanzar(Duration.ofMinutes(11));
+		vencimiento.vencer();
+		simulador.forzar(cobro.getReferencia(), EstadoDelCobro.PAGADO);
+		conciliacion.conciliar(cobro.getIdCobro());
+		assertThat(estado(venta)).isEqualTo(EstadoPedido.PAGADO);
+
+		assertThat(entregar(empleado, venta)).hasStatus(HttpStatus.OK);
+
+		assertThat(estado(venta)).isEqualTo(EstadoPedido.ENTREGADO);
 	}
 }

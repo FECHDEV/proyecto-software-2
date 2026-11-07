@@ -111,7 +111,8 @@ class CobroRepositoryTest {
 		em.clear();
 
 		assertThat(cobroRepository.datosParaConciliar(pendiente.getIdCobro())).contains(new CobroAConciliar(
-				pendiente.getIdCobro(), "TM-pend", pedido.getIdPedido(), ana.getIdUsuario()));
+				pendiente.getIdCobro(), "TM-pend", pedido.getIdPedido(), ana.getIdUsuario(),
+				bo.edu.uagrm.tienda.entity.Canal.EN_LINEA));
 		assertThat(cobroRepository.datosParaConciliar(pagado.getIdCobro())).isEmpty();
 	}
 

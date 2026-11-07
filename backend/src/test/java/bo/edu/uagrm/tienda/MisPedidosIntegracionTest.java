@@ -97,6 +97,9 @@ class MisPedidosIntegracionTest {
 	@Autowired
 	private UsuarioRepository usuarioRepository;
 
+	@Autowired
+	private org.springframework.transaction.PlatformTransactionManager transacciones;
+
 	private String admin;
 	private String ana;
 	private String beto;
@@ -330,5 +333,30 @@ class MisPedidosIntegracionTest {
 			assertThat(resultado).hasStatus(HttpStatus.OK);
 			assertThat(resultado).bodyJson().extractingPath("$.pagina.pagina").isEqualTo(0);
 		}
+	}
+
+	// --- HU-23: la venta del mostrador a nombre del Cliente ---
+
+	// HU-23 RF-17: la ya pagada aparece «En tienda», sin datos de retiro; la que espera el QR no aparece, ni arriba ni en
+	// la lista
+	@Test
+	void muestraLaVentaDelMostradorPagadaYNoLaPendiente() throws Exception {
+		VentasDePrueba ventas = new VentasDePrueba(pedidoRepository, productoRepository, usuarioRepository,
+				movimientoRepository, cobroRepository, simulador, reloj, transacciones);
+		Long pagada = ventas.enEfectivo("ana.hu14@mail.com", ADMIN, java.util.Map.of(martillo, "2"));
+		ventas.conQr("ana.hu14@mail.com", ADMIN, java.util.Map.of(martillo, "1"));
+
+		MvcTestResult lista = get(PEDIDOS, ana);
+
+		assertThat(lista).hasStatus(HttpStatus.OK);
+		assertThat(lista).bodyJson().extractingPath("$.pendiente").isNull();
+		assertThat(lista).bodyJson().extractingPath("$.pagina.contenido[*].idPedido").asArray()
+				.containsExactly(pagada.intValue());
+		assertThat(lista).bodyJson().extractingPath("$.pagina.contenido[0].canal").isEqualTo("TIENDA");
+		MvcTestResult pedido = get(PEDIDOS + "/{id}", ana, pagada);
+		assertThat(pedido).hasStatus(HttpStatus.OK);
+		assertThat(pedido).bodyJson().extractingPath("$.canal").isEqualTo("TIENDA");
+		assertThat(pedido).bodyJson().extractingPath("$.estado").isEqualTo("ENTREGADO");
+		assertThat(pedido).bodyJson().extractingPath("$.nombreRetira").isNull();
 	}
 }

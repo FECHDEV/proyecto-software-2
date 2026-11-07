@@ -138,6 +138,18 @@ describe('PanelPage', () => {
     }
   });
 
+  // HU-23 RF-24: la tarjeta Nueva venta para el Empleado y el Administrador; el Contador y el Cliente no
+  it('tarjetaNuevaVentaSegunElRol', () => {
+    for (const rol of ['EMPLEADO', 'ADMINISTRADOR'] as const) {
+      sesion.iniciar(sesionCon(rol));
+      expect(crear().querySelector('a[href="/ventas/nueva"]')?.textContent).toContain('Nueva venta');
+    }
+    for (const rol of ['CONTADOR', 'CLIENTE'] as const) {
+      sesion.iniciar(sesionCon(rol));
+      expect(crear().querySelector('a[href="/ventas/nueva"]')).toBeNull();
+    }
+  });
+
   // HU-07 RF-1
   it('el administrador tiene el acceso a productos', () => {
     sesion.iniciar(sesionCon('ADMINISTRADOR'));

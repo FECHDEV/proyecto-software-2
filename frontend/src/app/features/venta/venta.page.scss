@@ -1,0 +1,284 @@
+// «Nueva venta» (HU-23), con el tono sobrio del panel (DESIGN.md → Overview):
+// superficies verdes y formularios rectos. Los campos, el botón secundario y
+// los avisos salen de _lista.scss; las líneas van en la placa de lona, como
+// el carrito y la lista de pedidos, y «Cobrar en efectivo» es la acción
+// principal en amarillo
+@use '../../../styles/controles';
+
+:host {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-6);
+}
+
+h1 {
+	margin: 0;
+}
+
+h2 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+}
+
+.armado {
+	display: grid;
+	grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+	gap: var(--app-espacio-6);
+	align-items: start;
+}
+
+.columna {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-6);
+	min-width: 0;
+}
+
+.bloque {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-4);
+	padding: var(--app-espacio-6);
+	border: 1px solid var(--app-borde);
+	border-radius: var(--app-radio);
+	background: var(--app-superficie);
+}
+
+// --- Las líneas, en la placa de lona ---
+
+// Sobre la lona clara, el acento (el foco) y el error van oscuros: los del modo oscuro no se leen (como el carrito)
+.lineas {
+	--app-acento-texto: var(--app-sobre-lona);
+	--app-error: var(--app-error-sobre-lona);
+	margin: 0;
+	padding: var(--app-espacio-2) var(--app-espacio-4);
+	list-style: none;
+	border-radius: var(--app-radio);
+	background: var(--app-lona) var(--app-textura-cruda);
+	background-blend-mode: soft-light;
+	color: var(--app-sobre-lona);
+}
+
+.linea {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) max-content max-content var(--app-area-tocable);
+	grid-template-areas:
+		'nombre cantidad subtotal quitar'
+		'precio cantidad subtotal quitar'
+		'aviso aviso aviso aviso';
+	gap: var(--app-espacio-1) var(--app-espacio-3);
+	align-items: center;
+	padding: var(--app-espacio-3) 0;
+	border-bottom: 1px solid color-mix(in srgb, var(--app-sobre-lona) 12%, transparent);
+
+	&:last-child {
+		border-bottom: 0;
+	}
+
+	// Una línea con algo que corregir: costura a la izquierda, además del aviso escrito
+	&.marcada {
+		box-shadow: inset 4px 0 0 var(--app-error);
+		padding-left: var(--app-espacio-3);
+	}
+
+	p {
+		margin: 0;
+	}
+
+	.nombre {
+		grid-area: nombre;
+		font-weight: 600;
+		overflow-wrap: anywhere;
+	}
+
+	.precio {
+		grid-area: precio;
+		color: var(--app-sobre-lona-suave);
+		font-size: 14px;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.cantidad {
+		grid-area: cantidad;
+
+		// Como el carrito: entra 999,99 entero (DESIGN.md → Inputs: «Cantidad con − y +»)
+		input {
+			width: 5rem;
+			padding: var(--app-espacio-2) var(--app-espacio-1);
+			font-variant-numeric: tabular-nums;
+			text-align: center;
+		}
+
+	}
+
+	.subtotal {
+		grid-area: subtotal;
+		min-width: 6rem;
+		font-variant-numeric: tabular-nums;
+		font-weight: 600;
+		text-align: right;
+	}
+
+	.quitar {
+		grid-area: quitar;
+		display: inline-grid;
+		place-items: center;
+		width: var(--app-area-tocable);
+		height: var(--app-area-tocable);
+		border: 0;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
+
+		&[aria-disabled='true'] {
+			cursor: not-allowed;
+			opacity: 0.5;
+		}
+
+		svg {
+			width: var(--app-icono);
+			height: var(--app-icono);
+		}
+	}
+
+	.aviso-linea {
+		grid-area: aviso;
+		color: var(--app-error);
+		font-size: 14px;
+		font-weight: 600;
+
+		&:empty {
+			display: none;
+		}
+	}
+}
+
+// Un campo con error: borde de 2 px del color de error (DESIGN.md → Inputs), como _formulario.scss
+input[aria-invalid='true'] {
+	border: 2px solid var(--app-error);
+}
+
+// --- El comprador ---
+
+.comprador {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-1);
+	margin: 0;
+
+	span {
+		color: var(--app-texto-suave);
+		font-size: 14px;
+		overflow-wrap: anywhere;
+	}
+}
+
+.buscar-comprador {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) max-content;
+	gap: var(--app-espacio-3);
+	align-items: end;
+}
+
+.error-campo {
+	margin: 0;
+	color: var(--app-error);
+	font-size: 14px;
+}
+
+// --- El cobro ---
+
+.total {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-2);
+	align-items: baseline;
+	justify-content: space-between;
+	margin: 0;
+	padding-bottom: var(--app-espacio-3);
+	border-bottom: 3px solid var(--app-ambar);
+	color: var(--app-texto-suave);
+	font-size: 14px;
+	font-weight: 600;
+	text-transform: uppercase;
+
+	strong {
+		color: var(--app-titulo);
+		font-family: var(--app-familia-titulos);
+		font-size: clamp(28px, 9vw, 40px);
+		font-variant-numeric: tabular-nums;
+		font-weight: 800;
+	}
+}
+
+.efectivo {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-3);
+}
+
+.cambio {
+	min-height: 1.5em;
+	margin: 0;
+	font-variant-numeric: tabular-nums;
+
+	strong {
+		font-size: 22px;
+	}
+}
+
+.principal {
+	min-height: 52px;
+	padding: 0 var(--app-espacio-8);
+	border: 0;
+	background: var(--app-ambar);
+	color: var(--app-sobre-ambar);
+	font-family: var(--app-familia-titulos);
+	font-size: 22px;
+	font-weight: 800;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition:
+		background-color var(--app-transicion),
+		transform var(--app-duracion-rapida) var(--app-curva-salida);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.principal:hover:not([aria-disabled='true']) {
+		background: var(--app-ambar-fuerte);
+	}
+}
+
+.principal:active:not([aria-disabled='true']) {
+	transform: scale(0.97);
+}
+
+.principal[aria-disabled='true'],
+.con-qr[aria-disabled='true'] {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+@media (max-width: 860px) {
+	.armado {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+@media (max-width: 560px) {
+	// La cantidad y el subtotal, cada uno en su fila: un importe grande (Bs 99.899.990,01) tapaba el «+»
+	.linea {
+		grid-template-columns: minmax(0, 1fr) max-content;
+		grid-template-areas:
+			'nombre quitar'
+			'precio quitar'
+			'cantidad cantidad'
+			'subtotal subtotal'
+			'aviso aviso';
+	}
+
+	.buscar-comprador {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

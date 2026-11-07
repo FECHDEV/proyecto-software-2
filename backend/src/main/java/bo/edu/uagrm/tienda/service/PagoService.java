@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import bo.edu.uagrm.tienda.dto.PedidoResponse;
+import bo.edu.uagrm.tienda.entity.Canal;
 import bo.edu.uagrm.tienda.entity.Cobro;
 import bo.edu.uagrm.tienda.entity.Pedido;
 import bo.edu.uagrm.tienda.exception.CobroNoDisponibleException;
@@ -158,7 +159,8 @@ public class PagoService {
 
 	// El pedido de otro cliente responde igual que uno inexistente (RF-14)
 	private void exigirDueño(Long idUsuario, Long idPedido) {
-		if (pedidoRepository.findByIdPedidoAndUsuario_IdUsuario(idPedido, idUsuario).isEmpty()) {
+		// Solo en línea: una venta del mostrador la cobra el personal (HU-23 RF-23)
+		if (pedidoRepository.findByIdPedidoAndUsuario_IdUsuarioAndCanal(idPedido, idUsuario, Canal.EN_LINEA).isEmpty()) {
 			throw new PedidoNoEncontradoException();
 		}
 	}

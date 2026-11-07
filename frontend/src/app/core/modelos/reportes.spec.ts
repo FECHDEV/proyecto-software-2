@@ -11,6 +11,7 @@ const DE_ENTRADA: FiltrosDeReportes = {
   desde: '2026-10-01',
   hasta: HOY,
   tipo: null,
+  canal: null,
   orden: 'MAS',
   dias: 30,
   pagina: 0,
@@ -24,13 +25,14 @@ describe('consulta de reportes', () => {
     expect(consultaDeReportes(DE_ENTRADA, HOY)).toEqual({});
   });
 
-  // HU-18 RF-2, RF-5: lo que filtra queda en la dirección; lo de entrada, no
+  // HU-18 RF-2, RF-5: lo que filtra queda en la dirección; lo de entrada, no. HU-23 RF-22: también el canal
   it('lee y escribe lo que filtra', () => {
     const filtros: FiltrosDeReportes = {
       seccion: 'productos',
       desde: '2026-09-01',
       hasta: '2026-09-30',
       tipo: 'TALLER',
+      canal: 'TIENDA',
       orden: 'MENOS',
       dias: 60,
       pagina: 2,
@@ -42,6 +44,7 @@ describe('consulta de reportes', () => {
       desde: '2026-09-01',
       hasta: '2026-09-30',
       tipo: 'TALLER',
+      canal: 'TIENDA',
       orden: 'MENOS',
       dias: 60,
       pagina: 2,

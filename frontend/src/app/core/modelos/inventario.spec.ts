@@ -13,6 +13,8 @@ function movimiento(cambios: Partial<Movimiento>): Movimiento {
     idPedido: null,
     contado: null,
     comprometido: null,
+    canal: null,
+    estadoPedido: null,
     ...cambios,
   };
 }
@@ -31,6 +33,21 @@ describe('descripcionDeMovimiento', () => {
     );
     expect(descripcionDeMovimiento(movimiento({ tipo: 'LIBERACION', cantidad: 2, idPedido: 12 }))).toBe(
       'Liberación por pedido N.º 12',
+    );
+  });
+
+  // HU-23 (decisiones de la historia): la venta del mostrador y su anulación se nombran por lo que son
+  it('movimientosDeVentaYAnulacion', () => {
+    const deVenta = { idPedido: 31, canal: 'TIENDA' as const };
+    expect(descripcionDeMovimiento(movimiento({ ...deVenta, tipo: 'RESERVA', estadoPedido: 'ENTREGADO' }))).toBe(
+      'Venta en tienda N.º 31',
+    );
+    expect(descripcionDeMovimiento(movimiento({ ...deVenta, tipo: 'LIBERACION', estadoPedido: 'ANULADO' }))).toBe(
+      'Anulación de venta N.º 31',
+    );
+    // Un QR cancelado o vencido en el mostrador: el stock volvió, sin anulación
+    expect(descripcionDeMovimiento(movimiento({ ...deVenta, tipo: 'LIBERACION', estadoPedido: 'CANCELADO' }))).toBe(
+      'Liberación por venta en tienda N.º 31',
     );
   });
 });

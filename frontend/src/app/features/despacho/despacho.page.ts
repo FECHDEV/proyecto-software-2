@@ -5,6 +5,8 @@ import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { DespachoService } from '../../core/api/despacho.service';
 import { mensajeDeError } from '../../core/api/mensajes-error';
 import {
+	CanalDeDespacho,
+	CANALES_DE_DESPACHO,
 	consultaDeDespacho,
 	EstadoDeDespacho,
 	ESTADOS_DE_DESPACHO,
@@ -12,6 +14,7 @@ import {
 } from '../../core/modelos/despacho';
 import { comoErrorApi } from '../../core/modelos/error-api';
 import { NOMBRES_DE_ESTADO, TONO_DE_ESTADO } from '../../core/modelos/pedido';
+import { NOMBRES_DE_CANAL } from '../../core/modelos/venta';
 import { fechaCorta } from '../../shared/formato/fechas';
 import { precio } from '../../shared/formato/precios';
 import { paginaDeLaUrl } from '../../shared/navegacion/pagina-de-la-url';
@@ -21,8 +24,9 @@ import { ultimoValor } from '../../shared/recursos/ultimo-valor';
 const ESPERA_DE_BUSQUEDA_MS = 300;
 
 // Los pedidos de todos los clientes, para el personal (HU-17 RF-1 a RF-3): de
-// entrada los pagados, que esperan retiro. El estado, la búsqueda y la página
-// viven en la dirección, como en el inventario. Cada fila lleva a su ficha
+// entrada los pagados, que esperan retiro. El estado, el canal (HU-23 RF-16),
+// la búsqueda y la página viven en la dirección, como en el inventario. Cada
+// fila lleva a su ficha
 @Component({
 	selector: 'app-despacho',
 	imports: [RouterLink],
@@ -54,6 +58,8 @@ export class DespachoPage {
 	private espera: ReturnType<typeof setTimeout> | null = null;
 
 	protected readonly estados = ESTADOS_DE_DESPACHO;
+	protected readonly canales = CANALES_DE_DESPACHO;
+	protected readonly nombresDeCanal = NOMBRES_DE_CANAL;
 	protected readonly nombresDeEstado = NOMBRES_DE_ESTADO;
 	protected readonly tono = TONO_DE_ESTADO;
 	protected readonly fecha = fechaCorta;
@@ -78,6 +84,10 @@ export class DespachoPage {
 		return estado === 'TODOS' ? 'Todos' : NOMBRES_DE_ESTADO[estado];
 	}
 
+	protected nombreDelCanal(canal: CanalDeDespacho): string {
+		return canal === 'TODOS' ? 'Todos' : NOMBRES_DE_CANAL[canal];
+	}
+
 	protected productos(cantidad: number): string {
 		return cantidad === 1 ? '1 producto' : `${cantidad} productos`;
 	}
@@ -97,6 +107,10 @@ export class DespachoPage {
 
 	protected alElegirEstado(valor: string): void {
 		this.filtrar({ estado: estadoDe(valor) });
+	}
+
+	protected alElegirCanal(valor: string): void {
+		this.filtrar({ canal: canalDe(valor) });
 	}
 
 	protected irAPagina(pagina: number): void {
@@ -136,14 +150,20 @@ function estadoDe(valor: string | null): EstadoDeDespacho {
 	return ESTADOS_DE_DESPACHO.find((estado) => estado === valor) ?? 'PAGADO';
 }
 
+// Un canal que no existe es «Todos» (HU-23 RF-16)
+function canalDe(valor: string | null): CanalDeDespacho {
+	return CANALES_DE_DESPACHO.find((canal) => canal === valor) ?? 'TODOS';
+}
+
 function leerFiltros(consulta: ParamMap): FiltrosDeDespacho {
 	return {
 		estado: estadoDe(consulta.get('estado')),
+		canal: canalDe(consulta.get('canal')),
 		texto: consulta.get('texto') ?? '',
 		pagina: paginaDeLaUrl(consulta.get('pagina')),
 	};
 }
 
 function mismosFiltros(a: FiltrosDeDespacho, b: FiltrosDeDespacho): boolean {
-	return a.estado === b.estado && a.texto === b.texto && a.pagina === b.pagina;
+	return a.estado === b.estado && a.canal === b.canal && a.texto === b.texto && a.pagina === b.pagina;
 }

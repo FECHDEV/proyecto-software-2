@@ -10,6 +10,7 @@ const FILTROS: FiltrosDeReportes = {
   desde: '2026-10-01',
   hasta: '2026-10-22',
   tipo: null,
+  canal: null,
   orden: 'MAS',
   dias: 30,
   pagina: 0,
@@ -198,5 +199,30 @@ describe('ReportesResumen', () => {
     await fixture.whenStable();
     expect(texto()).toContain('No hubo ventas a clientes «Contratista» en este período.');
     expect(pantalla().querySelectorAll('app-tabla-de-ventas')).toHaveLength(1);
+  });
+
+  // HU-23 RF-22: el resumen reparte los ingresos por canal y por medio de pago
+  it('elResumenRepartePorCanalYMedio', async () => {
+    await abrir((falso) =>
+      falso.ventasRecurso.value.set(
+        ventas({
+          porCanal: [
+            { canal: 'EN_LINEA', ingresos: 400, pedidos: 2 },
+            { canal: 'TIENDA', ingresos: 200, pedidos: 1 },
+          ],
+          porMedio: [
+            { medio: 'EFECTIVO', ingresos: 150, pedidos: 1 },
+            { medio: 'QR', ingresos: 450, pedidos: 2 },
+          ],
+        }),
+      ),
+    );
+
+    expect(filas('Por canal').map((fila) => [fila[0], fila[1]])).toEqual([
+      ['En línea', '2'],
+      ['En tienda', '1'],
+    ]);
+    expect(filas('Por medio de pago').map((fila) => fila[0])).toEqual(['Efectivo', 'QR']);
+    expect(filas('Por medio de pago')[0][2]).toContain('150,00');
   });
 });

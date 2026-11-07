@@ -29,6 +29,12 @@ const PAGADO: FichaDePedido = {
   entregadoPor: null,
   clienteNombre: 'Ana Paz',
   clienteCorreo: 'ana@mail.com',
+  canal: 'EN_LINEA',
+  medioPago: null,
+  vendidoPor: null,
+  anulado: null,
+  anuladoPor: null,
+  motivoAnulacion: null,
 };
 
 const ENTREGADO: FichaDePedido = {
@@ -250,5 +256,37 @@ describe('DespachoPedidoPage', () => {
     await abrir('/pedidos/abc', 'EMPLEADO', (falso) => falso.recurso.value.set(undefined));
     expect(despacho.id!()).toBeNull();
     expect(texto()).toContain('No encontramos ese pedido.');
+  });
+
+  // HU-23 RF-16: la ficha de una venta del mostrador a consumidor final: el canal, el cobro, quién vendió y su
+  // comprobante, sin datos de retiro
+  it('fichaDeVentaDelMostrador', async () => {
+    await abrir('/pedidos/31', 'CONTADOR', (falso) =>
+      falso.recurso.value.set({
+        ...ENTREGADO,
+        idPedido: 31,
+        nombreRetira: null,
+        telefonoRetira: null,
+        nota: null,
+        clienteNombre: null,
+        clienteCorreo: null,
+        canal: 'TIENDA',
+        medioPago: 'EFECTIVO',
+        vendidoPor: 'Eva Rojas',
+        anulado: '2026-10-21T17:00:00',
+        anuladoPor: 'Fabio Cruz',
+        motivoAnulacion: 'Producto equivocado',
+        estado: 'ANULADO',
+      }),
+    );
+
+    expect(texto()).toContain('Venta en tienda');
+    expect(texto()).toContain('Efectivo');
+    expect(texto()).toContain('Eva Rojas');
+    expect(texto()).toContain('Consumidor final');
+    expect(texto()).toContain('Fabio Cruz: Producto equivocado');
+    expect(texto()).not.toContain('Quién lo retira');
+    expect(pantalla().querySelector('.estado')?.textContent?.trim()).toBe('Anulado');
+    expect(pantalla().querySelector('a[href="/ventas/31"]')).not.toBeNull();
   });
 });

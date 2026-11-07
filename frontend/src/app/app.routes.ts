@@ -171,6 +171,21 @@ export const routes: Routes = [
     data: { roles: ROLES_DE.pedidos },
     loadComponent: () => import('./features/despacho-pedido/despacho-pedido.page').then((m) => m.DespachoPedidoPage),
   },
+  // La venta del mostrador (HU-23): la registran el Empleado y el Administrador; el comprobante lo ve el personal
+  {
+    path: 'ventas/nueva',
+    title: `Nueva venta · ${MARCA.nombre}`,
+    canActivate: [rolGuard],
+    data: { roles: ROLES_DE.ventas },
+    loadComponent: () => import('./features/venta/venta.page').then((m) => m.VentaPage),
+  },
+  {
+    path: 'ventas/:id',
+    title: `Comprobante · ${MARCA.nombre}`,
+    canActivate: [rolGuard],
+    data: { roles: ROLES_DE.pedidos },
+    loadComponent: () => import('./features/comprobante/comprobante.page').then((m) => m.ComprobantePage),
+  },
   // Los reportes: el Contador y el Administrador; el Empleado no (HU-18 RF-1)
   {
     path: 'reportes',

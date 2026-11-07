@@ -28,8 +28,9 @@ public class DespachoController {
 	// Los parámetros llegan como texto: un estado o una página que no sirven muestran lo más cercano, sin 400 (RF-12)
 	@GetMapping
 	public PaginaResponse<PedidoDespachoResumenResponse> lista(@RequestParam(required = false) String estado,
-			@RequestParam(required = false) String texto, @RequestParam(required = false) String pagina) {
-		return despachoService.lista(estado, texto, Paginas.numeroDePagina(pagina));
+			@RequestParam(required = false) String canal, @RequestParam(required = false) String texto,
+			@RequestParam(required = false) String pagina) {
+		return despachoService.lista(estado, canal, texto, Paginas.numeroDePagina(pagina));
 	}
 
 	@GetMapping(ID)

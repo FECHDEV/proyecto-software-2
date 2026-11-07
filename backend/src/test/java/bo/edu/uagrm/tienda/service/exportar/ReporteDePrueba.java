@@ -58,7 +58,7 @@ final class ReporteDePrueba {
 		VentasResponse ventas = new VentasResponse(
 				new PeriodoResponse(DESDE, HASTA, LocalDate.of(2025, 9, 9), LocalDate.of(2025, 9, 30), "DIA"),
 				actual, anterior, porFecha, porDiaSemana(bs("970.00"), 3), porHora(bs("970.00"), 3),
-				List.of(new PorCategoria("Herramientas", bs("970.00"), 3, bs("145.00"))), porTipo(bs("970.00"), 3));
+				List.of(new PorCategoria("Herramientas", bs("970.00"), 3, bs("145.00"))), porTipo(bs("970.00"), 3), List.of(), List.of());
 		return new ReporteCompleto(ventas, new ResumenDePerdidos(1, bs("120.00"), 4, 3, bs("75.0")), masVendidos,
 				List.of(vendido(4L, "Sierra", "0", "0.00", null), vendido(2L, "Llave ñandú 🔧", "5", "50.00", null)),
 				List.of(new ProductoSinVenta(5L, "HER-0005", "Rastrillo", UnidadVenta.UNIDAD, bs("3"), bs("20.00"),
@@ -66,7 +66,7 @@ final class ReporteDePrueba {
 				List.of(new ProductoPerdido(1L, "HER-0001", "Taladro", UnidadVenta.UNIDAD, bs("1"), bs("120.00"))),
 				List.of(new ClienteInactivo(9L, "Ana", "Paz", "ana@mail.com", "70000000", TipoCliente.CONTRATISTA,
 						LocalDateTime.of(2025, 7, 1, 10, 0), 4, bs("1200.00"))),
-				TipoCliente.CONTRATISTA, 60, GENERADO, "Fabio Cruz");
+				TipoCliente.CONTRATISTA, null, 60, GENERADO, "Fabio Cruz");
 	}
 
 	// Sin ventas en el período: las listas que no dependen de él siguen con filas (RF-9)
@@ -77,12 +77,12 @@ final class ReporteDePrueba {
 		VentasResponse ventas = new VentasResponse(
 				new PeriodoResponse(DESDE, HASTA, LocalDate.of(2025, 9, 9), LocalDate.of(2025, 9, 30), "DIA"), cero,
 				cero, porFecha, porDiaSemana(bs("0.00"), 0), porHora(bs("0.00"), 0), List.of(),
-				porTipo(bs("0.00"), 0));
+				porTipo(bs("0.00"), 0), List.of(), List.of());
 		return new ReporteCompleto(ventas, new ResumenDePerdidos(0, bs("0.00"), 0, 0, null), List.of(),
 				List.of(vendido(4L, "Sierra", "0", "0.00", null)),
 				List.of(new ProductoSinVenta(5L, "HER-0005", "Rastrillo", UnidadVenta.UNIDAD, bs("3"), bs("20.00"),
 						null, null, 100, bs("60.00"), true)),
-				List.of(), List.of(), null, 30, GENERADO, "Fabio Cruz");
+				List.of(), List.of(), null, null, 30, GENERADO, "Fabio Cruz");
 	}
 
 	// Un año: por mes, 13 filas (de octubre de 2024 a octubre de 2025)
@@ -97,9 +97,9 @@ final class ReporteDePrueba {
 		VentasResponse ventas = new VentasResponse(
 				new PeriodoResponse(desde, HASTA, LocalDate.of(2023, 10, 21), LocalDate.of(2024, 10, 21), "MES"),
 				actual, base.ventas().anterior(), meses, porDiaSemana(bs("130.00"), 13), porHora(bs("130.00"), 13),
-				List.of(), porTipo(bs("130.00"), 13));
+				List.of(), porTipo(bs("130.00"), 13), List.of(), List.of());
 		return new ReporteCompleto(ventas, base.perdidos(), base.masVendidos(), base.menosVendidos(),
-				base.sinVenta(), base.productosPerdidos(), base.clientesInactivos(), null, 30, GENERADO,
+				base.sinVenta(), base.productosPerdidos(), base.clientesInactivos(), null, null, 30, GENERADO,
 				"Fabio Cruz");
 	}
 

@@ -37,6 +37,9 @@ describe('mensajeDeError', () => {
     // HU-13 RF-3, RF-12
     ['COBRO_NO_DISPONIBLE', 'Intente de nuevo'],
     ['COBRO_NO_ENCONTRADO', 'cobro'],
+    // HU-23
+    ['VENTA_NO_ENCONTRADA', 'venta'],
+    ['VENTA_NO_ANULABLE', 'anular'],
   ])('traduce %s', (codigo, motivo) => {
     const mensaje = mensajeDeError(error(codigo));
 
