@@ -561,4 +561,33 @@ class ReportesIntegracionTest {
 		assertThat(resumen).bodyJson().extractingPath("$.importe").isEqualTo(100.0);
 		assertThat(perdidos(OCTUBRE + "&canal=TIENDA")).bodyJson().extractingPath("$.cantidad").isEqualTo(0);
 	}
+
+	// HU-23 RF-22 (/code-review): «Sin venderse» y «Clientes inactivos» también cuentan solo el canal elegido
+	@Test
+	void sinVenderseYClientesInactivosPorCanal() throws Exception {
+		// Ana compró en línea hace 40 días; Beto, hace 5. La pieza solo se vendió en línea, y tiene stock
+		pagado(ana, LocalDateTime.now().minusDays(40), 1);
+		pagado(beto, LocalDateTime.now().minusDays(5), 1);
+		pieza.aplicarMovimiento(new BigDecimal("10"));
+		productoRepository.save(pieza);
+
+		MvcTestResult inactivosEnLinea = mvc.get().uri("/api/reportes/clientes-inactivos?dias=30&canal=EN_LINEA")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + contador).exchange();
+		assertThat(inactivosEnLinea).bodyJson().extractingPath("$.contenido[*].correo").asArray()
+				.contains("ana.hu18@mail.com");
+		MvcTestResult inactivosEnTienda = mvc.get().uri("/api/reportes/clientes-inactivos?dias=30&canal=TIENDA")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + contador).exchange();
+		assertThat(inactivosEnTienda).bodyJson().extractingPath("$.contenido[*].correo").asArray()
+				.doesNotContain("ana.hu18@mail.com");
+
+		MvcTestResult sinVenderseEnLinea = mvc.get().uri("/api/reportes/sin-venta?dias=30&canal=EN_LINEA")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + contador).exchange();
+		MvcTestResult sinVenderseEnTienda = mvc.get().uri("/api/reportes/sin-venta?dias=30&canal=TIENDA")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + contador).exchange();
+		// En línea se vendió hace 5 días; en el mostrador, nunca
+		assertThat(sinVenderseEnLinea).bodyJson().extractingPath("$.contenido[*].idProducto").asArray()
+				.doesNotContain(pieza.getIdProducto().intValue());
+		assertThat(sinVenderseEnTienda).bodyJson().extractingPath("$.contenido[*].idProducto").asArray()
+				.contains(pieza.getIdProducto().intValue());
+	}
 }

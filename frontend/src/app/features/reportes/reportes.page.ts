@@ -82,8 +82,6 @@ export class ReportesPage {
 	// «Sin venderse» no depende del período ni del tipo; «Clientes», del período
 	protected readonly usaPeriodo = computed(() => !['sin-venta', 'clientes'].includes(this.filtros().seccion));
 	protected readonly usaTipo = computed(() => this.filtros().seccion !== 'sin-venta');
-	// HU-23 RF-22: el canal filtra lo que se vendió y lo perdido; «Sin venderse» y «Clientes» no dependen de él
-	protected readonly usaCanal = computed(() => ['resumen', 'productos', 'perdidos'].includes(this.filtros().seccion));
 
 	constructor() {
 		// Un período que no servía se lee como lo más cercano (RF-3): la dirección

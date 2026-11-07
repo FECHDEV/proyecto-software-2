@@ -80,14 +80,14 @@ export class ReportesService {
 	sinVenta(filtros: Signal<FiltrosDeReportes>): HttpResourceRef<Pagina<ProductoSinVenta> | undefined> {
 		return httpResource<Pagina<ProductoSinVenta>>(() => ({
 			url: `${REPORTES}/sin-venta`,
-			params: { dias: filtros().dias, ...pagina(filtros()) },
+			params: { dias: filtros().dias, ...canal(filtros()), ...pagina(filtros()) },
 		}));
 	}
 
 	clientesInactivos(filtros: Signal<FiltrosDeReportes>): HttpResourceRef<Pagina<ClienteInactivo> | undefined> {
 		return httpResource<Pagina<ClienteInactivo>>(() => ({
 			url: `${REPORTES}/clientes-inactivos`,
-			params: { dias: filtros().dias, ...tipo(filtros()), ...pagina(filtros()) },
+			params: { dias: filtros().dias, ...tipo(filtros()), ...canal(filtros()), ...pagina(filtros()) },
 		}));
 	}
 
@@ -130,7 +130,7 @@ function tipo(filtros: FiltrosDeReportes): Record<string, string> {
 	return filtros.tipo === null ? {} : { tipo: filtros.tipo };
 }
 
-// HU-23 RF-22: sin canal, los dos. Clientes inactivos y sin venderse no dependen del canal
+// HU-23 RF-21, RF-22: sin canal, los dos. En «Sin venderse» y «Clientes», la última venta o compra en ese canal
 function canal(filtros: FiltrosDeReportes): Record<string, string> {
 	return filtros.canal === null ? {} : { canal: filtros.canal };
 }

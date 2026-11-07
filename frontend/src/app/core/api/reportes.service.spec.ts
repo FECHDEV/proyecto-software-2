@@ -55,10 +55,11 @@ describe('ReportesService', () => {
   // HU-18 RF-11 a RF-13, RF-16, RF-18: cada lista con lo suyo y su página
   it('pide cada lista con su página', () => {
     const filtros = { ...DE_ENTRADA, tipo: 'TALLER' as const, orden: 'MENOS' as const, dias: 60 as const, pagina: 2 };
+    const enTienda = { ...filtros, canal: 'TIENDA' as const };
     TestBed.runInInjectionContext(() => {
       servicio.productos(signal(filtros));
-      servicio.sinVenta(signal(filtros));
-      servicio.clientesInactivos(signal(filtros));
+      servicio.sinVenta(signal(enTienda));
+      servicio.clientesInactivos(signal(enTienda));
       servicio.perdidos(signal(filtros));
       servicio.resumenDePerdidos(signal(filtros));
     });
@@ -68,10 +69,12 @@ describe('ReportesService', () => {
     expect(productos.request.params.keys().sort()).toEqual(['desde', 'hasta', 'orden', 'pagina', 'tipo']);
     expect(productos.request.params.get('orden')).toBe('MENOS');
     const sinVenta = pedido('/api/reportes/sin-venta');
-    expect(sinVenta.request.params.keys().sort()).toEqual(['dias', 'pagina']);
+    // HU-23 RF-21 (revisión de código): la última venta y la última compra, en ese canal
+    expect(sinVenta.request.params.keys().sort()).toEqual(['canal', 'dias', 'pagina']);
     expect(sinVenta.request.params.get('dias')).toBe('60');
     const clientes = pedido('/api/reportes/clientes-inactivos');
-    expect(clientes.request.params.keys().sort()).toEqual(['dias', 'pagina', 'tipo']);
+    expect(clientes.request.params.keys().sort()).toEqual(['canal', 'dias', 'pagina', 'tipo']);
+    expect(clientes.request.params.get('canal')).toBe('TIENDA');
     const perdidos = pedido('/api/reportes/perdidos');
     expect(perdidos.request.params.keys().sort()).toEqual(['desde', 'hasta', 'pagina', 'tipo']);
     expect(perdidos.request.params.get('pagina')).toBe('2');

@@ -233,4 +233,14 @@ describe('DespachoPage', () => {
     expect(url()).toBe('/pedidos?canal=TIENDA');
     expect(despacho.filtros!().canal).toBe('TIENDA');
   });
+
+  // HU-23 RF-16 (revisión de código): una venta del mostrador no queda «Pagado» al cobrarse; con «En tienda» y
+  // «Pagado» vacío, el aviso sugiere «Todos» sin cambiar el filtro que se eligió
+  it('enTiendaYPagadoVacioSugiereTodos', async () => {
+    await abrir(pagina([]), '/pedidos?canal=TIENDA');
+    expect(pantalla().querySelector('.vacio')?.textContent).toContain('elija «Todos» en el estado');
+
+    await abrir(pagina([]), '/pedidos?canal=EN_LINEA');
+    expect(pantalla().querySelector('.vacio')?.textContent).not.toContain('Todos');
+  });
 });

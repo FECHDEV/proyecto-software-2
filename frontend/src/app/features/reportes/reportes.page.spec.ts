@@ -249,9 +249,10 @@ describe('ReportesPage', () => {
     await harness.fixture.whenStable();
     expect(reportes.exportar).toHaveBeenCalledWith(expect.objectContaining({ canal: 'TIENDA' }), 'xlsx');
 
+    // Revisión de código: también en «Clientes» y «Sin venderse», que se cuentan por canal
     await abrir('/reportes?seccion=clientes');
-    expect(pantalla().querySelector('#filtro-canal')).toBeNull();
+    expect(pantalla().querySelector('#filtro-canal')).not.toBeNull();
     await abrir('/reportes?seccion=sin-venta');
-    expect(pantalla().querySelector('#filtro-canal')).toBeNull();
+    expect(pantalla().querySelector('#filtro-canal')).not.toBeNull();
   });
 });

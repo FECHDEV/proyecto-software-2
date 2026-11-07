@@ -55,14 +55,15 @@ public class ReportesController {
 
 	@GetMapping("/sin-venta")
 	public PaginaResponse<ProductoSinVenta> sinVenta(@RequestParam(required = false) String dias,
-			@RequestParam(required = false) String pagina) {
-		return reportesService.sinVenta(dias, Paginas.numeroDePagina(pagina));
+			@RequestParam(required = false) String canal, @RequestParam(required = false) String pagina) {
+		return reportesService.sinVenta(dias, Canal.deTexto(canal), Paginas.numeroDePagina(pagina));
 	}
 
 	@GetMapping("/clientes-inactivos")
 	public PaginaResponse<ClienteInactivo> clientesInactivos(@RequestParam(required = false) String dias,
-			@RequestParam(required = false) TipoCliente tipo, @RequestParam(required = false) String pagina) {
-		return reportesService.clientesInactivos(dias, tipo, Paginas.numeroDePagina(pagina));
+			@RequestParam(required = false) TipoCliente tipo, @RequestParam(required = false) String canal,
+			@RequestParam(required = false) String pagina) {
+		return reportesService.clientesInactivos(dias, tipo, Canal.deTexto(canal), Paginas.numeroDePagina(pagina));
 	}
 
 	// Las cifras de los pedidos perdidos, sin el resumen entero (RF-17)

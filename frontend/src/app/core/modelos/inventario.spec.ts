@@ -49,5 +49,16 @@ describe('descripcionDeMovimiento', () => {
     expect(descripcionDeMovimiento(movimiento({ ...deVenta, tipo: 'LIBERACION', estadoPedido: 'CANCELADO' }))).toBe(
       'Liberación por venta en tienda N.º 31',
     );
+    // Revisión de código: la reserva de un QR que no se pagó, o que espera el pago, no fue una venta
+    for (const estadoPedido of ['PENDIENTE_PAGO', 'CANCELADO', 'VENCIDO'] as const) {
+      expect(descripcionDeMovimiento(movimiento({ ...deVenta, tipo: 'RESERVA', estadoPedido }))).toBe(
+        'Reserva por venta en tienda N.º 31',
+      );
+    }
+    for (const estadoPedido of ['PAGADO', 'ANULADO', 'PAGO_A_DEVOLVER'] as const) {
+      expect(descripcionDeMovimiento(movimiento({ ...deVenta, tipo: 'RESERVA', estadoPedido }))).toBe(
+        'Venta en tienda N.º 31',
+      );
+    }
   });
 });

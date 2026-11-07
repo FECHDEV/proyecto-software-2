@@ -1507,7 +1507,11 @@ cuenta en los reportes junto con las en línea.
   la excepción a «todo lo que cambia un pedido bloquea antes la fila de su
   cliente» («Pedidos»). No toca el carrito ni el pedido en línea del cliente,
   y lo de en línea solo bloquea pedidos en línea de su cliente, así que ningún
-  camino espera en círculo.
+  camino espera en círculo. *07/11/2026 (revisión):* al registrarla, la venta
+  se inserta **antes** de bloquear los productos: la clave foránea toma un
+  bloqueo compartido de la cuenta del comprador, y así queda en el mismo orden
+  que en línea (cuenta, pedido, productos). El índice del pedido por cliente
+  pasa a `(id_usuario, canal, estado)`.
 - **Movimientos del stock:** la venta usa la «Reserva por pedido» y la
   anulación, la «Liberación por pedido», a nombre de quien vendió o anuló; la
   pantalla los nombra «Venta en tienda» y «Anulación de venta».
