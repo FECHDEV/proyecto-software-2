@@ -14,9 +14,13 @@ export function politicaDeContenido(html) {
   if (manejador) {
     throw new Error(`index.html tiene un manejador en un atributo, que la política bloquea: ${manejador[0]}`);
   }
-  const hashes = [...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/gi)].map(
-    ([, codigo]) => `'sha256-${createHash('sha256').update(codigo, 'utf8').digest('base64')}'`,
-  );
+  // El navegador pasa los fines de línea CRLF y CR a LF antes de calcular el hash (el HTML se normaliza al leerlo).
+  // Un checkout en Windows trae el index.html con CRLF: sin esto, el hash no coincide y el script del tema queda
+  // bloqueado
+  const hashes = [...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/gi)].map(([, codigo]) => {
+    const comoLoLeeElNavegador = codigo.replace(/\r\n?/g, '\n');
+    return `'sha256-${createHash('sha256').update(comoLoLeeElNavegador, 'utf8').digest('base64')}'`;
+  });
   return [
     "default-src 'self'",
     // 'unsafe-eval': los decodificadores del visor 3D (HU-16 RF-10) son WebAssembly, y el de KTX2 además arma sus

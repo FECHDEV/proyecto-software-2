@@ -590,6 +590,10 @@ puede leer la sesión.
   enlace a la pasarela de pago es una navegación, que la política no limita.
 - Las pruebas de extremo a extremo fallan si la política bloquea algo de la
   compra o del catálogo, y comprueban que un script inyectado no corre.
+- *06/11/2026.* **El hash se calcula con los fines de línea en LF,** como el
+  navegador, que pasa CRLF y CR a LF al leer el HTML. Un checkout en Windows
+  (`core.autocrlf`) trae el `index.html` con CRLF, y el script del tema quedaba
+  bloqueado en Docker en la PC; en Linux no pasaba.
 - *10/10/2026 (HU-05).* **Desactivar invalida las sesiones para siempre:** la
   cuenta lleva una versión de sesión que viaja en el token y se compara en cada
   petición, como la huella de la contraseña; desactivar la incrementa, así los
