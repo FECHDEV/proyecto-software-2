@@ -320,6 +320,26 @@ describe('PedidoPage', () => {
     expect(boton('Simular pago')).toBeUndefined();
   });
 
+  // 07/11/2026: el QR se baja como imagen para pagarlo desde la galería, en la app del banco
+  it('Descargar QR baja la imagen con el número del pedido', async () => {
+    await abrir('/mis-pedidos/12', (falso) => falso.recurso.value.set(CON_COBRO));
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      fillRect: () => {},
+    } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((listo) => listo(new Blob(['png'])));
+    URL.createObjectURL = vi.fn(() => 'blob:qr');
+    URL.revokeObjectURL = vi.fn();
+    const bajados: string[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      bajados.push(this.download);
+    });
+
+    await tocar('Descargar QR');
+
+    expect(bajados).toEqual(['pedido-12-qr.png']);
+    vi.restoreAllMocks();
+  });
+
   // HU-13 RF-3
   it('si el cobro no se puede generar avisa y deja reintentar', async () => {
     await abrir();

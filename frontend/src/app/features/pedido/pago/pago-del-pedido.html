@@ -16,6 +16,7 @@
       >
         Ya pagué
       </button>
+      <button type="button" class="secundario" (click)="descargar(cobro.codigoQr)">Descargar QR</button>
       @if (cobro.urlPasarela) {
         <a class="enlace" [href]="cobro.urlPasarela" target="_blank" rel="noopener noreferrer">
           Pagar en la página del sistema de pago<span class="solo-lectores"> (se abre en otra pestaña)</span>

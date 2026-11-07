@@ -4,10 +4,16 @@
 // styles.scss con .solo-pantalla y el encabezado de la aplicación)
 @use '../../../styles/controles';
 
+// En pantalla solo está el ticket: va al centro, con los botones y los avisos del mismo ancho encima (07/11/2026)
 :host {
 	display: flex;
 	flex-direction: column;
+	align-items: center;
 	gap: var(--app-espacio-6);
+
+	> * {
+		width: min(100%, 420px);
+	}
 }
 
 .acciones {
@@ -240,6 +246,10 @@ dialog {
 
 // Al imprimir: solo el ticket, en negro sobre blanco y del ancho de un rollo de 80 mm
 @media print {
+	:host {
+		align-items: flex-start;
+	}
+
 	.ticket {
 		width: 72mm;
 		padding: 0;
