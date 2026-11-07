@@ -4,17 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.HtmlUtils;
 
-import bo.edu.uagrm.tienda.config.SitioProperties;
-import bo.edu.uagrm.tienda.repository.ProductoRepository;
+import bo.edu.uagrm.tienda.config.CorreoProperties;
+import bo.edu.uagrm.tienda.service.CatalogoService;
 import lombok.RequiredArgsConstructor;
 
 // El mapa del sitio para los buscadores (plan 2026-11-07-seo): la portada, el catálogo y cada producto que el
@@ -22,22 +20,23 @@ import lombok.RequiredArgsConstructor;
 // exactas, y la del alta no dice cuándo cambió el producto
 @RestController
 @RequiredArgsConstructor
-@EnableConfigurationProperties(SitioProperties.class)
 public class MapaDelSitioController {
 
-	private final ProductoRepository productoRepository;
-	private final SitioProperties sitio;
+	private final CatalogoService catalogoService;
+	// La dirección pública de la tienda (TIENDA_SITIO_URL), la misma de los enlaces de los correos; nunca el Host de
+	// la petición, que lo manda el cliente
+	private final CorreoProperties sitio;
 
 	@GetMapping(value = "/api/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
-	@Transactional(readOnly = true)
 	public ResponseEntity<String> mapa() {
-		String origen = HtmlUtils.htmlEscape(sitio.url());
+		// Con la codificación, escapa solo & < > " ': las entidades con nombre de HTML no existen en XML
+		String origen = HtmlUtils.htmlEscape(sitio.urlDelSitio(), "UTF-8");
+		List<String> rutas = new ArrayList<>(List.of("/", "/catalogo"));
+		catalogoService.idsPublicos().forEach(id -> rutas.add("/producto/" + id));
 		StringBuilder xml = new StringBuilder("""
 				<?xml version="1.0" encoding="UTF-8"?>
 				<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 				""");
-		List<String> rutas = new ArrayList<>(List.of("/", "/catalogo"));
-		productoRepository.idsPublicos().forEach(id -> rutas.add("/producto/" + id));
 		rutas.forEach(ruta -> xml.append("  <url><loc>").append(origen).append(ruta).append("</loc></url>\n"));
 		xml.append("</urlset>\n");
 		// Una hora: los buscadores lo piden poco, y un producto nuevo no apura

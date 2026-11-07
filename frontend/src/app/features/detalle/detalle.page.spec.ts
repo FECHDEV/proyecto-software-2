@@ -382,6 +382,21 @@ describe('DetallePage', () => {
 
     expect(TestBed.inject(Meta).getTag('name="robots"')?.content).toBe('noindex');
     expect(datosEstructurados()).toBeNull();
+    expect(document.head.querySelector('link[rel="canonical"]')).toBeNull();
+  });
+
+  // Revisión: la pantalla sigue y su estado no cambia (dos direcciones basura): igual queda noindex, aunque la
+  // estrategia de títulos lo limpie al navegar
+  it('otraDireccionBasuraSigueSinIndexarse', async () => {
+    await abrir('/producto/abc');
+    expect(TestBed.inject(Meta).getTag('name="robots"')?.content).toBe('noindex');
+
+    // Lo que hace la estrategia de títulos al navegar
+    TestBed.inject(Meta).removeTag('name="robots"');
+    await harness.navigateByUrl('/producto/xyz');
+    await harness.fixture.whenStable();
+
+    expect(TestBed.inject(Meta).getTag('name="robots"')?.content).toBe('noindex');
   });
 
   // Caso límite: un error que no es 404 se puede reintentar

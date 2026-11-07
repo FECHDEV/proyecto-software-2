@@ -68,13 +68,35 @@ describe('TituloYDescripcion', () => {
     expect(document.head.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
   });
 
+  // Revisión: el origen es el público que nginx pone en og:image (el mismo del mapa del sitio), no el que se tipeó
+  it('laCanonicaUsaElOrigenPublico', async () => {
+    const imagen = document.createElement('meta');
+    imagen.setAttribute('property', 'og:image');
+    imagen.content = 'https://tienda.ejemplo/compartir.jpg';
+    document.head.appendChild(imagen);
+    try {
+      await router.navigateByUrl('/catalogo?pagina=2');
+      expect(canonica()).toBe('https://tienda.ejemplo/catalogo');
+
+      // Sin sustituir (ng serve), el de la página
+      imagen.content = '__ORIGEN__/compartir.jpg';
+      await router.navigateByUrl('/');
+      expect(canonica()).toBe(`${location.origin}/`);
+    } finally {
+      imagen.remove();
+    }
+  });
+
   // SEO: «Página no encontrada» responde 200 (la arma el navegador): que no se indexe; la próxima página sí
   it('noIndexaLaPaginaNoEncontrada', async () => {
     await router.navigateByUrl('/no-existe');
     expect(robots()).toBe('noindex');
+    // noindex y canónica a la vez se contradicen
+    expect(canonica()).toBeUndefined();
 
     await router.navigateByUrl('/catalogo');
     expect(robots()).toBeUndefined();
+    expect(canonica()).toBe(`${location.origin}/catalogo`);
   });
 
   // SEO: los datos del producto los pone el detalle; al irse, no quedan en otra página

@@ -78,6 +78,12 @@ public class CatalogoService {
 		return ProductoDetalleResponse.from(producto, relacionados);
 	}
 
+	// Lo que lista el mapa del sitio: la misma regla que el catálogo, también agotado (plan 2026-11-07-seo)
+	@Transactional(readOnly = true)
+	public List<Long> idsPublicos() {
+		return productoRepository.idsPublicos();
+	}
+
 	@Transactional(readOnly = true)
 	public List<String> marcas() {
 		return productoRepository.marcasDelCatalogo();

@@ -8,11 +8,13 @@ import {
 	effect,
 	ElementRef,
 	inject,
+	untracked,
 	viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Meta, Title } from '@angular/platform-browser';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
+import { filter } from 'rxjs';
 import { LucideCircleCheck, LucideCircleSlash, LucidePencil } from '@lucide/angular';
 import { comoErrorApi } from '../../core/modelos/error-api';
 
@@ -20,6 +22,7 @@ import { CatalogoService } from '../../core/api/catalogo.service';
 import { mensajeDeError } from '../../core/api/mensajes-error';
 import {
 	indexar,
+	origenPublico,
 	ponerDatosEstructurados,
 	ponerDescripcion,
 	resumen,
@@ -126,15 +129,23 @@ export class DetallePage {
 			if (producto !== undefined) {
 				pestana.setTitle(`${producto.nombre} · ${MARCA.nombre}`);
 				ponerDescripcion(meta, resumen(producto.descripcion ?? '') || MARCA.descripcion);
-				ponerDatosEstructurados(documento, datosDelProducto(producto, documento.location.origin));
-				indexar(meta, true);
 			}
 		});
-		// El que no existe responde 200 (lo arma el navegador): que no se indexe (plan 2026-11-07-seo)
+		// Los buscadores (plan 2026-11-07-seo). Con cada navegación, también si la
+		// pantalla sigue y el producto no cambia (/producto/abc → /producto/xyz):
+		// la estrategia de títulos los limpia al navegar, y esto corre después
+		const router = inject(Router);
+		const navegacion = toSignal(router.events.pipe(filter((evento) => evento instanceof NavigationEnd)));
 		effect(() => {
+			navegacion();
+			const producto = this.producto();
 			if (this.noDisponible()) {
-				indexar(meta, false);
+				// El que no existe responde 200 (lo arma el navegador): que no se indexe
+				indexar(documento, meta, null);
 				ponerDatosEstructurados(documento, null);
+			} else if (producto !== undefined) {
+				indexar(documento, meta, untracked(() => router.url));
+				ponerDatosEstructurados(documento, datosDelProducto(producto, origenPublico(documento)));
 			}
 		});
 

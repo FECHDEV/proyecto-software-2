@@ -24,33 +24,35 @@ export class TituloYDescripcion extends TitleStrategy {
 			this.titulo.setTitle(titulo);
 		}
 		ponerDescripcion(this.meta, descripcionDe(estado.root) ?? MARCA.descripcion);
-		ponerCanonica(this.documento, estado.url);
-		indexar(this.meta, seIndexa(estado.root));
+		indexar(this.documento, this.meta, seIndexa(estado.root) ? estado.url : null);
 		ponerDatosEstructurados(this.documento, null);
 	}
 }
 
-// Sin la consulta ni el fragmento: los filtros y las páginas del catálogo no
-// cuentan como otras páginas. El origen es el de la página que se ve
-export function ponerCanonica(documento: Document, url: string): void {
-	const camino = url.split(/[?#]/)[0] || '/';
-	let enlace = documento.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-	if (enlace === null) {
-		enlace = documento.createElement('link');
-		enlace.rel = 'canonical';
-		documento.head.appendChild(enlace);
-	}
-	enlace.href = `${documento.location.origin}${camino}`;
+// La dirección pública de la tienda, la misma del mapa del sitio: nginx la
+// pone en og:image al servir index.html (TIENDA_SITIO_URL), nunca con el Host
+// que manda el cliente. Sin ella (ng serve), la de la página que se ve
+export function origenPublico(documento: Document): string {
+	const imagen = documento.head.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content ?? '';
+	return /^https?:\/\//.test(imagen) ? new URL(imagen).origin : documento.location.origin;
 }
 
-// «Página no encontrada» y el producto que no existe responden 200, porque las
-// arma el navegador: con noindex, Google no las toma por páginas de la tienda
-export function indexar(meta: Meta, si: boolean): void {
-	if (si) {
-		meta.removeTag('name="robots"');
-	} else {
+// Con la dirección de la página, se indexa y lleva su canónica: el origen
+// público y el camino, sin la consulta ni el fragmento (los filtros y las
+// páginas del catálogo no cuentan como otras páginas). Con null, noindex y sin
+// canónica, que se contradirían: «Página no encontrada» y el producto que no
+// existe responden 200 porque los arma el navegador
+export function indexar(documento: Document, meta: Meta, url: string | null): void {
+	const enlace = documento.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+	if (url === null) {
 		meta.updateTag({ name: 'robots', content: 'noindex' });
+		enlace?.remove();
+		return;
 	}
+	meta.removeTag('name="robots"');
+	const canonica = enlace ?? documento.head.appendChild(documento.createElement('link'));
+	canonica.rel = 'canonical';
+	canonica.href = `${origenPublico(documento)}${url.split(/[?#]/)[0] || '/'}`;
 }
 
 // Los datos estructurados (schema.org) de la página, o null para sacarlos.
