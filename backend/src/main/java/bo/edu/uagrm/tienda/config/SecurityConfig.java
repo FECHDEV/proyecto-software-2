@@ -52,6 +52,8 @@ public class SecurityConfig {
 						.requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
 						// Lo que lee el catálogo es público; la gestión de la tienda es del Administrador (HU-06)
 						.requestMatchers(HttpMethod.GET, "/api/categorias/**", "/api/productos/**").permitAll()
+						// El mapa del sitio, para los buscadores
+						.requestMatchers(HttpMethod.GET, "/api/sitemap.xml").permitAll()
 						.requestMatchers("/api/gestion/**").hasRole("ADMINISTRADOR")
 						// El inventario lo leen el Empleado, el Administrador y el Contador; solo los dos primeros
 						// registran movimientos (HU-08)

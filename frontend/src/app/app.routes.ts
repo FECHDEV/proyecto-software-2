@@ -198,6 +198,7 @@ export const routes: Routes = [
   {
     path: '**',
     title: `Página no encontrada · ${MARCA.nombre}`,
+    data: { indexar: false },
     loadComponent: () => import('./features/no-encontrada/no-encontrada.page').then((m) => m.NoEncontradaPage),
   },
 ];

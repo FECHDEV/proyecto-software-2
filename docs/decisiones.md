@@ -199,6 +199,26 @@ fuentes, las pantallas quedan iguales (comparadas píxel a píxel).
   general de `core/marca.ts`; el detalle pone la del producto, en una línea y
   hasta 155 caracteres.
 
+- *07/11/2026 (`docs/planes/2026-11-07-seo.md`).*
+  - **Mapa del sitio:** `GET /api/sitemap.xml`, abierto, con la portada, el
+    catálogo y cada producto que el catálogo muestra (también agotado). nginx
+    lo sirve en `/sitemap.xml` y `robots.txt` lo anuncia, con la dirección
+    completa que nginx pone igual que en `og:image`. La API arma las
+    direcciones con `tienda.sitio.url` (la misma `TIENDA_SITIO_URL`), nunca
+    con el `Host`. Sin fechas: la del alta no dice cuándo cambió el producto.
+  - **Dirección canónica** en cada página: el origen y el camino, sin la
+    consulta, para que los filtros y las páginas del catálogo no cuenten como
+    otras páginas (el mapa ya lleva cada producto).
+  - **`noindex`** en «Página no encontrada» (`data.indexar: false`) y en el
+    producto que no existe: responden 200 porque las arma el navegador.
+  - **Datos estructurados del producto** (schema.org `Product` con su `Offer`
+    en BOB y si hay stock), en JSON-LD que pone el detalle y saca la
+    navegación. Google los lee aunque los ponga JavaScript; la política de
+    contenido no los bloquea porque no se ejecutan.
+  - **Sin SSR por ahora:** es lo único que daría una tarjeta por producto y
+    páginas legibles para los buscadores que no ejecutan JavaScript, pero
+    cambia el despliegue (un servidor de Node en lugar de nginx con archivos).
+
 **Motivo:** `noindex` y no `Disallow: /`. Con `Disallow`, Google puede listar
 la dirección igual (sin texto) y los bots de vista previa que respetan
 `robots.txt` dejan de armar la tarjeta. Va en Caddy y no en `index.html`
