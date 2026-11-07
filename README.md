@@ -219,7 +219,8 @@ bash scripts/copiar-env-al-servidor.sh root@<ip>
 
 Copia del `.env` de la PC Libélula, Gmail, la marca, el retiro y los datos del
 Administrador (no su contraseña ni las claves de la base y del JWT), apunta el
-catálogo de demostración a `/opt/demo-tienda` si está, y corre `completar`, que
+catálogo de demostración a `/opt/demo-tienda` si está (y le da permiso de
+lectura: `scp` desde Windows la deja solo para root), y corre `completar`, que
 pide la contraseña del Administrador la primera vez y levanta los contenedores.
 El catálogo se copia antes con `scp -r <carpeta> root@<ip>:/opt/demo-tienda`.
 Sin la PC, `completar` también se puede correr en el servidor con el `.env`
