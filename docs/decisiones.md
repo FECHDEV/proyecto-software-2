@@ -204,6 +204,36 @@ la dirección igual (sin texto) y los bots de vista previa que respetan
 `robots.txt` dejan de armar la tarjeta. Va en Caddy y no en `index.html`
 para que valga solo en el servidor público y se quite en una línea.
 
+*07/11/2026 (`docs/planes/2026-11-07-seo.md`).*
+
+- **Mapa del sitio:** `GET /api/sitemap.xml`, abierto, con la portada, el
+  catálogo y cada producto que el catálogo muestra (también agotado), según
+  `CatalogoService`. nginx lo sirve en `/sitemap.xml` y `robots.txt` lo
+  anuncia, con la dirección completa que nginx pone igual que en `og:image`.
+  Las direcciones salen de `TIENDA_SITIO_URL` (la de los correos), nunca del
+  `Host`. Sin fechas: la del alta no dice cuándo cambió el producto.
+- **Dirección canónica** en cada página que se indexa: el origen público y el
+  camino, sin la consulta, para que los filtros y las páginas del catálogo no
+  cuenten como otras páginas (el mapa ya lleva cada producto). El origen sale
+  de `og:image`, que nginx completa con `TIENDA_SITIO_URL`; sin él (`ng
+  serve`), el de la página.
+- **`noindex`, y sin canónica,** en «Página no encontrada» (`data.indexar:
+  false`) y en el producto que no existe: responden 200 porque las arma el
+  navegador.
+- **Datos estructurados del producto** (schema.org `Product` con su `Offer`
+  en BOB y si hay stock), en JSON-LD que pone el detalle y saca la
+  navegación. Google los lee aunque los ponga JavaScript; la política de
+  contenido no los bloquea porque no se ejecutan. `robots.txt` deja recorrer
+  las fotos de los productos (`Allow: /api/productos/*/imagenes/`), que los
+  datos anuncian.
+- **Sin SSR por ahora:** es lo único que daría una tarjeta por producto y
+  páginas legibles para los buscadores que no ejecutan JavaScript, pero
+  cambia el despliegue (un servidor de Node en lugar de nginx con archivos).
+
+**Motivo:** que Google encuentre cada producto sin seguir enlaces, no
+indexe las variantes de una misma página ni las que no existen, y pueda
+mostrar el precio y el stock en el resultado, sin cambiar el despliegue.
+
 ### Dependencias al día con Dependabot
 
 *29/10/2026.* `.github/dependabot.yml`: los lunes, Dependabot abre PRs con las

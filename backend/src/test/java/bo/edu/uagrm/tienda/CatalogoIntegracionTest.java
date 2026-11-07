@@ -417,4 +417,32 @@ class CatalogoIntegracionTest {
 		}
 		assertThat(get(PRODUCTOS + "/-1")).hasStatus(HttpStatus.NOT_FOUND);
 	}
+
+	// --- Buscadores (plan 2026-11-07-seo) ---
+
+	// El mapa del sitio: la portada, el catálogo y cada producto que el catálogo muestra, también agotado; ni los
+	// desactivados ni los de una categoría oculta. Sin sesión y con la dirección pública del sitio
+	@Test
+	void mapaDelSitioConLosProductosPublicos() throws Exception {
+		Integer martillo = producto("Martillo", null, herramientas, "85.00", 3, false);
+		Integer agotado = producto("Serrucho", null, herramientas, "60.00", 0, false);
+		Integer desactivado = producto("Taladro", null, herramientas, "400.00", 2, false);
+		desactivar(desactivado);
+		Integer oculto = producto("Pala", null, jardin, "50.00", 3, false);
+		assertThat(mvc.put().uri("/api/gestion/categorias/{id}/visible", jardin)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + admin).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"visible\":false}").exchange()).hasStatus(HttpStatus.OK);
+
+		MvcTestResult mapa = get("/api/sitemap.xml");
+
+		assertThat(mapa).hasStatus(HttpStatus.OK);
+		assertThat(mapa.getResponse().getContentType()).startsWith("application/xml");
+		String xml = mapa.getResponse().getContentAsString();
+		assertThat(xml).startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+				.contains("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">")
+				.contains("<loc>http://localhost:4200/</loc>", "<loc>http://localhost:4200/catalogo</loc>",
+						"<loc>http://localhost:4200/producto/" + martillo + "</loc>",
+						"<loc>http://localhost:4200/producto/" + agotado + "</loc>")
+				.doesNotContain("/producto/" + desactivado + "<", "/producto/" + oculto + "<");
+	}
 }

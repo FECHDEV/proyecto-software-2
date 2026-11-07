@@ -324,6 +324,81 @@ describe('DetallePage', () => {
     }
   });
 
+  // SEO (plan 2026-11-07): el producto en datos estructurados, para que Google muestre el precio y si hay stock
+  function datosEstructurados(): Record<string, unknown> | null {
+    const bloque = document.head.querySelector('script[type="application/ld+json"]');
+    return bloque === null ? null : (JSON.parse(bloque.textContent ?? '') as Record<string, unknown>);
+  }
+
+  it('losDatosDelProductoParaLosBuscadores', async () => {
+    await abrir();
+
+    expect(datosEstructurados()).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: 'Taladro percutor 750 W',
+      sku: 'HER-0007',
+      description: 'Para concreto y madera.\nCon maletín.',
+      category: 'Herramientas',
+      brand: { '@type': 'Brand', name: 'Bosch' },
+      image: [
+        `${location.origin}/api/productos/7/imagenes/a.webp?ancho=1200`,
+        `${location.origin}/api/productos/7/imagenes/b.webp?ancho=1200`,
+      ],
+      offers: {
+        '@type': 'Offer',
+        url: `${location.origin}/producto/7`,
+        price: '420.00',
+        priceCurrency: 'BOB',
+        availability: 'https://schema.org/InStock',
+        itemCondition: 'https://schema.org/NewCondition',
+      },
+    });
+  });
+
+  it('agotadoYSinMarcaNiFotosNiDescripcion', async () => {
+    await abrir('/producto/8', null, false);
+    catalogo.respuestas.set(8, { ...MARTILLO, marca: null, descripcion: '  ', disponible: false, precio: 4.5 });
+    catalogo.responder();
+    await harness.fixture.whenStable();
+
+    const datos = datosEstructurados()!;
+    expect(datos['brand']).toBeUndefined();
+    expect(datos['image']).toBeUndefined();
+    expect(datos['description']).toBeUndefined();
+    expect(datos['offers']).toEqual(
+      expect.objectContaining({ price: '4.50', availability: 'https://schema.org/OutOfStock' }),
+    );
+  });
+
+  // SEO: el producto que no existe responde 200 (lo arma el navegador): que no se indexe ni lleve datos
+  it('unProductoQueNoExisteNoSeIndexa', async () => {
+    await abrir();
+    expect(TestBed.inject(Meta).getTag('name="robots"')).toBeNull();
+
+    await abrir('/producto/7', null, false);
+    catalogo.recurso.error.set(new HttpErrorResponse({ status: 404 }));
+    await harness.fixture.whenStable();
+
+    expect(TestBed.inject(Meta).getTag('name="robots"')?.content).toBe('noindex');
+    expect(datosEstructurados()).toBeNull();
+    expect(document.head.querySelector('link[rel="canonical"]')).toBeNull();
+  });
+
+  // Revisión: la pantalla sigue y su estado no cambia (dos direcciones basura): igual queda noindex, aunque la
+  // estrategia de títulos lo limpie al navegar
+  it('otraDireccionBasuraSigueSinIndexarse', async () => {
+    await abrir('/producto/abc');
+    expect(TestBed.inject(Meta).getTag('name="robots"')?.content).toBe('noindex');
+
+    // Lo que hace la estrategia de títulos al navegar
+    TestBed.inject(Meta).removeTag('name="robots"');
+    await harness.navigateByUrl('/producto/xyz');
+    await harness.fixture.whenStable();
+
+    expect(TestBed.inject(Meta).getTag('name="robots"')?.content).toBe('noindex');
+  });
+
   // Caso límite: un error que no es 404 se puede reintentar
   it('un error de red ofrece reintentar', async () => {
     await abrir('/producto/7', null, false);

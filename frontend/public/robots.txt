@@ -4,6 +4,9 @@
 # Que la demo no aparezca en Google lo decide X-Robots-Tag en nube/Caddyfile.
 User-agent: *
 Disallow: /api/
+# Salvo las fotos de los productos, que los datos estructurados del detalle
+# anuncian: la regla más larga gana
+Allow: /api/productos/*/imagenes/
 Disallow: /carrito
 Disallow: /confirmar-pedido
 Disallow: /mis-pedidos
@@ -12,3 +15,6 @@ Disallow: /mis-datos
 Disallow: /restablecer
 Disallow: /verificacion
 Allow: /
+
+# La dirección completa la pone nginx al servirlo (nginx.conf)
+Sitemap: __ORIGEN__/sitemap.xml

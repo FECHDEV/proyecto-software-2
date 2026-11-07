@@ -4,22 +4,37 @@ import {
 	ChangeDetectionStrategy,
 	Component,
 	computed,
+	DOCUMENT,
 	effect,
 	ElementRef,
 	inject,
+	untracked,
 	viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Meta, Title } from '@angular/platform-browser';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
+import { filter } from 'rxjs';
 import { LucideCircleCheck, LucideCircleSlash, LucidePencil } from '@lucide/angular';
 import { comoErrorApi } from '../../core/modelos/error-api';
 
 import { CatalogoService } from '../../core/api/catalogo.service';
 import { mensajeDeError } from '../../core/api/mensajes-error';
-import { ponerDescripcion, resumen } from '../../core/navegacion/titulo-y-descripcion';
+import {
+	indexar,
+	origenPublico,
+	ponerDatosEstructurados,
+	ponerDescripcion,
+	resumen,
+} from '../../core/navegacion/titulo-y-descripcion';
 import { MARCA } from '../../core/marca';
-import { aTarjeta, srcsetDeImagen, urlDeImagen, urlDeModelo } from '../../core/modelos/catalogo';
+import {
+	aTarjeta,
+	ProductoEnDetalle,
+	srcsetDeImagen,
+	urlDeImagen,
+	urlDeModelo,
+} from '../../core/modelos/catalogo';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { Carrusel } from '../../shared/carrusel/carrusel';
 import { precio } from '../../shared/formato/precios';
@@ -108,11 +123,29 @@ export class DetallePage {
 	constructor() {
 		const pestana = inject(Title);
 		const meta = inject(Meta);
+		const documento = inject(DOCUMENT);
 		effect(() => {
 			const producto = this.producto();
 			if (producto !== undefined) {
 				pestana.setTitle(`${producto.nombre} · ${MARCA.nombre}`);
 				ponerDescripcion(meta, resumen(producto.descripcion ?? '') || MARCA.descripcion);
+			}
+		});
+		// Los buscadores (plan 2026-11-07-seo). Con cada navegación, también si la
+		// pantalla sigue y el producto no cambia (/producto/abc → /producto/xyz):
+		// la estrategia de títulos los limpia al navegar, y esto corre después
+		const router = inject(Router);
+		const navegacion = toSignal(router.events.pipe(filter((evento) => evento instanceof NavigationEnd)));
+		effect(() => {
+			navegacion();
+			const producto = this.producto();
+			if (this.noDisponible()) {
+				// El que no existe responde 200 (lo arma el navegador): que no se indexe
+				indexar(documento, meta, null);
+				ponerDatosEstructurados(documento, null);
+			} else if (producto !== undefined) {
+				indexar(documento, meta, untracked(() => router.url));
+				ponerDatosEstructurados(documento, datosDelProducto(producto, origenPublico(documento)));
 			}
 		});
 
@@ -131,4 +164,29 @@ export class DetallePage {
 			anterior = idProducto;
 		});
 	}
+}
+
+// El producto en schema.org, para que Google muestre el precio y si hay stock
+// (plan 2026-11-07-seo). Lo vacío no va: Google lo marca como error
+export function datosDelProducto(producto: ProductoEnDetalle, origen: string): object {
+	const descripcion = producto.descripcion?.trim();
+	return {
+		'@type': 'Product',
+		name: producto.nombre,
+		sku: producto.codigo,
+		...(descripcion ? { description: descripcion } : {}),
+		category: producto.categoria,
+		...(producto.marca === null ? {} : { brand: { '@type': 'Brand', name: producto.marca } }),
+		...(producto.imagenes.length === 0
+			? {}
+			: { image: producto.imagenes.map((imagen) => origen + urlDeImagen(producto.idProducto, imagen, 1200)) }),
+		offers: {
+			'@type': 'Offer',
+			url: `${origen}/producto/${producto.idProducto}`,
+			price: producto.precio.toFixed(2),
+			priceCurrency: 'BOB',
+			availability: producto.disponible ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+			itemCondition: 'https://schema.org/NewCondition',
+		},
+	};
 }
