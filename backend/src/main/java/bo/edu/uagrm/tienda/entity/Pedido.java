@@ -36,7 +36,7 @@ import lombok.NoArgsConstructor;
 // datos de retiro, con quien la vendió y, si es de consumidor final, sin cuenta del cliente
 @Entity
 @Table(name = "pedido", indexes = {
-		@Index(name = "idx_pedido_usuario_estado", columnList = "id_usuario, estado"),
+		@Index(name = "idx_pedido_usuario_canal_estado", columnList = "id_usuario, canal, estado"),
 		@Index(name = "idx_pedido_estado_vence", columnList = "estado, vence"),
 		@Index(name = "idx_pedido_estado_pagado", columnList = "estado, pagado"),
 		@Index(name = "idx_pedido_estado_confirmado", columnList = "estado, confirmado"),

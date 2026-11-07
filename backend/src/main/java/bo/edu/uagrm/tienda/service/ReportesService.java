@@ -119,14 +119,14 @@ public class ReportesService {
 	}
 
 	// RF-13: activos con stock, por días desde la última venta, o desde el alta si nunca se vendió. No depende del
-	// período ni del tipo
+	// período ni del tipo; sí del canal: la última venta en ese canal (HU-23 RF-21)
 	@Transactional(readOnly = true)
-	public PaginaResponse<ProductoSinVenta> sinVenta(String dias, int pagina) {
-		return paginar(sinVenta(dias(dias), LocalDateTime.now(clock)), pagina);
+	public PaginaResponse<ProductoSinVenta> sinVenta(String dias, Canal canal, int pagina) {
+		return paginar(sinVenta(dias(dias), canal, LocalDateTime.now(clock)), pagina);
 	}
 
-	private List<ProductoSinVenta> sinVenta(int minimo, LocalDateTime ahora) {
-		Map<Long, LocalDateTime> ultimas = reportesRepository.ultimasVentas(VENDIDOS).stream()
+	private List<ProductoSinVenta> sinVenta(int minimo, Canal canal, LocalDateTime ahora) {
+		Map<Long, LocalDateTime> ultimas = reportesRepository.ultimasVentas(VENDIDOS, canal).stream()
 				.collect(Collectors.toMap(UltimaVentaFila::idProducto, UltimaVentaFila::ultima));
 		Function<Producto, LocalDateTime> desde = producto -> ultimas.getOrDefault(producto.getIdProducto(),
 				producto.getFechaAlta());
@@ -141,17 +141,18 @@ public class ReportesService {
 	// RF-16: clientes activos que compraron alguna vez y no desde hace más de los días pedidos, del mayor total al
 	// menor
 	@Transactional(readOnly = true)
-	public PaginaResponse<ClienteInactivo> clientesInactivos(String dias, TipoCliente tipo, int pagina) {
-		PaginaResponse<CompraFila> deLaPagina = paginar(comprasHasta(dias(dias), tipo, LocalDateTime.now(clock)),
-				pagina);
+	public PaginaResponse<ClienteInactivo> clientesInactivos(String dias, TipoCliente tipo, Canal canal, int pagina) {
+		PaginaResponse<CompraFila> deLaPagina = paginar(
+				comprasHasta(dias(dias), tipo, canal, LocalDateTime.now(clock)), pagina);
 		return new PaginaResponse<>(clientes(deLaPagina.contenido()), deLaPagina.pagina(), deLaPagina.tamano(),
 				deLaPagina.totalElementos(), deLaPagina.totalPaginas());
 	}
 
-	private List<CompraFila> comprasHasta(int dias, TipoCliente tipo, LocalDateTime ahora) {
+	// Con el canal, las compras en ese canal (HU-23 RF-21)
+	private List<CompraFila> comprasHasta(int dias, TipoCliente tipo, Canal canal, LocalDateTime ahora) {
 		// En días enteros, como «Sin venderse»: más de 30 días enteros es 31 o más
 		LocalDateTime limite = ahora.minusDays(dias + 1L);
-		return reportesRepository.comprasHasta(VENDIDOS, Rol.CLIENTE, EstadoCuenta.ACTIVA, tipo, limite).stream()
+		return reportesRepository.comprasHasta(VENDIDOS, Rol.CLIENTE, EstadoCuenta.ACTIVA, tipo, canal, limite).stream()
 				.sorted(Comparator.comparing(CompraFila::total).reversed().thenComparing(CompraFila::idUsuario))
 				.toList();
 	}
@@ -199,8 +200,8 @@ public class ReportesService {
 		Periodo periodo = Periodo.de(desde, hasta, ahora.toLocalDate());
 		Usuario autor = usuarioRepository.findById(idUsuario).orElseThrow(UsuarioNoEncontradoException::new);
 		return new ReporteCompleto(ventas(periodo, tipo, canal), perdidos(periodo, tipo, canal),
-				productos(periodo, tipo, canal, false), productos(periodo, tipo, canal, true), sinVenta(minimo, ahora),
-				productosPerdidos(periodo, tipo, canal), clientes(comprasHasta(minimo, tipo, ahora)), tipo, canal,
+				productos(periodo, tipo, canal, false), productos(periodo, tipo, canal, true), sinVenta(minimo, canal, ahora),
+				productosPerdidos(periodo, tipo, canal), clientes(comprasHasta(minimo, tipo, canal, ahora)), tipo, canal,
 				minimo, ahora,
 				autor.getNombre() + " " + autor.getApellido());
 	}

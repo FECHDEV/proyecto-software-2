@@ -64,6 +64,9 @@ public class SecurityConfig {
 						.requestMatchers("/api/despacho/**").hasAnyRole("EMPLEADO", "ADMINISTRADOR")
 						// La venta del mostrador (HU-23 RF-23): el personal la ve; la registran, consultan y cancelan
 						// el Empleado y el Administrador; anula solo el Administrador
+						// Buscar productos y compradores es para vender: el Contador no (/code-review)
+						.requestMatchers(HttpMethod.GET, "/api/ventas/productos", "/api/ventas/clientes")
+						.hasAnyRole("EMPLEADO", "ADMINISTRADOR")
 						.requestMatchers(HttpMethod.GET, "/api/ventas/**")
 						.hasAnyRole("EMPLEADO", "ADMINISTRADOR", "CONTADOR")
 						.requestMatchers(HttpMethod.POST, "/api/ventas/*/anulacion").hasRole("ADMINISTRADOR")

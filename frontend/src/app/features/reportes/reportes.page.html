@@ -40,71 +40,67 @@
   }
 </nav>
 
-@if (usaPeriodo() || usaTipo()) {
-  <form class="filtros" aria-label="Período, tipo de cliente y canal" (submit)="$event.preventDefault()">
-    @if (usaPeriodo()) {
-      <div class="atajos" role="group" aria-label="Período">
-        @for (atajo of atajos; track atajo.valor) {
-          <button
-            type="button"
-            class="secundario"
-            [attr.aria-pressed]="atajoActivo() === atajo.valor"
-            (click)="alElegirAtajo(atajo.valor)"
-          >
-            {{ atajo.nombre }}
-          </button>
+<form class="filtros" aria-label="Período, tipo de cliente y canal" (submit)="$event.preventDefault()">
+  @if (usaPeriodo()) {
+    <div class="atajos" role="group" aria-label="Período">
+      @for (atajo of atajos; track atajo.valor) {
+        <button
+          type="button"
+          class="secundario"
+          [attr.aria-pressed]="atajoActivo() === atajo.valor"
+          (click)="alElegirAtajo(atajo.valor)"
+        >
+          {{ atajo.nombre }}
+        </button>
+      }
+    </div>
+    <div class="campo">
+      <label for="filtro-desde">Desde</label>
+      <input
+        id="filtro-desde"
+        name="desde"
+        type="date"
+        required
+        [max]="hoy()"
+        [value]="filtros().desde"
+        (change)="alCambiarFecha('desde', $any($event.target).value)"
+      />
+    </div>
+    <div class="campo">
+      <label for="filtro-hasta">Hasta</label>
+      <input
+        id="filtro-hasta"
+        name="hasta"
+        type="date"
+        required
+        [max]="hoy()"
+        [value]="filtros().hasta"
+        (change)="alCambiarFecha('hasta', $any($event.target).value)"
+      />
+    </div>
+  }
+  @if (usaTipo()) {
+    <div class="campo">
+      <label for="filtro-tipo">Tipo de cliente</label>
+      <select id="filtro-tipo" name="tipo" (change)="alElegirTipo($any($event.target).value)">
+        <option value="" [selected]="filtros().tipo === null">Todos los clientes</option>
+        @for (tipo of tipos; track tipo) {
+          <option [value]="tipo" [selected]="filtros().tipo === tipo">{{ nombresDeTipo[tipo] }}</option>
         }
-      </div>
-      <div class="campo">
-        <label for="filtro-desde">Desde</label>
-        <input
-          id="filtro-desde"
-          name="desde"
-          type="date"
-          required
-          [max]="hoy()"
-          [value]="filtros().desde"
-          (change)="alCambiarFecha('desde', $any($event.target).value)"
-        />
-      </div>
-      <div class="campo">
-        <label for="filtro-hasta">Hasta</label>
-        <input
-          id="filtro-hasta"
-          name="hasta"
-          type="date"
-          required
-          [max]="hoy()"
-          [value]="filtros().hasta"
-          (change)="alCambiarFecha('hasta', $any($event.target).value)"
-        />
-      </div>
-    }
-    @if (usaTipo()) {
-      <div class="campo">
-        <label for="filtro-tipo">Tipo de cliente</label>
-        <select id="filtro-tipo" name="tipo" (change)="alElegirTipo($any($event.target).value)">
-          <option value="" [selected]="filtros().tipo === null">Todos los clientes</option>
-          @for (tipo of tipos; track tipo) {
-            <option [value]="tipo" [selected]="filtros().tipo === tipo">{{ nombresDeTipo[tipo] }}</option>
-          }
-        </select>
-      </div>
-    }
-    <!-- HU-23 RF-22 -->
-    @if (usaCanal()) {
-      <div class="campo">
-        <label for="filtro-canal">Canal</label>
-        <select id="filtro-canal" name="canal" (change)="alElegirCanal($any($event.target).value)">
-          <option value="" [selected]="filtros().canal === null">En línea y en tienda</option>
-          @for (canal of canales; track canal) {
-            <option [value]="canal" [selected]="filtros().canal === canal">{{ nombresDeCanal[canal] }}</option>
-          }
-        </select>
-      </div>
-    }
-  </form>
-}
+      </select>
+    </div>
+  }
+  <!-- HU-23 RF-21, RF-22: en todas las secciones; en «Sin venderse» y «Clientes», la última venta en ese canal -->
+  <div class="campo">
+    <label for="filtro-canal">Canal</label>
+    <select id="filtro-canal" name="canal" (change)="alElegirCanal($any($event.target).value)">
+      <option value="" [selected]="filtros().canal === null">En línea y en tienda</option>
+      @for (canal of canales; track canal) {
+        <option [value]="canal" [selected]="filtros().canal === canal">{{ nombresDeCanal[canal] }}</option>
+      }
+    </select>
+  </div>
+</form>
 
 <div role="status" class="avisos">
   @if (avisoDePeriodo()) {

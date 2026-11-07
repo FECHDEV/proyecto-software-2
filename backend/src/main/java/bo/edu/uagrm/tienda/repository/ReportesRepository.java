@@ -90,19 +90,20 @@ public interface ReportesRepository extends Repository<Pedido, Long> {
 	@Query("""
 			select new bo.edu.uagrm.tienda.dto.reportes.UltimaVentaFila(l.producto.idProducto, max(p.pagado))
 			from LineaPedido l join l.pedido p
-			where p.estado in :estados
+			where p.estado in :estados and (:canal is null or p.canal = :canal)
 			group by l.producto.idProducto""")
-	List<UltimaVentaFila> ultimasVentas(@Param("estados") Collection<EstadoPedido> estados);
+	List<UltimaVentaFila> ultimasVentas(@Param("estados") Collection<EstadoPedido> estados,
+			@Param("canal") Canal canal);
 
 	// RF-16: las cuentas activas del rol dado que compraron alguna vez, pero no desde el límite
 	@Query("""
 			select new bo.edu.uagrm.tienda.dto.reportes.CompraFila(u.idUsuario, max(p.pagado), count(p), sum(p.total))
 			from Pedido p join p.usuario u
 			where p.estado in :estados and u.rol = :rol and u.estado = :cuenta
-				and (:tipo is null or u.tipoCliente = :tipo)
+				and (:tipo is null or u.tipoCliente = :tipo) and (:canal is null or p.canal = :canal)
 			group by u.idUsuario
 			having max(p.pagado) <= :limite""")
 	List<CompraFila> comprasHasta(@Param("estados") Collection<EstadoPedido> estados, @Param("rol") Rol rol,
-			@Param("cuenta") EstadoCuenta cuenta, @Param("tipo") TipoCliente tipo,
+			@Param("cuenta") EstadoCuenta cuenta, @Param("tipo") TipoCliente tipo, @Param("canal") Canal canal,
 			@Param("limite") LocalDateTime limite);
 }

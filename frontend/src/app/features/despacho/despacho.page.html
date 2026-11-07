@@ -45,7 +45,13 @@
   <!-- Mientras carga otra página se ve la anterior: el lector se entera de que viene otra -->
   <p class="solo-lectores" role="status">@if (recurso.isLoading()) {Cargando los pedidos…}</p>
   @if (pagina.contenido.length === 0) {
-    <p class="vacio" role="status">No hay pedidos con ese filtro.</p>
+    <p class="vacio" role="status">
+      No hay pedidos con ese filtro.
+      <!-- Una venta del mostrador se entrega al cobrarse: «Pagado» solo la muestra con un pago tardío (HU-23) -->
+      @if (filtros().canal === 'TIENDA' && filtros().estado === 'PAGADO') {
+        Las ventas en tienda se entregan al cobrarlas: elija «Todos» en el estado para verlas.
+      }
+    </p>
   } @else {
     <ol class="lista" aria-label="Pedidos">
       @for (pedido of pagina.contenido; track pedido.idPedido) {

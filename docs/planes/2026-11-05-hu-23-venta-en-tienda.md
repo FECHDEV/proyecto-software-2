@@ -602,6 +602,26 @@ Distinto del plan:
     aparte para la venta cancelada mientras tanto; `Canal.deTexto` en
     `entity`; un canal inválido que da los dos (así lo piden RF-16 y RF-22).
 
+- **`/code-review` de la sesión en la nube** (07/11/2026, rama
+  `fix/hu-23-revision`). **Corregido:**
+  - «Sin venderse» y «Clientes inactivos» no respetaban el canal (RF-22 pide
+    todas las secciones): la API los filtra por la última venta o compra en ese
+    canal, y la pantalla muestra el filtro «Canal» en todas las secciones;
+  - al registrar, los productos se bloqueaban antes de insertar la venta (al
+    revés que en línea): ahora la venta va primero, y el índice del pedido por
+    cliente pasa a `(id_usuario, canal, estado)`;
+  - el Contador podía usar la búsqueda de productos y de compradores de «Nueva
+    venta»: ahora 403;
+  - el historial del stock llamaba «Venta en tienda» a la reserva de un QR que
+    nunca se cobró: ahora «Reserva por venta en tienda»;
+  - en Despacho, «En tienda» con «Pagado» vacío avisa que se elija «Todos»;
+  - `noSeAnulaLaDeAyerNiLaDeQrNiDosVeces` fallaba cerca de la medianoche de
+    Bolivia (vencía el token): pide uno nuevo.
+  **Descartado:** conciliar antes de cancelar (un pago tardío cae en la
+  cancelada, RF-11) y bloquear la venta en `consultar` solo al vencer (ya
+  descartado arriba). Backend con 832 pruebas, frontend con 934, lint y build
+  sin avisos.
+
 ### Prueba manual
 
 Fabio, 06/11/2026, con Libélula real (el producto «prueba» para el QR): los

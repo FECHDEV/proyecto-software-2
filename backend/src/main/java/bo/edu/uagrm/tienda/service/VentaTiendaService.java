@@ -166,8 +166,10 @@ public class VentaTiendaService {
 		});
 	}
 
-	// Todo o nada, con los productos bloqueados por id ascendente antes de leerlos, como al confirmar un pedido: dos
-	// ventas, un pedido y un ajuste no se esperan en círculo (RF-12, casos límite)
+	// Todo o nada, en el mismo orden que un pedido en línea: primero se inserta la venta (la clave foránea toma el
+	// bloqueo compartido de la cuenta del comprador, como el bloqueo del cliente al confirmar) y después los productos,
+	// por id ascendente y antes de leerlos: dos ventas, un pedido y un ajuste no se esperan en círculo (RF-12, casos
+	// límite)
 	private Pedido registrar(VentaRequest venta, Long idVendedor) {
 		LocalDateTime ahora = LocalDateTime.now(clock);
 		exigirMonto(venta);
@@ -179,6 +181,8 @@ public class VentaTiendaService {
 		Usuario comprador = venta.idCliente() == null ? null
 				: usuarioRepository.findById(venta.idCliente()).filter(VentaTiendaService::esComprador)
 						.orElseThrow(() -> campoInvalido("idCliente", "no es una cuenta de Cliente activa"));
+		Pedido pedido = pedidoRepository.save(
+				Pedido.enTienda(comprador, vendedor, venta.medio(), venta.recibido(), ahora, VIGENCIA));
 		Map<Long, Producto> productos = new TreeMap<>();
 		venta.lineas().stream().map(LineaVentaRequest::idProducto).sorted()
 				.forEach(id -> productos.put(id, productoRepository.findConBloqueoByIdProducto(id)
@@ -189,7 +193,6 @@ public class VentaTiendaService {
 		if (!rechazadas.isEmpty()) {
 			throw StockInsuficienteException.enLaVenta(rechazadas); // RF-12
 		}
-		Pedido pedido = Pedido.enTienda(comprador, vendedor, venta.medio(), venta.recibido(), ahora, VIGENCIA);
 		venta.lineas().forEach(linea -> pedido.agregarLinea(productos.get(linea.idProducto()), linea.cantidad()));
 		// Con los precios del servidor; el de la pantalla solo se compara (RF-14)
 		if (pedido.getTotal().compareTo(venta.totalEsperado()) != 0) {
@@ -198,7 +201,6 @@ public class VentaTiendaService {
 		if (venta.medio() == MedioPago.EFECTIVO && venta.recibido().compareTo(pedido.getTotal()) < 0) {
 			throw campoInvalido("recibido", "no puede ser menor que el total"); // RF-13
 		}
-		pedidoRepository.save(pedido);
 		for (LineaPedido linea : pedido.lineasPorProducto()) {
 			Producto producto = productos.get(linea.getIdProducto());
 			// Nunca negativo: se revisó con el producto bloqueado

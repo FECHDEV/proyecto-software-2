@@ -83,9 +83,14 @@ export function descripcionDeMovimiento(movimiento: Movimiento): string {
 				: `${motivo} · en el estante ${cantidad(movimiento.contado)}, comprometido ${cantidad(movimiento.comprometido)}`;
 		}
 		case 'RESERVA':
-			return movimiento.canal === 'TIENDA'
-				? `Venta en tienda N.º ${movimiento.idPedido}`
-				: `Reserva por pedido N.º ${movimiento.idPedido}`;
+			if (movimiento.canal === 'TIENDA') {
+				// Venta solo si se cobró, aunque después se anulara; un QR que espera, se canceló o venció, fue una
+				// reserva (revisión de código)
+				return movimiento.estadoPedido !== null && VENDIDA_EN_TIENDA.has(movimiento.estadoPedido)
+					? `Venta en tienda N.º ${movimiento.idPedido}`
+					: `Reserva por venta en tienda N.º ${movimiento.idPedido}`;
+			}
+			return `Reserva por pedido N.º ${movimiento.idPedido}`;
 		case 'LIBERACION':
 			// En el mostrador: la anulación, o el stock que volvió de un QR cancelado o vencido (HU-23)
 			if (movimiento.canal === 'TIENDA') {
@@ -96,6 +101,8 @@ export function descripcionDeMovimiento(movimiento: Movimiento): string {
 			return `Liberación por pedido N.º ${movimiento.idPedido}`;
 	}
 }
+
+const VENDIDA_EN_TIENDA: ReadonlySet<EstadoDePedido> = new Set(['ENTREGADO', 'PAGADO', 'ANULADO', 'PAGO_A_DEVOLVER']);
 
 // Los filtros de la lista. null en categoría o estado es "todos"; la página
 // empieza en 0, como en el backend.

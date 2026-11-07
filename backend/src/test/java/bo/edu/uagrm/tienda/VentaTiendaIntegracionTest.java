@@ -655,6 +655,8 @@ class VentaTiendaIntegracionTest {
 		LocalDateTime ahora = LocalDateTime.now(reloj);
 		LocalDateTime manana = LocalDate.now(reloj.withZone(BOLIVIA)).plusDays(1).atTime(LocalTime.of(0, 1));
 		reloj.avanzar(Duration.between(ahora, manana));
+		// Un token nuevo: pasada la medianoche, el de antes puede haber vencido según la hora en que corre la prueba
+		admin = token(ADMIN, CLAVE_ADMIN);
 		MvcTestResult tarde = post(VENTAS + "/{id}/anulacion", admin, "{\"motivo\":\"Error\"}", deAyer);
 		assertThat(tarde).hasStatus(HttpStatus.CONFLICT);
 		assertThat(get(VENTAS + "/{id}", admin, deAyer)).bodyJson().extractingPath("$.anulable").isEqualTo(false);
@@ -695,6 +697,9 @@ class VentaTiendaIntegracionTest {
 		assertThat(get(VENTAS + "/{id}", contador, venta)).hasStatus(HttpStatus.OK);
 		assertThat(get(VENTAS + "/{id}", ana, venta)).hasStatus(HttpStatus.FORBIDDEN);
 		assertThat(get(VENTAS + "/productos?texto=martillo", ana)).hasStatus(HttpStatus.FORBIDDEN);
+		// Buscar productos y compradores es para vender: el Contador no (revisión)
+		assertThat(get(VENTAS + "/productos?texto=martillo", contador)).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(get(VENTAS + "/clientes?correo=ana.hu23@mail.com", contador)).hasStatus(HttpStatus.FORBIDDEN);
 		assertThat(post(VENTAS + "/{id}/cancelacion", contador, "", deQr)).hasStatus(HttpStatus.FORBIDDEN);
 		assertThat(post(VENTAS + "/{id}/consulta", contador, "", deQr)).hasStatus(HttpStatus.FORBIDDEN);
 		assertThat(post(VENTAS + "/{id}/anulacion", empleado, "{\"motivo\":\"Error\"}", venta))
