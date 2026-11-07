@@ -3,6 +3,7 @@ package bo.edu.uagrm.tienda;
 import static bo.edu.uagrm.tienda.IpsDePrueba.ipNueva;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 
 import java.time.Duration;
@@ -55,6 +56,7 @@ import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import bo.edu.uagrm.tienda.service.AdministradorInicial;
 import bo.edu.uagrm.tienda.service.ConciliacionDePagos;
 import bo.edu.uagrm.tienda.service.VencimientoPedidos;
+import bo.edu.uagrm.tienda.service.VentaTiendaService;
 import bo.edu.uagrm.tienda.service.pago.EstadoDelCobro;
 import bo.edu.uagrm.tienda.service.pago.SimuladorDePago;
 import bo.edu.uagrm.tienda.service.pago.SistemaDePagoNoDisponibleException;
@@ -99,6 +101,9 @@ class VentaTiendaIntegracionTest {
 
 	@MockitoSpyBean
 	private SimuladorDePago simulador;
+
+	@Autowired
+	private VentaTiendaService ventaTiendaService;
 
 	@Autowired
 	private CobroRepository cobroRepository;
@@ -427,6 +432,27 @@ class VentaTiendaIntegracionTest {
 				.satisfies(pedido -> assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.CANCELADO));
 		assertThat(stock(martillo)).isEqualTo(10.0);
 		assertThat(stock(cable)).isEqualTo(100.0);
+	}
+
+	// HU-23 (casos límite, /code-review): si la cancelan mientras se generaba el QR y después falla, sigue el 503 y el
+	// stock vuelve una sola vez
+	@Test
+	void siLaCancelanMientrasSeGeneraYFallaSigueEl503() throws Exception {
+		doAnswer(llamada -> {
+			ventaTiendaService.cancelar(llamada.getArgument(0));
+			throw new SistemaDePagoNoDisponibleException("sin conexión", null);
+		}).when(simulador).generarCobro(any(), any(), any());
+
+		MvcTestResult venta = vender(empleado, LINEAS.formatted(martillo, cable), null, "QR", "null", "96.25");
+
+		assertThat(venta).hasStatus(HttpStatus.SERVICE_UNAVAILABLE);
+		assertThat(venta).bodyJson().extractingPath("$.codigo").isEqualTo("COBRO_NO_DISPONIBLE");
+		assertThat(pedidoRepository.findAll()).singleElement()
+				.satisfies(pedido -> assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.CANCELADO));
+		assertThat(stock(martillo)).isEqualTo(10.0);
+		assertThat(stock(cable)).isEqualTo(100.0);
+		// Una liberación por línea: la de la cancelación, no otra al fallar
+		assertThat(movimientoRepository.findAll()).filteredOn(m -> m.getTipo() == TipoMovimiento.LIBERACION).hasSize(2);
 	}
 
 	// --- RF-12 a RF-14: rechazos ---

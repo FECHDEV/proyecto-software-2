@@ -47,7 +47,10 @@ h2 {
 
 // --- Las líneas, en la placa de lona ---
 
+// Sobre la lona clara, el acento (el foco) y el error van oscuros: los del modo oscuro no se leen (como el carrito)
 .lineas {
+	--app-acento-texto: var(--app-sobre-lona);
+	--app-error: var(--app-error-sobre-lona);
 	margin: 0;
 	padding: var(--app-espacio-2) var(--app-espacio-4);
 	list-style: none;
@@ -107,9 +110,6 @@ h2 {
 			text-align: center;
 		}
 
-		input[aria-invalid='true'] {
-			border: 2px solid var(--app-error);
-		}
 	}
 
 	.subtotal {
@@ -131,6 +131,11 @@ h2 {
 		color: inherit;
 		cursor: pointer;
 
+		&[aria-disabled='true'] {
+			cursor: not-allowed;
+			opacity: 0.5;
+		}
+
 		svg {
 			width: var(--app-icono);
 			height: var(--app-icono);
@@ -147,6 +152,11 @@ h2 {
 			display: none;
 		}
 	}
+}
+
+// Un campo con error: borde de 2 px del color de error (DESIGN.md → Inputs), como _formulario.scss
+input[aria-invalid='true'] {
+	border: 2px solid var(--app-error);
 }
 
 // --- El comprador ---
@@ -181,6 +191,8 @@ h2 {
 
 .total {
 	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-2);
 	align-items: baseline;
 	justify-content: space-between;
 	margin: 0;
@@ -194,7 +206,7 @@ h2 {
 	strong {
 		color: var(--app-titulo);
 		font-family: var(--app-familia-titulos);
-		font-size: 40px;
+		font-size: clamp(28px, 9vw, 40px);
 		font-variant-numeric: tabular-nums;
 		font-weight: 800;
 	}
@@ -255,13 +267,14 @@ h2 {
 }
 
 @media (max-width: 560px) {
-	// La segunda columna, del ancho del subtotal: con la de «Quitar» (44 px) el importe se cortaba
+	// La cantidad y el subtotal, cada uno en su fila: un importe grande (Bs 99.899.990,01) tapaba el «+»
 	.linea {
 		grid-template-columns: minmax(0, 1fr) max-content;
 		grid-template-areas:
 			'nombre quitar'
 			'precio quitar'
-			'cantidad subtotal'
+			'cantidad cantidad'
+			'subtotal subtotal'
 			'aviso aviso';
 	}
 

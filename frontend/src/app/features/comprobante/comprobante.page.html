@@ -28,7 +28,7 @@
   <article class="ticket" aria-labelledby="titulo-ticket">
     <header>
       <p class="marca" translate="no">{{ marca.nombre }}</p>
-      <h1 id="titulo-ticket">Venta N.º&nbsp;{{ venta.idPedido }}</h1>
+      <h1 id="titulo-ticket" tabindex="-1">Venta N.º&nbsp;{{ venta.idPedido }}</h1>
       <p>{{ fechaYHora(venta.pagado ?? venta.confirmado) }}</p>
       @if (venta.estado !== 'ENTREGADO') {
         <p [class]="'estado ' + tono[venta.estado]">{{ nombresDeEstado[venta.estado] }}</p>

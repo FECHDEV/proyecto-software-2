@@ -9,7 +9,7 @@
     maxlength="100"
     placeholder="Nombre del producto…"
     [value]="textoBuscado()"
-    [attr.aria-disabled]="bloqueada() ? 'true' : null"
+    [readOnly]="bloqueada()"
     (input)="alBuscar($any($event.target).value)"
   />
 </div>

@@ -1,9 +1,11 @@
 import {
+	afterNextRender,
 	ChangeDetectionStrategy,
 	Component,
 	computed,
 	ElementRef,
 	inject,
+	Injector,
 	signal,
 	viewChild,
 } from '@angular/core';
@@ -40,6 +42,7 @@ const MAXIMO_MOTIVO = 200;
 export class ComprobantePage {
 	private readonly ventas = inject(VentasService);
 	private readonly sesion = inject(SesionService);
+	private readonly injector = inject(Injector);
 
 	protected readonly marca = MARCA;
 	protected readonly precio = precio;
@@ -122,6 +125,8 @@ export class ComprobantePage {
 		try {
 			this.anulada.set(await this.ventas.anular(venta.idPedido, motivo));
 			this.cerrarDialogo();
+			// «Anular venta» ya no está: el foco va al título, que ahora dice «Anulado», y no se pierde en la página
+			afterNextRender(() => document.getElementById('titulo-ticket')?.focus(), { injector: this.injector });
 		} catch (rechazo: unknown) {
 			this.errorDeAnulacion.set(mensajeDeError(comoError(rechazo)));
 			this.cerrarDialogo();

@@ -784,6 +784,13 @@ solo lugar por tema evita que se contradigan.
   **`.solo-lectores` es global** (`styles.scss`), no una copia por
   componente, y **`comoErrorApi` vive en `core/modelos/error-api.ts`**, junto
   a `comoError`.
+- *06/11/2026 (cierre de HU-23).* **Un importe que la pantalla calcula y el
+  servidor compara se calcula en centavos enteros,** con el medio centavo
+  hacia arriba como `BigDecimal` `HALF_UP` (`features/venta/venta.page.ts` →
+  `centavos`). **Motivo:** con decimales de JavaScript, 4,50 × 0,69 = 3,105
+  daba 3,10 y no 3,11 como el servidor, y la venta volvía siempre con
+  `TOTAL_CAMBIADO`; y 85 + 8,46 daba 93,46000000000001, que rechazaba un pago
+  justo.
 
 ### ESLint
 

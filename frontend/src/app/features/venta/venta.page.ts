@@ -1,9 +1,11 @@
 import {
+	afterNextRender,
 	ChangeDetectionStrategy,
 	Component,
 	computed,
 	effect,
 	inject,
+	Injector,
 	NgZone,
 	signal,
 } from '@angular/core';
@@ -56,6 +58,7 @@ export class VentaPage {
 	private readonly ventas = inject(VentasService);
 	private readonly router = inject(Router);
 	private readonly zona = inject(NgZone);
+	private readonly injector = inject(Injector);
 
 	protected readonly precio = precio;
 	protected readonly cantidad = cantidad;
@@ -68,8 +71,9 @@ export class VentaPage {
 	// Por producto: lo que dijo el servidor al rechazar (RF-12)
 	protected readonly rechazos = signal<ReadonlyMap<number, string>>(new Map());
 
-	protected readonly total = computed(() =>
-		this.lineas().reduce((suma, linea) => suma + (subtotal(linea) ?? 0), 0),
+	// En centavos enteros: sumar decimales en JavaScript deja restos (85 + 8,46 = 93,46000000000001)
+	protected readonly total = computed(
+		() => this.lineas().reduce((suma, linea) => suma + (centavos(linea) ?? 0), 0) / 100,
 	);
 	protected readonly hayProblemas = computed(() => this.lineas().some((linea) => this.problema(linea) !== null));
 
@@ -230,8 +234,12 @@ export class VentaPage {
 	protected async cobrarEnEfectivo(): Promise<void> {
 		this.errorDeRecibido.set('');
 		const recibido = this.recibidoLeido();
-		if (recibido === null || recibido > MAXIMO_RECIBIDO) {
+		if (recibido === null) {
 			this.errorDeRecibido.set('Escriba lo recibido con números, por ejemplo 100 o 100,50.');
+			return;
+		}
+		if (recibido > MAXIMO_RECIBIDO) {
+			this.errorDeRecibido.set(`Lo recibido admite hasta ${precio(MAXIMO_RECIBIDO)}.`);
 			return;
 		}
 		if (recibido < this.total()) {
@@ -319,7 +327,7 @@ export class VentaPage {
 		this.error.set('');
 		this.rechazos.set(new Map());
 		this.registrando.set(true);
-		const total = redondear(this.total());
+		const total = this.total();
 		try {
 			return await this.ventas.registrar({
 				lineas: this.lineas().map((linea) => ({
@@ -356,6 +364,9 @@ export class VentaPage {
 			}
 			this.rechazos.set(rechazos);
 			this.error.set('Algunos productos no se pueden vender así. Corrija los marcados.');
+			// La primera línea marcada recibe el foco: en el celular queda lejos del botón (DESIGN.md → Error)
+			const primera = error.lineas[0]?.idProducto;
+			afterNextRender(() => document.getElementById(`cantidad-${primera}`)?.focus(), { injector: this.injector });
 			return;
 		}
 		if (error.codigo === 'TOTAL_CAMBIADO') {
@@ -457,16 +468,28 @@ function decimales(linea: LineaEnVenta): number {
 	return DECIMALES_DE_UNIDAD[linea.producto.unidad];
 }
 
-// Como el servidor: cada subtotal redondeado a centavos (LineaPedido)
 function subtotal(linea: LineaEnVenta): number | null {
-	const pedida = leerCantidad(linea.texto);
-	return pedida === null ? null : redondear(linea.producto.precio * pedida);
+	const enCentavos = centavos(linea);
+	return enCentavos === null ? null : enCentavos / 100;
 }
 
-// Lo recibido como lo escribe quien cobra: «100», «100,50» o «100.5»; hasta 999 999,99 (RF-13). null si no tiene esa forma
+// Como el servidor (LineaPedido): precio × cantidad redondeado a centavos, el medio centavo hacia arriba (HALF_UP).
+// Con enteros, porque 4,50 × 0,69 = 3,105 da 3,1049999… en decimales de JavaScript y bajaba a 3,10. El precio y la
+// cantidad tienen hasta dos decimales, y el producto entra holgado en un entero exacto
+function centavos(linea: LineaEnVenta): number | null {
+	const pedida = leerCantidad(linea.texto);
+	if (pedida === null) {
+		return null;
+	}
+	const diezMilesimos = Math.round(linea.producto.precio * 100) * Math.round(pedida * 100);
+	return Math.floor((diezMilesimos + 50) / 100);
+}
+
+// Lo recibido como lo escribe quien cobra: «100», «100,50» o «100.5». null si no tiene esa forma; el tope de
+// 999 999,99 (RF-13) lo revisa el cobro, con su propio aviso
 function leerRecibido(texto: string): number | null {
 	const limpio = texto.trim();
-	return /^\d{1,6}([.,]\d{1,2})?$/.test(limpio) ? Number(limpio.replace(',', '.')) : null;
+	return /^\d{1,9}([.,]\d{1,2})?$/.test(limpio) ? Number(limpio.replace(',', '.')) : null;
 }
 
 function redondear(valor: number): number {

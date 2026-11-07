@@ -180,6 +180,8 @@ describe('ComprobantePage', () => {
     expect(ticket()).toContain('Anulado');
     expect(ticket()).toContain('Anulada el 05/11/2026 10:30 por Fabio Cruz: Producto equivocado');
     expect(boton('Anular venta')).toBeUndefined();
+    // Sin el botón, el foco va al título del ticket y no se pierde (revisión de interfaz)
+    expect(document.activeElement?.id).toBe('titulo-ticket');
   });
 
   // HU-23 RF-20: el Empleado no ve «Anular venta», ni el Administrador en una que ya no se puede

@@ -218,6 +218,10 @@ dialog {
 		background: var(--app-fondo);
 		color: var(--app-texto);
 		resize: vertical;
+
+		&[aria-invalid='true'] {
+			border: 2px solid var(--app-error);
+		}
 	}
 }
 

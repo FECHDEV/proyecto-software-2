@@ -506,4 +506,108 @@ pruebas y `ng build`, y al terminar la suite del frontend y `npm run lint`. En
 
 ## Resultado
 
-*(Se completa en `/sdd:cerrar HU-23`.)*
+Tareas 1 a 11 hechas con TDD en una sesión en la nube; el cierre, en la PC
+(06/11/2026). Backend con 831 pruebas (1 saltada), frontend con 79 archivos y
+933 pruebas, `npm run lint` y `ng build` sin avisos. De extremo a extremo, en la PC: «desde el celular se vende en el mostrador»
+en verde; las de escritorio chocan con un error que viene de `main` y solo
+pasa en Windows (el hash del script del tema se calcula con los CRLF del
+checkout: PR aparte `fix/politica-crlf`), y en el CI, en Linux, corren
+completas.
+
+### Cobertura RF → pruebas
+
+| RF | Pruebas |
+|---|---|
+| RF-1 | `VentaTiendaIntegracionTest`, `ventas.service.spec` |
+| RF-2 | `venta.page.spec` |
+| RF-3 | `VentaTiendaIntegracionTest`, `venta.page.spec` |
+| RF-4 | `VentaTiendaIntegracionTest`, `venta.page.spec`, `ventas.service.spec` |
+| RF-5, RF-6 | `PedidoTest`, `VentaTiendaIntegracionTest`, `venta.page.spec`, `ventas.service.spec` |
+| RF-7 | `VentaTiendaIntegracionTest`, `venta.page.spec` |
+| RF-8 | `PagoIntegracionTest`, `VentaTiendaIntegracionTest`, `venta.page.spec`, `ventas.service.spec` |
+| RF-9 | `VentaTiendaIntegracionTest`, `venta.page.spec`, `ventas.service.spec` |
+| RF-10 | `PagoIntegracionTest`, `VentaTiendaIntegracionTest` |
+| RF-11 | `DespachoIntegracionTest`, `PagoIntegracionTest`, `VentaTiendaIntegracionTest` |
+| RF-12 | `VentaTiendaIntegracionTest`, `venta.page.spec`, `ventas.service.spec` |
+| RF-13 | `VentaTiendaIntegracionTest` (la pantalla no deja mandar lo inválido: `venta.page.spec`) |
+| RF-14 | `VentaTiendaIntegracionTest`, `venta.page.spec` |
+| RF-15 | `VentaTiendaIntegracionTest`, `comprobante.page.spec`, `ventas.service.spec` |
+| RF-16 | `DespachoIntegracionTest`, `despacho.page.spec`, `despacho-pedido.page.spec` |
+| RF-17 | `MisPedidosIntegracionTest`, `mis-pedidos.page.spec`, `pedido.page.spec` |
+| RF-18, RF-19 | `PedidoTest`, `VentaTiendaIntegracionTest`, `comprobante.page.spec`, `ventas.service.spec` |
+| RF-20 | `PedidoTest`, `VentaTiendaIntegracionTest`, `comprobante.page.spec` |
+| RF-21 | `ReportesIntegracionTest` |
+| RF-22 | `ReportesIntegracionTest`, `ReportesExportarIntegracionTest`, `reportes.page.spec`, `reportes-resumen.spec`, `reportes.spec` |
+| RF-23 | `VentaTiendaIntegracionTest`, `PedidoIntegracionTest`, `app.routes.spec` |
+| RF-24 | `app.component.spec`, `panel.page.spec` |
+
+De extremo a extremo, `e2e/venta.spec.ts` (efectivo, comprobante, «Pedidos»
+con el canal y la anulación) y `e2e/celular.spec.ts`.
+
+Distinto del plan:
+- **La e2e la hace el Administrador,** no el Empleado: una sola sesión, del
+  que también vende y es quien anula. El Empleado lo cubren las pruebas de la
+  API y la prueba manual.
+- **Al fallar la generación del QR, la venta se cierra solo si sigue
+  pendiente** (`/code-review`): otro pudo cancelarla o vencerla mientras tanto.
+- **Los importes de «Nueva venta» en centavos enteros**
+  (`decisiones.md` → «Decisiones técnicas del frontend», 06/11/2026).
+- **`Canal.deTexto`** lee el filtro de canal de `/pedidos` y de los reportes,
+  en un solo lugar.
+
+### Revisiones
+
+- **Subagente de interfaz** (tienda de pruebas, escritorio e iPhone 15, los dos
+  temas, peores datos). Confirmó el comprador, el cambio, los rechazos con
+  `role="alert"`, el QR del simulador, la impresión (solo el ticket, negro
+  sobre blanco), el filtro «Canal», nombres larguísimos, objetivos de 44 px y
+  sin desplazamiento horizontal. **Corregido:**
+  - en modo oscuro las líneas usaban el error y el foco del tema oscuro sobre
+    la lona clara (1,73:1 y 1,3:1): ahora los de la lona, como el carrito;
+  - lo recibido, el correo del comprador y el motivo de la anulación no
+    mostraban el borde de error de 2 px;
+  - en el celular un subtotal grande tapaba el «+» (ahora va en su fila) y el
+    total se salía de la tarjeta;
+  - durante el QR, «Quitar» y la búsqueda no se veían desactivados (la búsqueda
+    ahora es de solo lectura);
+  - al rechazar por stock el foco se quedaba en el botón: ahora va a la
+    primera línea marcada; al anular, al título del ticket;
+  - lo recibido de más de Bs 999.999,99 decía «Escriba con números»: ahora
+    dice el tope.
+  **Pendiente:** una venta de más de Bs 999.999,99 no se puede cobrar en
+  efectivo (lo recibido tiene ese tope, RF-13); no se pregunta por ahora.
+- **`/security-review`** (controladores, servicios, `SecurityConfig`, DTO y
+  `Pedido`): sin hallazgos de confianza ≥ 8. Se revisaron el orden de las
+  reglas de `SecurityConfig`, el simulador solo con `simulador`, que un Cliente
+  no vea la venta de otro, precio y total desde la pantalla, cantidades y lo
+  recibido, anular dos veces, el QR confirmado por consulta, `canal` como
+  parámetro y los datos de la búsqueda del comprador.
+- **`/code-review`, dos rondas.**
+  - **Corregido en la primera:**
+    - el total sumaba con los restos de JavaScript y rechazaba un pago justo
+      (85 + 8,46);
+    - si cancelaban la venta mientras se generaba el QR y la generación
+      fallaba, respondía 500 en lugar de 503;
+    - la lectura del canal estaba repetida.
+  - **Corregido en la segunda:** el subtotal redondeaba el medio centavo hacia
+    abajo y el servidor hacia arriba (4,50 × 0,69): la venta no se podía
+    cobrar nunca. Pruebas más estrictas del cambio en cero y de una sola
+    devolución de stock.
+  - **Descartado:** rearmar los temporizadores del QR en cada consulta (así la
+    cuenta regresiva toma la del servidor); bloquear la venta en cada consulta
+    y leer dos veces la venta en efectivo (rendimiento, sin efecto con este
+    tráfico); las fotos de la búsqueda (hasta 10 por consulta); el precio viejo
+    tras un 404 (un producto oculto se rechaza antes como «no disponible»);
+    `cerrar` sin revisar el estado (cada llamada ya lo revisa); un registro
+    aparte para la venta cancelada mientras tanto; `Canal.deTexto` en
+    `entity`; un canal inválido que da los dos (así lo piden RF-16 y RF-22).
+
+### Prueba manual
+
+Fabio, 06/11/2026, con Libélula real (el producto «prueba» para el QR): los
+nueve pasos pasaron (efectivo, stock que no alcanza, a nombre de un Cliente,
+QR pagado y cancelado, «Pedidos» con el canal, anular, Contador y reportes,
+direcciones con basura y celular). Preguntó por qué la venta con QR cancelada y
+la cobrada después en efectivo quedan como dos ventas: así lo pide RF-9, y
+cada cobro conserva su venta (un pago tardío del QR cae en la cancelada, RF-11).
+**Lo dejó así.**

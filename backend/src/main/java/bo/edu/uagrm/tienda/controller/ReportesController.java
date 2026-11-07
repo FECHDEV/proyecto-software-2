@@ -1,7 +1,5 @@
 package bo.edu.uagrm.tienda.controller;
 
-import java.util.Arrays;
-
 import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -42,7 +40,7 @@ public class ReportesController {
 	public VentasResponse ventas(@RequestParam(required = false) String desde,
 			@RequestParam(required = false) String hasta, @RequestParam(required = false) TipoCliente tipo,
 			@RequestParam(required = false) String canal) {
-		return reportesService.ventas(desde, hasta, tipo, canal(canal));
+		return reportesService.ventas(desde, hasta, tipo, Canal.deTexto(canal));
 	}
 
 	// orden=MENOS son los menos vendidos (RF-12); cualquier otro, los más vendidos (RF-11)
@@ -51,7 +49,7 @@ public class ReportesController {
 			@RequestParam(required = false) String hasta, @RequestParam(required = false) TipoCliente tipo,
 			@RequestParam(required = false) String canal, @RequestParam(required = false) String orden,
 			@RequestParam(required = false) String pagina) {
-		return reportesService.productos(desde, hasta, tipo, canal(canal), "MENOS".equals(orden),
+		return reportesService.productos(desde, hasta, tipo, Canal.deTexto(canal), "MENOS".equals(orden),
 				Paginas.numeroDePagina(pagina));
 	}
 
@@ -72,14 +70,14 @@ public class ReportesController {
 	public ResumenDePerdidos resumenDePerdidos(@RequestParam(required = false) String desde,
 			@RequestParam(required = false) String hasta, @RequestParam(required = false) TipoCliente tipo,
 			@RequestParam(required = false) String canal) {
-		return reportesService.resumenDePerdidos(desde, hasta, tipo, canal(canal));
+		return reportesService.resumenDePerdidos(desde, hasta, tipo, Canal.deTexto(canal));
 	}
 
 	@GetMapping("/perdidos")
 	public PaginaResponse<ProductoPerdido> perdidos(@RequestParam(required = false) String desde,
 			@RequestParam(required = false) String hasta, @RequestParam(required = false) TipoCliente tipo,
 			@RequestParam(required = false) String canal, @RequestParam(required = false) String pagina) {
-		return reportesService.perdidos(desde, hasta, tipo, canal(canal), Paginas.numeroDePagina(pagina));
+		return reportesService.perdidos(desde, hasta, tipo, Canal.deTexto(canal), Paginas.numeroDePagina(pagina));
 	}
 
 	// HU-19: todo el reporte en un archivo, como descarga (RF-4). no-store porque trae datos de clientes (RF-8)
@@ -88,16 +86,11 @@ public class ReportesController {
 			@RequestParam(required = false) String desde, @RequestParam(required = false) String hasta,
 			@RequestParam(required = false) TipoCliente tipo, @RequestParam(required = false) String canal,
 			@RequestParam(required = false) String dias, @AuthenticationPrincipal Long idUsuario) {
-		ArchivoExportado archivo = exportacionDeReportes.exportar(formato, desde, hasta, tipo, canal(canal), dias,
+		ArchivoExportado archivo = exportacionDeReportes.exportar(formato, desde, hasta, tipo, Canal.deTexto(canal), dias,
 				idUsuario);
 		return ResponseEntity.ok().contentType(MediaType.parseMediaType(archivo.tipoDeContenido()))
 				.header(HttpHeaders.CONTENT_DISPOSITION,
 						ContentDisposition.attachment().filename(archivo.nombre()).build().toString())
 				.cacheControl(CacheControl.noStore()).body(archivo.contenido());
-	}
-
-	// HU-23 RF-22: vacío o uno que no existe, los dos canales
-	private static Canal canal(String canal) {
-		return Arrays.stream(Canal.values()).filter(valor -> valor.name().equals(canal)).findFirst().orElse(null);
 	}
 }

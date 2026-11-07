@@ -47,8 +47,7 @@ public class DespachoService {
 	public PaginaResponse<PedidoDespachoResumenResponse> lista(String estado, String canal, String texto, int pagina) {
 		EstadoPedido filtro = TODOS.equals(estado) ? null : estadoOPagado(estado);
 		// Sin canal o con uno que no existe, todos (HU-23 RF-16)
-		Canal deCanal = Arrays.stream(Canal.values()).filter(valor -> valor.name().equals(canal)).findFirst()
-				.orElse(null);
+		Canal deCanal = Canal.deTexto(canal);
 		// Sin los espacios de alrededor primero: no cuentan para el límite. Por caracteres completos: no parte un emoji
 		String limpio = texto == null ? null : texto.strip();
 		String recortado = limpio == null ? null

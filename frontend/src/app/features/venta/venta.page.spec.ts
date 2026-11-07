@@ -210,7 +210,41 @@ describe('VentaPage', () => {
     await escribirRecibido('90');
     await tocar('Cobrar en efectivo');
     expect(pantalla().querySelector('#error-recibido')?.textContent).toContain('no alcanza');
+
+    // Revisión de interfaz: más del tope no es «escriba con números»
+    await escribirRecibido('100000000');
+    await tocar('Cobrar en efectivo');
+    expect(pantalla().querySelector('#error-recibido')?.textContent).toMatch(/admite hasta Bs\s999\.999,99/);
     expect(ventas.registrar).not.toHaveBeenCalled();
+  });
+
+  // HU-23 RF-5 (/code-review): 85 + 8,46 da 93,46000000000001 sumando con decimales de JavaScript; lo recibido
+  // justo, igual al total, se acepta con cambio cero
+  it('aceptaLoRecibidoIgualAlTotalSinErrorDeRedondeo', async () => {
+    await abrir();
+    await tocarProducto('Martillo');
+    await tocarProducto('Cable');
+    await escribirCantidad(1, '1,88');
+    await escribirRecibido('93,46');
+    expect(pantalla().querySelector('#cambio strong')?.textContent?.trim()).toMatch(/^Bs\s0,00$/);
+
+    await tocar('Cobrar en efectivo');
+
+    expect(ventas.registrar).toHaveBeenCalledWith(expect.objectContaining({ recibido: 93.46, totalEsperado: 93.46 }));
+  });
+
+  // HU-23 RF-14 (/code-review): el subtotal redondea medio centavo hacia arriba, como el servidor (HALF_UP). 4,50 ×
+  // 0,69 = 3,105 es 3,11; con decimales de JavaScript daba 3,10 y el servidor respondía TOTAL_CAMBIADO siempre
+  it('redondeaElMedioCentavoComoElServidor', async () => {
+    await abrir();
+    await tocarProducto('Martillo');
+    await tocarProducto('Cable');
+    await escribirCantidad(1, '0,69');
+    await escribirRecibido('100');
+
+    await tocar('Cobrar en efectivo');
+
+    expect(ventas.registrar).toHaveBeenCalledWith(expect.objectContaining({ totalEsperado: 88.11 }));
   });
 
   // HU-23 RF-6: en efectivo registra con el total que se vio y va al comprobante
@@ -294,6 +328,9 @@ describe('VentaPage', () => {
     expect(lineas()[1].classList).toContain('marcada');
     expect(lineas()[1].querySelector('.aviso-linea')?.textContent).toContain('hay 0,5 metros');
     expect(pantalla().querySelector('.aviso')?.textContent).toContain('Corrija los marcados');
+    // La primera línea marcada recibe el foco (revisión de interfaz)
+    await harness.fixture.whenStable();
+    expect(document.activeElement?.id).toBe('cantidad-2');
 
     ventas.registrar.mockRejectedValueOnce({ status: 409, detail: 'x', codigo: 'TOTAL_CAMBIADO', total: 94.5 });
     await escribirCantidad(1, '0,5');

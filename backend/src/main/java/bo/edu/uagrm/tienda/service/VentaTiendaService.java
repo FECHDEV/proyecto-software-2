@@ -145,7 +145,13 @@ public class VentaTiendaService {
 			generado = iPago.generarCobro(idPedido, registrada.getTotal(), "Venta N.º " + idPedido + " — " + marca);
 		} catch (SistemaDePagoNoDisponibleException error) {
 			log.warn("No se pudo generar el cobro de la venta {}", idPedido, error);
-			transaccion.executeWithoutResult(estado -> cerrar(bloquearVenta(idPedido), EstadoPedido.CANCELADO));
+			// Mientras se generaba, otro pudo cancelarla o vencerla: ya devolvió el stock
+			transaccion.executeWithoutResult(estado -> {
+				Pedido pedido = bloquearVenta(idPedido);
+				if (pedido.getEstado() == EstadoPedido.PENDIENTE_PAGO) {
+					cerrar(pedido, EstadoPedido.CANCELADO);
+				}
+			});
 			throw new CobroNoDisponibleException(); // 503; las líneas siguen en la pantalla
 		}
 		return transaccion.execute(estado -> {
