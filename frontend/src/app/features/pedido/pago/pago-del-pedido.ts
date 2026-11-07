@@ -18,7 +18,7 @@ import { mensajeDeError } from '../../../core/api/mensajes-error';
 import { PedidosService } from '../../../core/api/pedidos.service';
 import { comoError } from '../../../core/modelos/error-api';
 import { Pedido, ResultadoSimulado } from '../../../core/modelos/pedido';
-import { CodigoQr } from '../../../shared/codigo-qr/codigo-qr';
+import { CodigoQr, descargarQr } from '../../../shared/codigo-qr/codigo-qr';
 import { precio } from '../../../shared/formato/precios';
 
 // RF-6: el sistema de pago informó un error y el cobro se descartó
@@ -113,6 +113,13 @@ export class PagoDelPedido {
 	}
 
 	// «Ya pagué»: pregunta en el acto y dice si todavía no llegó
+	// Para pagarlo desde la galería en la app del banco (07/11/2026). Fuera de Angular: no cambia la pantalla, y la
+	// espera para liberar la imagen dejaría la aplicación «ocupada» 10 segundos
+	protected descargar(codigoQr: string): Promise<void> {
+		const nombre = `pedido-${this.pedido().idPedido}-qr.png`;
+		return this.zona.runOutsideAngular(() => descargarQr(codigoQr, nombre));
+	}
+
 	protected yaPague(): Promise<void> {
 		return this.consultar(true);
 	}
