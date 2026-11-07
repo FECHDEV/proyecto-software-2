@@ -1,10 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, DOCUMENT } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Meta, Title } from '@angular/platform-browser';
 import { provideRouter, Router, TitleStrategy } from '@angular/router';
 
 import { MARCA } from '../marca';
-import { resumen, TituloYDescripcion } from './titulo-y-descripcion';
+import { ponerDatosEstructurados, resumen, TituloYDescripcion } from './titulo-y-descripcion';
 
 @Component({ template: '' })
 class PantallaVacia {}
@@ -26,6 +26,7 @@ describe('TituloYDescripcion', () => {
             component: PantallaVacia,
           },
           { path: 'seccion', data: { descripcion: 'De la sección.' }, children: [{ path: 'hija', component: PantallaVacia }] },
+          { path: '**', data: { indexar: false }, component: PantallaVacia },
         ]),
         { provide: TitleStrategy, useClass: TituloYDescripcion },
       ],
@@ -56,7 +57,44 @@ describe('TituloYDescripcion', () => {
 
     expect(descripcion()).toBe('De la sección.');
   });
+
+  // SEO (plan 2026-11-07): la dirección canónica, sin la consulta, para que los filtros no cuenten como otras páginas
+  it('pone la dirección canónica sin la consulta', async () => {
+    await router.navigateByUrl('/catalogo?pagina=2&categoria=3');
+
+    expect(canonica()).toBe(`${location.origin}/catalogo`);
+    await router.navigateByUrl('/');
+    expect(canonica()).toBe(`${location.origin}/`);
+    expect(document.head.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
+  });
+
+  // SEO: «Página no encontrada» responde 200 (la arma el navegador): que no se indexe; la próxima página sí
+  it('noIndexaLaPaginaNoEncontrada', async () => {
+    await router.navigateByUrl('/no-existe');
+    expect(robots()).toBe('noindex');
+
+    await router.navigateByUrl('/catalogo');
+    expect(robots()).toBeUndefined();
+  });
+
+  // SEO: los datos del producto los pone el detalle; al irse, no quedan en otra página
+  it('alNavegarSacaLosDatosEstructurados', async () => {
+    ponerDatosEstructurados(TestBed.inject(DOCUMENT), { '@type': 'Product', name: 'Martillo' });
+    expect(document.head.querySelector('script[type="application/ld+json"]')?.textContent).toContain('Martillo');
+
+    await router.navigateByUrl('/catalogo');
+
+    expect(document.head.querySelector('script[type="application/ld+json"]')).toBeNull();
+  });
 });
+
+function canonica(): string | null | undefined {
+  return document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href;
+}
+
+function robots(): string | undefined {
+  return TestBed.inject(Meta).getTag('name="robots"')?.content;
+}
 
 describe('resumen', () => {
   it('un texto corto queda igual, en una sola línea', () => {

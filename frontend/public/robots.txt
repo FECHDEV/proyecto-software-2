@@ -12,3 +12,6 @@ Disallow: /mis-datos
 Disallow: /restablecer
 Disallow: /verificacion
 Allow: /
+
+# La dirección completa la pone nginx al servirlo (nginx.conf)
+Sitemap: __ORIGEN__/sitemap.xml

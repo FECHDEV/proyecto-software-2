@@ -4,6 +4,7 @@ import {
 	ChangeDetectionStrategy,
 	Component,
 	computed,
+	DOCUMENT,
 	effect,
 	ElementRef,
 	inject,
@@ -17,9 +18,20 @@ import { comoErrorApi } from '../../core/modelos/error-api';
 
 import { CatalogoService } from '../../core/api/catalogo.service';
 import { mensajeDeError } from '../../core/api/mensajes-error';
-import { ponerDescripcion, resumen } from '../../core/navegacion/titulo-y-descripcion';
+import {
+	indexar,
+	ponerDatosEstructurados,
+	ponerDescripcion,
+	resumen,
+} from '../../core/navegacion/titulo-y-descripcion';
 import { MARCA } from '../../core/marca';
-import { aTarjeta, srcsetDeImagen, urlDeImagen, urlDeModelo } from '../../core/modelos/catalogo';
+import {
+	aTarjeta,
+	ProductoEnDetalle,
+	srcsetDeImagen,
+	urlDeImagen,
+	urlDeModelo,
+} from '../../core/modelos/catalogo';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { Carrusel } from '../../shared/carrusel/carrusel';
 import { precio } from '../../shared/formato/precios';
@@ -108,11 +120,21 @@ export class DetallePage {
 	constructor() {
 		const pestana = inject(Title);
 		const meta = inject(Meta);
+		const documento = inject(DOCUMENT);
 		effect(() => {
 			const producto = this.producto();
 			if (producto !== undefined) {
 				pestana.setTitle(`${producto.nombre} · ${MARCA.nombre}`);
 				ponerDescripcion(meta, resumen(producto.descripcion ?? '') || MARCA.descripcion);
+				ponerDatosEstructurados(documento, datosDelProducto(producto, documento.location.origin));
+				indexar(meta, true);
+			}
+		});
+		// El que no existe responde 200 (lo arma el navegador): que no se indexe (plan 2026-11-07-seo)
+		effect(() => {
+			if (this.noDisponible()) {
+				indexar(meta, false);
+				ponerDatosEstructurados(documento, null);
 			}
 		});
 
@@ -131,4 +153,29 @@ export class DetallePage {
 			anterior = idProducto;
 		});
 	}
+}
+
+// El producto en schema.org, para que Google muestre el precio y si hay stock
+// (plan 2026-11-07-seo). Lo vacío no va: Google lo marca como error
+export function datosDelProducto(producto: ProductoEnDetalle, origen: string): object {
+	const descripcion = producto.descripcion?.trim();
+	return {
+		'@type': 'Product',
+		name: producto.nombre,
+		sku: producto.codigo,
+		...(descripcion ? { description: descripcion } : {}),
+		category: producto.categoria,
+		...(producto.marca === null ? {} : { brand: { '@type': 'Brand', name: producto.marca } }),
+		...(producto.imagenes.length === 0
+			? {}
+			: { image: producto.imagenes.map((imagen) => origen + urlDeImagen(producto.idProducto, imagen, 1200)) }),
+		offers: {
+			'@type': 'Offer',
+			url: `${origen}/producto/${producto.idProducto}`,
+			price: producto.precio.toFixed(2),
+			priceCurrency: 'BOB',
+			availability: producto.disponible ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+			itemCondition: 'https://schema.org/NewCondition',
+		},
+	};
 }
