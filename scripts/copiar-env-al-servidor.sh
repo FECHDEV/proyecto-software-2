@@ -41,7 +41,12 @@ printf '%s\n' "$LINEAS" | ssh "$SERVIDOR" '
   # Un simulador que ya estuviera en el servidor también se quita: sin la variable, va el proveedor real
   grep -Ev "^TIENDA_(PAGO|CORREO)_PROVEEDOR=[\"'"'"']?simulador[\"'"'"']?$" .env > .env.tmp || [ $? -eq 1 ]
   mv .env.tmp .env
-  [ -d /opt/demo-tienda ] && poner TIENDA_DEMO_DIRECTORIO=/opt/demo-tienda
+  if [ -d /opt/demo-tienda ]; then
+    # scp -r desde Windows la deja solo para root, y la API la lee con su propio usuario: sin esto no arranca
+    # («TIENDA_DEMO_DIRECTORIO tiene que ser una carpeta con catalogo.csv»)
+    chmod -R a+rX /opt/demo-tienda
+    poner TIENDA_DEMO_DIRECTORIO=/opt/demo-tienda
+  fi
   chmod 600 .env
   echo "Listo: .env del servidor completado"'
 
