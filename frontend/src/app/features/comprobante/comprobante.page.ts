@@ -18,12 +18,12 @@ import { VentasService } from '../../core/api/ventas.service';
 import { MARCA } from '../../core/marca';
 import { comoError, comoErrorApi } from '../../core/modelos/error-api';
 import { NOMBRES_DE_ESTADO, TONO_DE_ESTADO } from '../../core/modelos/pedido';
-import { unidadPara } from '../../core/modelos/producto';
-import { NOMBRES_DE_MEDIO, Venta } from '../../core/modelos/venta';
+import { fechaYHora, lineasDelTicket, pagosDelTicket } from '../../core/modelos/ticket';
+import { Venta } from '../../core/modelos/venta';
 import { puedeEntrar } from '../../core/sesion/modulos';
 import { SesionService } from '../../core/sesion/sesion.service';
-import { fechaCorta } from '../../shared/formato/fechas';
-import { cantidad, precio } from '../../shared/formato/precios';
+import { precio } from '../../shared/formato/precios';
+import { DatosDelTicket, Ticket } from '../../shared/ticket/ticket';
 
 // Como el backend (AnulacionRequest)
 const MAXIMO_MOTIVO = 200;
@@ -34,7 +34,7 @@ const MAXIMO_MOTIVO = 200;
 // Administrador anula desde acá la venta en efectivo del día, con un motivo
 @Component({
 	selector: 'app-comprobante',
-	imports: [RouterLink],
+	imports: [RouterLink, Ticket],
 	templateUrl: './comprobante.page.html',
 	styleUrl: './comprobante.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,13 +44,6 @@ export class ComprobantePage {
 	private readonly sesion = inject(SesionService);
 	private readonly injector = inject(Injector);
 
-	protected readonly marca = MARCA;
-	protected readonly precio = precio;
-	protected readonly cantidad = cantidad;
-	protected readonly unidadPara = unidadPara;
-	protected readonly nombresDeEstado = NOMBRES_DE_ESTADO;
-	protected readonly tono = TONO_DE_ESTADO;
-	protected readonly nombresDeMedio = NOMBRES_DE_MEDIO;
 	protected readonly maximoMotivo = MAXIMO_MOTIVO;
 
 	// Solo dígitos: lo demás es una dirección que no sirve (casos límite)
@@ -64,6 +57,32 @@ export class ComprobantePage {
 	protected readonly venta = computed(() => {
 		const anulada = this.anulada();
 		return anulada !== null && anulada.idPedido === this.recurso.value()?.idPedido ? anulada : this.recurso.value();
+	});
+	// RF-15: lo que muestra el ticket. «Entregado» no lleva chip: es la venta hecha
+	protected readonly ticket = computed((): DatosDelTicket | null => {
+		const venta = this.venta();
+		if (venta === undefined) {
+			return null;
+		}
+		return {
+			marca: MARCA.nombre,
+			titulo: `Venta N.º\u00a0${venta.idPedido}`,
+			fecha: fechaYHora(venta.pagado ?? venta.confirmado),
+			estado:
+				venta.estado === 'ENTREGADO'
+					? null
+					: { texto: NOMBRES_DE_ESTADO[venta.estado], tono: TONO_DE_ESTADO[venta.estado] },
+			datos: [
+				{ etiqueta: 'Cliente', valor: venta.comprador?.nombre ?? 'Consumidor final' },
+				{ etiqueta: 'Atendió', valor: venta.vendidoPor },
+			],
+			lineas: lineasDelTicket(venta.lineas),
+			total: precio(venta.total),
+			pagos: pagosDelTicket(venta.medio, venta.recibido, venta.cambio),
+			anulacion: venta.anulado
+				? `Anulada el ${fechaYHora(venta.anulado)} por ${venta.anuladoPor}: ${venta.motivoAnulacion}`
+				: null,
+		};
 	});
 	protected readonly noEncontrada = computed(() => {
 		if (this.id() === null) {
@@ -85,10 +104,6 @@ export class ComprobantePage {
 	protected readonly errorDelMotivo = signal('');
 	protected readonly anulando = signal(false);
 	protected readonly errorDeAnulacion = signal('');
-
-	protected fechaYHora(iso: string): string {
-		return `${fechaCorta(iso)} ${iso.slice(11, 16)}`;
-	}
 
 	protected imprimir(): void {
 		window.print();

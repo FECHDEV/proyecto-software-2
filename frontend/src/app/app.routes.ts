@@ -98,6 +98,15 @@ export const routes: Routes = [
     data: { rol: 'CLIENTE' },
     loadComponent: () => import('./features/pedido/pedido.page').then((m) => m.PedidoPage),
   },
+  // El comprobante de una compra del Cliente (HU-14 RF-10, RF-13)
+  {
+    path: 'mis-pedidos/:id/comprobante',
+    title: `Comprobante · ${MARCA.nombre}`,
+    canActivate: [rolGuard],
+    data: { rol: 'CLIENTE' },
+    loadComponent: () =>
+      import('./features/comprobante-cliente/comprobante-cliente.page').then((m) => m.ComprobanteClientePage),
+  },
   {
     path: 'panel',
     title: `Panel · ${MARCA.nombre}`,

@@ -190,6 +190,16 @@ describe('rutas', () => {
     expect(await navegarComo('EMPLEADO', '/mis-pedidos/12')).toBe('/panel');
   });
 
+  // HU-14 RF-13
+  it('RF-13: la ruta del comprobante es solo del Cliente', async () => {
+    expect(await navegarComo('CLIENTE', '/mis-pedidos/12/comprobante')).toBe('/mis-pedidos/12/comprobante');
+    expect(await navegarComo(null, '/mis-pedidos/12/comprobante')).toBe(
+      '/inicio-sesion?destino=%2Fmis-pedidos%2F12%2Fcomprobante',
+    );
+    expect(await navegarComo('EMPLEADO', '/mis-pedidos/12/comprobante')).toBe('/panel');
+    expect(await navegarComo('CONTADOR', '/mis-pedidos/12/comprobante')).toBe('/panel');
+  });
+
   it('mis datos pide sesión', async () => {
     expect(await navegarComo(null, '/mis-datos')).toBe('/inicio-sesion?destino=%2Fmis-datos');
     expect(await navegarComo('CLIENTE', '/mis-datos')).toBe('/mis-datos');

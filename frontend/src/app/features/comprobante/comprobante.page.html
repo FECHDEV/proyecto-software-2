@@ -25,80 +25,9 @@
   }
 
   <!-- RF-15: el ticket, lo único que sale al imprimir -->
-  <article class="ticket" aria-labelledby="titulo-ticket">
-    <header>
-      <p class="marca" translate="no">{{ marca.nombre }}</p>
-      <h1 id="titulo-ticket" tabindex="-1">Venta N.º&nbsp;{{ venta.idPedido }}</h1>
-      <p>{{ fechaYHora(venta.pagado ?? venta.confirmado) }}</p>
-      @if (venta.estado !== 'ENTREGADO') {
-        <p [class]="'estado ' + tono[venta.estado]">{{ nombresDeEstado[venta.estado] }}</p>
-      }
-    </header>
-
-    <dl class="datos">
-      <div>
-        <dt>Cliente</dt>
-        <dd>{{ venta.comprador?.nombre ?? 'Consumidor final' }}</dd>
-      </div>
-      <div>
-        <dt>Atendió</dt>
-        <dd>{{ venta.vendidoPor }}</dd>
-      </div>
-    </dl>
-
-    <table>
-      <caption class="solo-lectores">Productos de la venta</caption>
-      <thead>
-        <tr>
-          <th scope="col">Producto</th>
-          <th scope="col" class="numero">Importe</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (linea of venta.lineas; track linea.idProducto) {
-          <tr>
-            <td>
-              <span class="producto">{{ linea.nombre }}</span>
-              <span class="detalle">
-                {{ cantidad(linea.cantidad) }} {{ unidadPara(linea.unidad, linea.cantidad) }} × {{ precio(linea.precio) }}
-              </span>
-            </td>
-            <td class="numero">{{ precio(linea.subtotal) }}</td>
-          </tr>
-        }
-      </tbody>
-      <tfoot>
-        <tr class="total">
-          <th scope="row">Total</th>
-          <td class="numero">{{ precio(venta.total) }}</td>
-        </tr>
-        <tr>
-          <th scope="row">Pago</th>
-          <td class="numero">{{ nombresDeMedio[venta.medio] }}</td>
-        </tr>
-        @if (venta.recibido !== null) {
-          <tr>
-            <th scope="row">Recibido</th>
-            <td class="numero">{{ precio(venta.recibido) }}</td>
-          </tr>
-        }
-        @if (venta.cambio !== null) {
-          <tr>
-            <th scope="row">Cambio</th>
-            <td class="numero">{{ precio(venta.cambio) }}</td>
-          </tr>
-        }
-      </tfoot>
-    </table>
-
-    @if (venta.anulado) {
-      <p class="anulacion">
-        Anulada el {{ fechaYHora(venta.anulado) }} por {{ venta.anuladoPor }}: {{ venta.motivoAnulacion }}
-      </p>
-    }
-
-    <p class="leyenda">No válido como factura</p>
-  </article>
+  @if (ticket(); as ticket) {
+    <app-ticket [datos]="ticket" />
+  }
 
   <!-- RF-18: el motivo, obligatorio. Cancelar recibe el foco al abrir: es la opción segura -->
   <dialog #dialogo class="solo-pantalla" aria-labelledby="titulo-anular">
