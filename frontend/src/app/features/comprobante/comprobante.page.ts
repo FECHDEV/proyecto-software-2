@@ -18,12 +18,11 @@ import { VentasService } from '../../core/api/ventas.service';
 import { MARCA } from '../../core/marca';
 import { comoError, comoErrorApi } from '../../core/modelos/error-api';
 import { NOMBRES_DE_ESTADO, TONO_DE_ESTADO } from '../../core/modelos/pedido';
-import { unidadPara } from '../../core/modelos/producto';
-import { NOMBRES_DE_MEDIO, Venta } from '../../core/modelos/venta';
+import { fechaYHora, lineasDelTicket, pagosDelTicket } from '../../core/modelos/ticket';
+import { Venta } from '../../core/modelos/venta';
 import { puedeEntrar } from '../../core/sesion/modulos';
 import { SesionService } from '../../core/sesion/sesion.service';
-import { fechaCorta } from '../../shared/formato/fechas';
-import { cantidad, precio } from '../../shared/formato/precios';
+import { precio } from '../../shared/formato/precios';
 import { DatosDelTicket, Ticket } from '../../shared/ticket/ticket';
 
 // Como el backend (AnulacionRequest)
@@ -65,13 +64,6 @@ export class ComprobantePage {
 		if (venta === undefined) {
 			return null;
 		}
-		const pagos = [{ etiqueta: 'Pago', valor: NOMBRES_DE_MEDIO[venta.medio] }];
-		if (venta.recibido !== null) {
-			pagos.push({ etiqueta: 'Recibido', valor: precio(venta.recibido) });
-		}
-		if (venta.cambio !== null) {
-			pagos.push({ etiqueta: 'Cambio', valor: precio(venta.cambio) });
-		}
 		return {
 			marca: MARCA.nombre,
 			titulo: `Venta N.º\u00a0${venta.idPedido}`,
@@ -84,13 +76,9 @@ export class ComprobantePage {
 				{ etiqueta: 'Cliente', valor: venta.comprador?.nombre ?? 'Consumidor final' },
 				{ etiqueta: 'Atendió', valor: venta.vendidoPor },
 			],
-			lineas: venta.lineas.map((linea) => ({
-				nombre: linea.nombre,
-				detalle: `${cantidad(linea.cantidad)} ${unidadPara(linea.unidad, linea.cantidad)} × ${precio(linea.precio)}`,
-				importe: precio(linea.subtotal),
-			})),
+			lineas: lineasDelTicket(venta.lineas),
 			total: precio(venta.total),
-			pagos,
+			pagos: pagosDelTicket(venta.medio, venta.recibido, venta.cambio),
 			anulacion: venta.anulado
 				? `Anulada el ${fechaYHora(venta.anulado)} por ${venta.anuladoPor}: ${venta.motivoAnulacion}`
 				: null,
@@ -162,10 +150,6 @@ export class ComprobantePage {
 			this.anulando.set(false);
 		}
 	}
-}
-
-function fechaYHora(iso: string): string {
-	return `${fechaCorta(iso)} ${iso.slice(11, 16)}`;
 }
 
 function idDe(texto: string | null): number | null {

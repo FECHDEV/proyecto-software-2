@@ -1297,9 +1297,10 @@ retira en la tienda.
   del Cliente:** en la página de su pedido «Pagado» o «Entregado», «Ver
   comprobante» lleva a `/mis-pedidos/:id/comprobante`, con el mismo ticket del
   mostrador (HU-23): se imprime o se guarda como PDF con el navegador, con
-  «No válido como factura». Lleva su nombre, el medio de pago (QR en línea;
-  QR o efectivo en el mostrador, con lo recibido y el cambio) y, solo en la
-  venta del mostrador, «Atendió». Sin comprobante para «Pago a devolver»,
+  «No válido como factura». Lleva su nombre, el medio de pago («En línea» en
+  una compra en línea, porque la tienda no sabe con qué se pagó en el sistema
+  de pago; QR o efectivo en el mostrador, con lo recibido y el cambio) y, solo
+  en la venta del mostrador, «Atendió». Sin comprobante para «Pago a devolver»,
   «Anulado» ni los pedidos que no se pagaron: no fueron una compra.
   **Motivo:** el cliente que compra en línea no tiene ningún papel de su
   compra, y el del mostrador puede perder el que le dieron; repetir el ticket

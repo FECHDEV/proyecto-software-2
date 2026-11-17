@@ -78,7 +78,8 @@ export interface Pedido {
 }
 
 // Espejo de ComprobanteResponse (HU-14 RF-10): el comprobante de una compra hecha. fecha: cuándo se pagó;
-// vendidoPor: solo en el mostrador; recibido y cambio: solo en efectivo
+// vendidoPor y medio: solo en el mostrador (en línea, medio es null: la pantalla dice «En línea»); recibido y cambio:
+// solo en efectivo
 export interface Comprobante {
 	idPedido: number;
 	fecha: string;
@@ -86,7 +87,7 @@ export interface Comprobante {
 	vendidoPor: string | null;
 	lineas: LineaDePedido[];
 	total: number;
-	medio: MedioPago;
+	medio: MedioPago | null;
 	recibido: number | null;
 	cambio: number | null;
 }

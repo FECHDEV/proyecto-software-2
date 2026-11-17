@@ -40,7 +40,7 @@ const COMPROBANTE: Comprobante = {
   vendidoPor: null,
   lineas: [],
   total: 171,
-  medio: 'QR',
+  medio: null,
   recibido: null,
   cambio: null,
 };

@@ -7,8 +7,14 @@ cerrada, plan corto, `/sdd:analizar`, TDD y `/sdd:cerrar`.
 
 *Lista del 07/11/2026.* Ya hecho de la misma tanda: el comprobante del
 mostrador al centro y «Descargar QR» en el pago del pedido (PR #110).
+*17/11/2026:* el punto 1 está hecho (ampliación de HU-14, issue #117).
 
-## 1. Recibo de la compra para el cliente
+## 1. Recibo de la compra para el cliente (hecho)
+
+*17/11/2026:* hecho como ampliación de HU-14 (RF-9 a RF-13, issue #117):
+`/mis-pedidos/:id/comprobante`, solo «Pagado» y «Entregado», el mismo ticket
+del mostrador (ahora en `shared/ticket`) y «Pago: En línea» en las compras en
+línea. Lo de abajo queda como historial de lo que se pidió.
 
 - **Qué:** que el cliente imprima o guarde el comprobante de su compra desde
   «Mis pedidos» (`/mis-pedidos/:id`), con el mismo ticket del mostrador.
@@ -84,4 +90,8 @@ período) y «Pedidos perdidos».
     reportes por cliente;
   - qué cuenta como compra (la regla de HU-18 RF-4: «Pagado» o «Entregado»,
     en la fecha del pago);
-  - cuáles de estos reportes valen la pena y cuáles se descartan.
+  - cuáles de estos reportes valen la pena y cuáles se descartan;
+  - *17/11/2026 (HU-14):* el resumen por medio de pago cuenta las compras en
+    línea como QR (`VentaFila.medioDePago`, HU-23 RF-22), pero la tienda no
+    sabe con qué se pagó en el sistema de pago, y el comprobante ahora dice
+    «En línea»: ¿una fila «En línea» en lugar de sumarlas a QR?

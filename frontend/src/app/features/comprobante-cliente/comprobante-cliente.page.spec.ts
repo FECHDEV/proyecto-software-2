@@ -17,7 +17,7 @@ const EN_LINEA: Comprobante = {
   vendidoPor: null,
   lineas: [{ idProducto: 1, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85.5, cantidad: 2, subtotal: 171 }],
   total: 171,
-  medio: 'QR',
+  medio: null,
   recibido: null,
   cambio: null,
 };
@@ -87,7 +87,7 @@ describe('ComprobanteClientePage', () => {
       .trim();
   const enlace = (href: string): HTMLAnchorElement | null => pantalla().querySelector(`a[href="${href}"]`);
 
-  it('RF-10: en línea muestra el cliente, las líneas, el total y «Pago: QR», sin «Atendió» ni chip', async () => {
+  it('RF-10: en línea muestra el cliente, las líneas, el total y «Pago: En línea», sin «Atendió» ni chip', async () => {
     await abrir();
 
     expect(pedidos.id!()).toBe(12);
@@ -97,7 +97,7 @@ describe('ComprobanteClientePage', () => {
     expect(dato('Atendió')).toBeUndefined();
     expect(texto()).toContain('2 unidades × Bs 85,50');
     expect(fila('Total')).toBe('Bs 171,00');
-    expect(fila('Pago')).toBe('QR');
+    expect(fila('Pago')).toBe('En línea');
     expect(fila('Recibido')).toBeUndefined();
     expect(pantalla().querySelector('.estado')).toBeNull();
     expect(texto()).toContain('No válido como factura');

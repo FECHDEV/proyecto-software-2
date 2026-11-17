@@ -110,7 +110,6 @@ dialog {
 	gap: var(--app-espacio-3);
 }
 
-// Al imprimir: solo el ticket, en negro sobre blanco y del ancho de un rollo de 80 mm
 // Al imprimir sale solo el ticket, arriba a la izquierda
 @media print {
 	:host {

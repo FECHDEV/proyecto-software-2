@@ -17,9 +17,11 @@ código de la autorización y lo que cubre la revisión de interfaz.
   está `PAGADO` ni `ENTREGADO`), con la misma `PedidoNoEncontradoException`.
   **Motivo:** no revela si el pedido existe (RF-12), y la pantalla no
   necesita distinguir los casos.
-- **El medio de pago lo decide el servidor:** un pedido en línea no guarda
-  `medioPago` (es `null`); el comprobante dice `QR`, que es como se paga en
-  línea. En el mostrador, el `medioPago` guardado.
+- **El medio de pago:** un pedido en línea no guarda `medioPago` y el
+  comprobante lo manda `null`; la pantalla dice «En línea». En el mostrador,
+  el `medioPago` guardado. *17/11/2026 (`/code-review`, decisión de Fabio):*
+  antes decía `QR`, pero la página de pago del proveedor puede cobrar con
+  otro medio y la tienda no se entera de cuál.
 - **La fecha del ticket es `pagado`,** que en `PAGADO` y `ENTREGADO` siempre
   existe (en línea, al conciliar; en el mostrador, `cobrarEnTienda` y la
   consulta del QR). Si faltara, `confirmado`, como hace hoy el ticket del
@@ -66,7 +68,7 @@ código de la autorización y lo que cubre la revisión de interfaz.
    - `PedidoController`: `@GetMapping(ID + "/comprobante")`.
    - Pruebas, en `ComprobanteIntegracionTest` (nueva, con el armado de
      `MisPedidosIntegracionTest` y `VentaTiendaIntegracionTest`):
-     - `enLineaPagadoDaElTicketConQrYSinAtendio` (RF-10)
+     - `enLineaPagadoDaElTicketSinMedioNiAtendio` (RF-10)
      - `enLineaEntregadoTambienTieneComprobante` (RF-9, RF-10)
      - `ventaEnEfectivoDaRecibidoCambioYQuienVendio` (RF-10)
      - `ventaConQrPagadaDaQrSinRecibidoNiCambio` (RF-10)
@@ -119,7 +121,7 @@ código de la autorización y lo que cubre la revisión de interfaz.
        nada sin id`.
      - `comprobante-cliente.page.spec.ts`:
        - `RF-10: en línea muestra el cliente, las líneas, el total y «Pago:
-         QR», sin «Atendió» ni chip`
+         En línea», sin «Atendió» ni chip`
        - `RF-10: del mostrador en efectivo muestra «Atendió», lo recibido y
          el cambio`
        - `RF-11: «Imprimir» llama a window.print`
@@ -156,4 +158,90 @@ código de la autorización y lo que cubre la revisión de interfaz.
 
 ## Resultado
 
-*(Se completa en `/sdd:cerrar`.)*
+*17/11/2026 (`/sdd:cerrar`).*
+
+### Cobertura RF → pruebas
+
+| RF | Pruebas |
+|---|---|
+| RF-9 | `ComprobanteIntegracionTest.enLineaEntregadoTambienTieneComprobante`; `pedidos.service.spec` («RF-9: pide el comprobante…»); `pedido.page.spec` («RF-9: Ver comprobante en Pagado y Entregado…», «RF-9: al pasar a Pagado aparece…») |
+| RF-10 | `ComprobanteIntegracionTest`: `enLineaPagadoDaElTicketSinMedioNiAtendio`, `ventaEnEfectivoDaRecibidoCambioYQuienVendio`, `ventaConQrPagadaDaQrSinRecibidoNiCambio`; `ticket.spec` (3); `comprobante-cliente.page.spec` («RF-10: en línea…», «RF-10: del mostrador en efectivo…») |
+| RF-11 | `comprobante-cliente.page.spec` («RF-11: Imprimir llama a window.print»); que salga solo el ticket, en la revisión de interfaz |
+| RF-12 | `ComprobanteIntegracionTest`: `pendienteCanceladoVencidoYPagoADevolverDan404`, `ventaAnuladaDa404`, `elDeOtroClienteDa404`, `idQueNoEsUnNumeroDa404`; `comprobante-cliente.page.spec` (404, id basura) |
+| RF-13 | `ComprobanteIntegracionTest.elPersonalRecibe403YSinSesion401`; `app.routes.spec` («RF-13: la ruta del comprobante es solo del Cliente») |
+
+### Suites
+
+- Backend: `./mvnw test`, 844 pruebas, 0 fallas, 1 omitida (de antes).
+- Frontend: `npx ng test --watch=false`, 964 pruebas en 82 archivos; `npm run
+  lint` sin problemas; `npx ng build` sin avisos, inicial 494,12 kB.
+- Una corrida dio dos pruebas por tiempo agotado (`app.routes.spec`,
+  `usuarios.page.spec`): el servidor de desarrollo de la revisión de interfaz
+  seguía levantado. Sin él, todo en verde.
+
+### Revisiones
+
+- **Subagente de interfaz** (frontend sin backend, la API y la sesión
+  simuladas en el navegador; escritorio e iPhone 15, los dos temas, impresión,
+  404, id basura, error de red, peores datos, el comprobante del mostrador).
+  Confirmó: solo el ticket al imprimir, negro sobre blanco y de 72 mm; sin
+  desbordes con nombres de 70 caracteres, productos de 150 y 15 líneas;
+  «Ver comprobante» de 44 px con foco visible y contraste de 7,5:1 o más; un
+  solo `h1`; `role="alert"` en el error; el mostrador igual que antes.
+  **Corregido:** un comentario viejo repetido en `comprobante.page.scss`.
+  **Pendientes, de antes (HU-23) y comunes a las dos páginas:** al tocar
+  «Reintentar» el foco vuelve a `<body>`; en un rollo real de 80 mm con los
+  márgenes que pone el navegador, el ticket de 72 mm más el margen lateral
+  de `main` no entra y el navegador lo achica (`@page` y sin margen al
+  imprimir). **Sin cambio:** «Ver comprobante» dentro de la sección
+  `role="status"` (válido; se ve en la prueba manual) y los botones en dos
+  filas en el celular (como en el mostrador).
+- **`/security-review`** (controlador, servicio, DTO, consulta y
+  `SecurityConfig`): sin hallazgos de confianza ≥ 8. Revisó el orden de las
+  reglas de `/api/pedidos/**`, el dueño desde el token en
+  `visibleParaElCliente`, el mismo 404 para lo ajeno, lo inexistente y lo que
+  no fue una compra, y los datos que expone el comprobante (sin correo ni id
+  del vendedor ni datos del proveedor de pago).
+- **`/code-review`, primera ronda.**
+  **Corregido:**
+  - en línea el ticket decía «Pago: QR», pero un pedido en línea no guarda
+    con qué se pagó y la página de pago del proveedor puede cobrar con otro
+    medio: ahora el servidor manda el medio vacío y el ticket dice «En línea»
+    (decisión de Fabio), con sus pruebas;
+  - cómo se arman las líneas, los pagos y la fecha del ticket
+  estaba repetido en las dos páginas: ahora en `core/modelos/ticket.ts`.
+  **Descartado:**
+  - 3 o 4 consultas por comprobante (el pedido y, de a una, sus líneas, el
+    cliente y el vendedor): una lectura por clic, sin efecto con este tráfico;
+  - la verificación del id de la ruta (`idDe`), repetida en las pantallas
+    desde antes: fuera de esta historia;
+  - unas 45 líneas de estilos de los botones repetidas con el mostrador: cada
+    pantalla define los suyos, como en el resto del proyecto;
+  - el nombre completo (`nombre + " " + apellido`) armado también en otros
+    cuatro DTO desde antes: fuera de esta historia;
+  - el `id="titulo-ticket"` fijo en el ticket compartido: hay un ticket por
+    página, y el mostrador lo usa para llevar el foco al anular;
+  - `backend/mvnw.cmd` modificado en la copia de trabajo: solo fines de
+    línea, que dejó el PR #115 de Dependabot; no se commitea.
+- **`/code-review`, segunda ronda** (solo las correcciones). **Corregido:**
+  «En línea» sale de `NOMBRES_DE_CANAL`, no escrito aparte; pruebas propias
+  de `core/modelos/ticket.ts` (`ticket.spec.ts`, 5). **Descartado:** que un
+  medio vacío signifique «en línea» sin mandar el canal: la venta del
+  mostrador siempre guarda su medio (`requireNonNull` desde HU-23, sin filas
+  viejas). **Pendiente:** los reportes cuentan las compras en línea como QR
+  (`VentaFila.medioDePago`, HU-23 RF-22), y ahora el ticket dice «En línea»;
+  va a `docs/lista-de-cambios.md` → punto 4, con los reportes.
+
+### Distinto de lo planeado
+
+- «Ver comprobante» es un enlace con el estilo de los demás enlaces de la
+  sección del estado (`.cerrado a`), no con forma de botón secundario.
+- `core/modelos/ticket.ts` no estaba en el plan (salió de `/code-review`).
+- En línea el medio de pago dice «En línea», no «QR» (`/code-review`).
+
+### Prueba manual
+
+*17/11/2026:* Fabio probó los escenarios en Docker (venta del mostrador en
+efectivo a su cuenta, compra en línea, pedidos sin comprobante, la dirección
+basura e imprimir): todo pasó. El cambio a «En línea» vino después, con sus
+pruebas automáticas.

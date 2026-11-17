@@ -7,10 +7,8 @@ import { mensajeDeError } from '../../core/api/mensajes-error';
 import { PedidosService } from '../../core/api/pedidos.service';
 import { MARCA } from '../../core/marca';
 import { comoErrorApi } from '../../core/modelos/error-api';
-import { unidadPara } from '../../core/modelos/producto';
-import { NOMBRES_DE_MEDIO } from '../../core/modelos/venta';
-import { fechaCorta } from '../../shared/formato/fechas';
-import { cantidad, precio } from '../../shared/formato/precios';
+import { fechaYHora, lineasDelTicket, pagosDelTicket } from '../../core/modelos/ticket';
+import { precio } from '../../shared/formato/precios';
 import { DatosDelTicket, Ticket } from '../../shared/ticket/ticket';
 
 // El comprobante de una compra del Cliente (HU-14 RF-10 a RF-12), en línea o en el mostrador: el mismo ticket del
@@ -55,26 +53,15 @@ export class ComprobanteClientePage {
 		if (comprobante.vendidoPor !== null) {
 			datos.push({ etiqueta: 'Atendió', valor: comprobante.vendidoPor });
 		}
-		const pagos = [{ etiqueta: 'Pago', valor: NOMBRES_DE_MEDIO[comprobante.medio] }];
-		if (comprobante.recibido !== null) {
-			pagos.push({ etiqueta: 'Recibido', valor: precio(comprobante.recibido) });
-		}
-		if (comprobante.cambio !== null) {
-			pagos.push({ etiqueta: 'Cambio', valor: precio(comprobante.cambio) });
-		}
 		return {
 			marca: MARCA.nombre,
 			titulo: `Pedido N.º\u00a0${comprobante.idPedido}`,
-			fecha: `${fechaCorta(comprobante.fecha)} ${comprobante.fecha.slice(11, 16)}`,
+			fecha: fechaYHora(comprobante.fecha),
 			estado: null,
 			datos,
-			lineas: comprobante.lineas.map((linea) => ({
-				nombre: linea.nombre,
-				detalle: `${cantidad(linea.cantidad)} ${unidadPara(linea.unidad, linea.cantidad)} × ${precio(linea.precio)}`,
-				importe: precio(linea.subtotal),
-			})),
+			lineas: lineasDelTicket(comprobante.lineas),
 			total: precio(comprobante.total),
-			pagos,
+			pagos: pagosDelTicket(comprobante.medio, comprobante.recibido, comprobante.cambio),
 			anulacion: null,
 		};
 	});

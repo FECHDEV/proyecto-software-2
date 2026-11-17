@@ -229,9 +229,9 @@ class ComprobanteIntegracionTest {
 
 	// --- RF-9, RF-10: el ticket ---
 
-	// HU-14 RF-10: en línea, su nombre, las líneas, el total y «QR», sin quien vendió ni efectivo
+	// HU-14 RF-10: en línea, su nombre, las líneas y el total, sin medio (no se sabe con qué se pagó), quien vendió ni efectivo
 	@Test
-	void enLineaPagadoDaElTicketConQrYSinAtendio() throws Exception {
+	void enLineaPagadoDaElTicketSinMedioNiAtendio() throws Exception {
 		Integer idPedido = pagado(ana);
 
 		MvcTestResult resultado = comprobante(ana, idPedido);
@@ -245,7 +245,7 @@ class ComprobanteIntegracionTest {
 		assertThat(resultado).bodyJson().extractingPath("$.lineas[0].cantidad").isEqualTo(2.0);
 		assertThat(resultado).bodyJson().extractingPath("$.lineas[0].subtotal").isEqualTo(171.0);
 		assertThat(resultado).bodyJson().extractingPath("$.total").isEqualTo(171.0);
-		assertThat(resultado).bodyJson().extractingPath("$.medio").isEqualTo("QR");
+		assertThat(resultado).bodyJson().extractingPath("$.medio").isNull();
 		assertThat(resultado).bodyJson().extractingPath("$.recibido").isNull();
 		assertThat(resultado).bodyJson().extractingPath("$.cambio").isNull();
 	}
@@ -260,7 +260,7 @@ class ComprobanteIntegracionTest {
 
 		assertThat(resultado).hasStatus(HttpStatus.OK);
 		assertThat(resultado).bodyJson().extractingPath("$.vendidoPor").isNull();
-		assertThat(resultado).bodyJson().extractingPath("$.medio").isEqualTo("QR");
+		assertThat(resultado).bodyJson().extractingPath("$.medio").isNull();
 	}
 
 	// HU-14 RF-10: del mostrador en efectivo, como el papel: lo recibido, el cambio y quién vendió
