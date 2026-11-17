@@ -1293,6 +1293,17 @@ retira en la tienda.
   **Motivo:** en una tienda de un solo local, el pedido pagado ya se puede
   armar en el momento; un paso intermedio y su correo no agregan nada, y
   comparar el nombre con el documento alcanza sin sumar un código.
+- *17/11/2026 (ampliación de HU-14, entrevista con Fabio).* **El comprobante
+  del Cliente:** en la página de su pedido «Pagado» o «Entregado», «Ver
+  comprobante» lleva a `/mis-pedidos/:id/comprobante`, con el mismo ticket del
+  mostrador (HU-23): se imprime o se guarda como PDF con el navegador, con
+  «No válido como factura». Lleva su nombre, el medio de pago (QR en línea;
+  QR o efectivo en el mostrador, con lo recibido y el cambio) y, solo en la
+  venta del mostrador, «Atendió». Sin comprobante para «Pago a devolver»,
+  «Anulado» ni los pedidos que no se pagaron: no fueron una compra.
+  **Motivo:** el cliente que compra en línea no tiene ningún papel de su
+  compra, y el del mostrador puede perder el que le dieron; repetir el ticket
+  que ya existe evita un segundo formato (como un PDF del servidor).
 
 **Motivo:** el pago por QR es inmediato, así que 30 minutos alcanzan y un
 pedido abandonado no bloquea el stock; retirar en la tienda evita calcular
