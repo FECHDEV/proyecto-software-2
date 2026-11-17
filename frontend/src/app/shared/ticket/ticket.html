@@ -1,0 +1,59 @@
+@let ticket = datos();
+<article class="ticket" aria-labelledby="titulo-ticket">
+  <header>
+    <p class="marca" translate="no">{{ ticket.marca }}</p>
+    <h1 id="titulo-ticket" tabindex="-1">{{ ticket.titulo }}</h1>
+    <p>{{ ticket.fecha }}</p>
+    @if (ticket.estado; as estado) {
+      <p [class]="'estado ' + estado.tono">{{ estado.texto }}</p>
+    }
+  </header>
+
+  <dl class="datos">
+    @for (dato of ticket.datos; track dato.etiqueta) {
+      <div>
+        <dt>{{ dato.etiqueta }}</dt>
+        <dd>{{ dato.valor }}</dd>
+      </div>
+    }
+  </dl>
+
+  <table>
+    <caption class="solo-lectores">Productos</caption>
+    <thead>
+      <tr>
+        <th scope="col">Producto</th>
+        <th scope="col" class="numero">Importe</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (linea of ticket.lineas; track $index) {
+        <tr>
+          <td>
+            <span class="producto">{{ linea.nombre }}</span>
+            <span class="detalle">{{ linea.detalle }}</span>
+          </td>
+          <td class="numero">{{ linea.importe }}</td>
+        </tr>
+      }
+    </tbody>
+    <tfoot>
+      <tr class="total">
+        <th scope="row">Total</th>
+        <td class="numero">{{ ticket.total }}</td>
+      </tr>
+      @for (pago of ticket.pagos; track pago.etiqueta) {
+        <tr>
+          <th scope="row">{{ pago.etiqueta }}</th>
+          <td class="numero">{{ pago.valor }}</td>
+        </tr>
+      }
+    </tfoot>
+  </table>
+
+  @if (ticket.anulacion) {
+    <p class="anulacion">{{ ticket.anulacion }}</p>
+  }
+
+  <p class="leyenda">No válido como factura</p>
+</article>

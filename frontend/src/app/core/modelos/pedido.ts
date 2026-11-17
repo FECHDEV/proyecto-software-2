@@ -1,5 +1,5 @@
 import { AVISOS_DE_LINEA } from './carrito';
-import type { Canal } from './venta';
+import type { Canal, MedioPago } from './venta';
 import { Pagina } from './pagina';
 import { UnidadVenta } from './producto';
 
@@ -75,6 +75,20 @@ export interface Pedido {
 	entregado: string | null;
 	// TIENDA: una venta del mostrador a nombre del Cliente (HU-23 RF-17)
 	canal: Canal;
+}
+
+// Espejo de ComprobanteResponse (HU-14 RF-10): el comprobante de una compra hecha. fecha: cuándo se pagó;
+// vendidoPor: solo en el mostrador; recibido y cambio: solo en efectivo
+export interface Comprobante {
+	idPedido: number;
+	fecha: string;
+	cliente: string;
+	vendidoPor: string | null;
+	lineas: LineaDePedido[];
+	total: number;
+	medio: MedioPago;
+	recibido: number | null;
+	cambio: number | null;
 }
 
 // El QR que el Cliente paga y, si el sistema de pago la da, su página de pago.

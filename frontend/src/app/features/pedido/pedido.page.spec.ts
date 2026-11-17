@@ -616,4 +616,41 @@ describe('PedidoPage', () => {
     expect(texto()).toContain('Anulado');
     expect(texto()).toContain('La tienda anuló esta compra.');
   });
+
+  // HU-14 RF-9: el comprobante, solo de una compra hecha
+  const verComprobante = (): HTMLAnchorElement | undefined =>
+    Array.from(pantalla().querySelectorAll<HTMLAnchorElement>('a')).find(
+      (cada) => cada.textContent?.trim() === 'Ver comprobante',
+    );
+
+  it('RF-9: «Ver comprobante» en Pagado y Entregado, y no en Pendiente, Cancelado, Vencido, Pago a devolver ni Anulado', async () => {
+    const cerrado = { segundosParaPagar: 0, pagado: '2026-10-19T10:12:30' };
+    for (const estado of ['PAGADO', 'ENTREGADO'] as const) {
+      await abrir('/mis-pedidos/12', (falso) => falso.recurso.value.set({ ...PENDIENTE, ...cerrado, estado }));
+      expect(verComprobante()?.getAttribute('href')).toBe('/mis-pedidos/12/comprobante');
+    }
+    for (const estado of ['PENDIENTE_PAGO', 'CANCELADO', 'VENCIDO', 'PAGO_A_DEVOLVER', 'ANULADO'] as const) {
+      await abrir('/mis-pedidos/12', (falso) => falso.recurso.value.set({ ...PENDIENTE, ...cerrado, estado }));
+      expect(verComprobante()).toBeUndefined();
+    }
+  });
+
+  it('RF-9: al pasar a Pagado aparece «Ver comprobante» sin recargar', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+    await abrir('/mis-pedidos/12', (falso) => falso.recurso.value.set(CON_COBRO));
+    expect(verComprobante()).toBeUndefined();
+
+    pedidos.consultarPago.mockResolvedValueOnce({
+      ...PENDIENTE,
+      estado: 'PAGADO',
+      segundosParaPagar: 0,
+      pagado: '2026-10-19T10:12:30',
+    });
+    vi.advanceTimersByTime(5000);
+    await harness.fixture.whenStable();
+    await harness.fixture.whenStable();
+
+    expect(verComprobante()?.getAttribute('href')).toBe('/mis-pedidos/12/comprobante');
+    expect(pedidos.recurso.reload).not.toHaveBeenCalled();
+  });
 });

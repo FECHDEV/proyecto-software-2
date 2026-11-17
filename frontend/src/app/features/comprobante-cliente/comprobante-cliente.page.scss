@@ -1,0 +1,65 @@
+// El comprobante del Cliente (HU-14 RF-10): el ticket (shared/ticket) al centro,
+// con los botones encima, que no salen al imprimir. Como el del mostrador
+@use '../../../styles/controles';
+
+:host {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--app-espacio-6);
+
+	> * {
+		width: min(100%, 420px);
+	}
+}
+
+.acciones {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-3);
+	align-items: center;
+}
+
+a.secundario {
+	display: inline-flex;
+	align-items: center;
+	text-decoration: none;
+}
+
+.principal {
+	min-height: var(--app-area-tocable);
+	padding: 0 var(--app-espacio-6);
+	border: 0;
+	background: var(--app-ambar);
+	color: var(--app-sobre-ambar);
+	font-family: var(--app-familia-titulos);
+	font-size: 20px;
+	font-weight: 800;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: background-color var(--app-transicion);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.principal:hover {
+		background: var(--app-ambar-fuerte);
+	}
+}
+
+.sin-comprobante {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-4);
+
+	h1,
+	p {
+		margin: 0;
+	}
+}
+
+// Al imprimir sale solo el ticket, arriba a la izquierda
+@media print {
+	:host {
+		align-items: flex-start;
+	}
+}

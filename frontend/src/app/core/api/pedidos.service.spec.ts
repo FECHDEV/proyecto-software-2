@@ -4,7 +4,7 @@ import { ApplicationRef, Injector, runInInjectionContext, signal } from '@angula
 import { TestBed } from '@angular/core/testing';
 
 import { Carrito } from '../modelos/carrito';
-import { Cancelacion, Pedido } from '../modelos/pedido';
+import { Cancelacion, Comprobante, Pedido } from '../modelos/pedido';
 import { SesionService } from '../sesion/sesion.service';
 import { CarritoService } from './carrito.service';
 import { PedidosService } from './pedidos.service';
@@ -33,6 +33,18 @@ const PEDIDO: Pedido = {
 const VACIO: Carrito = { lineas: [], total: 0, cantidadLineas: 0, idPedidoPendiente: null, correoVerificado: true };
 
 // HU-12: llamadas a /api/pedidos
+const COMPROBANTE: Comprobante = {
+  idPedido: 12,
+  fecha: '2026-11-17T10:30:00',
+  cliente: 'Ana Paz',
+  vendidoPor: null,
+  lineas: [],
+  total: 171,
+  medio: 'QR',
+  recibido: null,
+  cambio: null,
+};
+
 describe('PedidosService', () => {
   let http: HttpTestingController;
 
@@ -173,5 +185,21 @@ describe('PedidosService', () => {
 
     expect(pedido.value()).toEqual(PEDIDO);
     expect(retiro.value()).toEqual({ direccion: null, horario: null });
+  });
+
+  // HU-14 RF-9: el comprobante, solo con un id
+  it('RF-9: pide el comprobante del pedido, y nada sin id', async () => {
+    const pedidos = await servicio();
+    const id = signal<number | null>(null);
+    const comprobante = runInInjectionContext(TestBed.inject(Injector), () => pedidos.comprobante(id));
+    TestBed.tick();
+    http.expectNone((pedido) => pedido.url.includes('/comprobante'));
+
+    id.set(12);
+    TestBed.tick();
+    http.expectOne({ method: 'GET', url: '/api/pedidos/12/comprobante' }).flush(COMPROBANTE);
+    await estable();
+
+    expect(comprobante.value()).toEqual(COMPROBANTE);
   });
 });

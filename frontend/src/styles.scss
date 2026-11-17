@@ -189,7 +189,7 @@ main > :not(router-outlet) {
 // HU-23 RF-15: al imprimir el comprobante, solo el ticket. El encabezado de la
 // aplicación, el salto al contenido y lo marcado .solo-pantalla no salen
 @media print {
-	body:has(app-comprobante) {
+	body:has(app-ticket) {
 		background: var(--app-impresion-papel);
 		color: var(--app-impresion-tinta);
 

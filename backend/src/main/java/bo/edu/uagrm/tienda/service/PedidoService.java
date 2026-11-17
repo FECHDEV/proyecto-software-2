@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import bo.edu.uagrm.tienda.config.RetiroProperties;
 import bo.edu.uagrm.tienda.dto.CancelacionResponse;
 import bo.edu.uagrm.tienda.dto.CobroResponse;
+import bo.edu.uagrm.tienda.dto.ComprobanteResponse;
 import bo.edu.uagrm.tienda.dto.ConfirmacionRequest;
 import bo.edu.uagrm.tienda.dto.EstadoLineaCarrito;
 import bo.edu.uagrm.tienda.dto.MisPedidosResponse;
@@ -76,6 +77,8 @@ public class PedidoService {
 	// Lo que el Cliente ve de una venta del mostrador a su nombre: solo ya pagada (HU-23 RF-17)
 	public static final Set<EstadoPedido> VISIBLES_EN_TIENDA = EnumSet.of(EstadoPedido.ENTREGADO, EstadoPedido.PAGADO,
 			EstadoPedido.PAGO_A_DEVOLVER, EstadoPedido.ANULADO);
+	// Los que fueron una compra hecha: tienen comprobante (HU-14 RF-9)
+	private static final Set<EstadoPedido> CON_COMPROBANTE = EnumSet.of(EstadoPedido.PAGADO, EstadoPedido.ENTREGADO);
 	static final int POR_PAGINA = 10;
 
 	private final PedidoRepository pedidoRepository;
@@ -160,6 +163,16 @@ public class PedidoService {
 		Pedido pedido = pedidoRepository.visibleParaElCliente(idPedido, idUsuario, VISIBLES_EN_TIENDA)
 				.orElseThrow(PedidoNoEncontradoException::new);
 		return respuesta(pedido, ahora);
+	}
+
+	// HU-14 RF-10, RF-12: el de otro cliente, el que no existe y el que no fue una compra dan el mismo 404. Solo lee:
+	// no bloquea ni vence, y un pedido pendiente no tiene comprobante
+	@Transactional(readOnly = true)
+	public ComprobanteResponse comprobante(Long idUsuario, Long idPedido) {
+		return pedidoRepository.visibleParaElCliente(idPedido, idUsuario, VISIBLES_EN_TIENDA)
+				.filter(pedido -> CON_COMPROBANTE.contains(pedido.getEstado()))
+				.map(ComprobanteResponse::from)
+				.orElseThrow(PedidoNoEncontradoException::new);
 	}
 
 	@Transactional(isolation = Isolation.READ_COMMITTED)

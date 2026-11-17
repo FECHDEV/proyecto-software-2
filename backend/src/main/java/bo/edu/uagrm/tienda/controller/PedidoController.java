@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import bo.edu.uagrm.tienda.dto.CancelacionResponse;
+import bo.edu.uagrm.tienda.dto.ComprobanteResponse;
 import bo.edu.uagrm.tienda.dto.ConfirmacionRequest;
 import bo.edu.uagrm.tienda.dto.MisPedidosResponse;
 import bo.edu.uagrm.tienda.dto.PedidoResponse;
@@ -54,6 +55,12 @@ public class PedidoController {
 	@GetMapping(ID)
 	public PedidoResponse ver(@AuthenticationPrincipal Long idUsuario, @PathVariable Long idPedido) {
 		return pedidoService.ver(idUsuario, idPedido);
+	}
+
+	// El comprobante de una compra hecha (HU-14 RF-10, RF-12)
+	@GetMapping(ID + "/comprobante")
+	public ComprobanteResponse comprobante(@AuthenticationPrincipal Long idUsuario, @PathVariable Long idPedido) {
+		return pedidoService.comprobante(idUsuario, idPedido);
 	}
 
 	@PostMapping(ID + "/cancelacion")

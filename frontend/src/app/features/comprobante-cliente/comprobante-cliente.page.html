@@ -1,0 +1,28 @@
+@if (sinComprobante()) {
+  <div class="sin-comprobante">
+    <h1>Este pedido no tiene comprobante</h1>
+    <p>El comprobante está en los pedidos pagados o entregados.</p>
+    <div class="acciones">
+      @if (id(); as id) {
+        <a class="secundario" [routerLink]="['/mis-pedidos', id]">Ver el pedido</a>
+      }
+      <a class="secundario" routerLink="/mis-pedidos">Mis pedidos</a>
+    </div>
+  </div>
+} @else if (errorDeCarga()) {
+  <div class="tarjeta-error">
+    <p class="aviso" role="alert">{{ errorDeCarga() }}</p>
+    <button type="button" class="secundario" (click)="recurso.reload()">Reintentar</button>
+  </div>
+} @else if (ticket(); as ticket) {
+  <div class="acciones solo-pantalla">
+    <button type="button" class="principal" (click)="imprimir()"><span>Imprimir</span></button>
+    <a class="secundario" [routerLink]="['/mis-pedidos', id()]">Ver el pedido</a>
+    <a class="secundario" routerLink="/mis-pedidos">Mis pedidos</a>
+  </div>
+
+  <!-- RF-10, RF-11: el ticket, lo único que sale al imprimir -->
+  <app-ticket [datos]="ticket" />
+} @else {
+  <p class="cargando" role="status">Cargando el comprobante…</p>
+}

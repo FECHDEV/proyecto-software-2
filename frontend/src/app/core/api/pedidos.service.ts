@@ -1,7 +1,7 @@
 import { HttpClient, httpResource, HttpResourceRef } from '@angular/common/http';
 import { inject, Injectable, Signal } from '@angular/core';
 
-import { Cancelacion, DatosDeConfirmacion, MisPedidos, Pedido, ResultadoSimulado, Retiro } from '../modelos/pedido';
+import { Cancelacion, Comprobante, DatosDeConfirmacion, MisPedidos, Pedido, ResultadoSimulado, Retiro } from '../modelos/pedido';
 import { CarritoService } from './carrito.service';
 import { escribir } from './escribir';
 
@@ -30,6 +30,14 @@ export class PedidosService {
 		return httpResource<Pedido>(() => {
 			const id = idPedido();
 			return id === null ? undefined : `${PEDIDOS}/${id}`;
+		});
+	}
+
+	// El comprobante de una compra hecha (HU-14 RF-9); sin id válido no pide nada
+	comprobante(idPedido: Signal<number | null>): HttpResourceRef<Comprobante | undefined> {
+		return httpResource<Comprobante>(() => {
+			const id = idPedido();
+			return id === null ? undefined : `${PEDIDOS}/${id}/comprobante`;
 		});
 	}
 
