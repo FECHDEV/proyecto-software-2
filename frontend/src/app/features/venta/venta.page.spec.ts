@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 
 import { VentasService } from '../../core/api/ventas.service';
 import { ErrorApi } from '../../core/modelos/error-api';
-import { Comprador, ProductoParaVenta, SolicitudDeVenta, Venta } from '../../core/modelos/venta';
+import { Comprador, CompradoresEncontrados, ProductoParaVenta, SolicitudDeVenta, Venta } from '../../core/modelos/venta';
 import { VentaPage } from './venta.page';
 
 const MARTILLO: ProductoParaVenta = {
@@ -74,6 +74,10 @@ class VentasFalso {
   readonly simular = vi.fn((): Promise<void> => Promise.resolve());
   readonly buscarCliente = vi.fn(
     (_correo: string): Promise<Comprador> => Promise.resolve({ idUsuario: 4, nombre: 'Ana Paz', correo: 'ana@mail.com' }),
+  );
+  readonly buscarClientesPorNombre = vi.fn(
+    (_nombre: string): Promise<CompradoresEncontrados> =>
+      Promise.resolve({ cuentas: [{ idUsuario: 7, nombre: 'Eva Rojas', correo: 'ev***@mail.com' }], hayMas: false }),
   );
   readonly precioDeHoy = vi.fn((_id: number): Promise<number> => Promise.resolve(90));
   productos() {
@@ -174,7 +178,7 @@ describe('VentaPage', () => {
   it('buscaAlCompradorPorCorreo', async () => {
     await abrir();
     expect(pantalla().querySelector('.comprador')?.textContent).toContain('Consumidor final');
-    const correo = pantalla().querySelector<HTMLInputElement>('#correo-comprador')!;
+    const correo = pantalla().querySelector<HTMLInputElement>('#texto-comprador')!;
     correo.value = ' ana@mail.com ';
     correo.dispatchEvent(new Event('input'));
 
@@ -190,12 +194,42 @@ describe('VentaPage', () => {
     ventas.buscarCliente.mockRejectedValueOnce({ status: 404, detail: 'x', codigo: 'USUARIO_NO_ENCONTRADO' });
     await abrir();
     ventas.buscarCliente.mockRejectedValueOnce({ status: 404, detail: 'x', codigo: 'USUARIO_NO_ENCONTRADO' });
-    const otro = pantalla().querySelector<HTMLInputElement>('#correo-comprador')!;
+    const otro = pantalla().querySelector<HTMLInputElement>('#texto-comprador')!;
     otro.value = 'x@mail.com';
     otro.dispatchEvent(new Event('input'));
     await tocar('Buscar');
     expect(pantalla().querySelector('#error-comprador')?.textContent).toContain('No hay una cuenta de cliente activa');
   });
+
+  // HU-23 RF-27: elegido por nombre, la venta va con su idCliente y «Volver a consumidor final» lo quita
+  it('RF-27: elegido por nombre, la venta va con su idCliente y «Volver a consumidor final» lo quita', async () => {
+    await abrir();
+    await elegirPorNombre('eva');
+
+    expect(ventas.buscarClientesPorNombre).toHaveBeenCalledWith('eva');
+    expect(pantalla().querySelector('.comprador')?.textContent).toContain('Eva Rojas');
+    expect(pantalla().querySelector('.comprador')?.textContent).toContain('ev***@mail.com');
+    // Revisión de interfaz: el foco no se pierde al desaparecer el botón que se tocó
+    expect(document.activeElement?.id).toBe('volver-consumidor-final');
+
+    await tocar('Volver a consumidor final');
+    expect(pantalla().querySelector('.comprador')?.textContent).toContain('Consumidor final');
+    expect(document.activeElement?.id).toBe('texto-comprador');
+    await elegirPorNombre('eva');
+    await tocarProducto('Martillo');
+    await escribirRecibido('100');
+    await tocar('Cobrar en efectivo');
+    expect(ventas.registrar.mock.calls[0][0].idCliente).toBe(7);
+  });
+
+  async function elegirPorNombre(nombre: string): Promise<void> {
+    const texto = pantalla().querySelector<HTMLInputElement>('#texto-comprador')!;
+    texto.value = nombre;
+    texto.dispatchEvent(new Event('input'));
+    await tocar('Buscar');
+    pantalla().querySelector<HTMLButtonElement>('app-busqueda-de-comprador .resultado')!.click();
+    await harness.fixture.whenStable();
+  }
 
   // HU-23 RF-5: el cambio en vivo; con menos de lo debido no se registra
   it('calculaElCambioYNoDejaCobrarMenos', async () => {

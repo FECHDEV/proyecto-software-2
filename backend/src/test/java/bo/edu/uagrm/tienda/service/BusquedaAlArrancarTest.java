@@ -80,4 +80,20 @@ class BusquedaAlArrancarTest {
 
 		assertThat(pedidoRepository.findById(id).orElseThrow().getBusquedaRetira()).isEqualTo("jose perez");
 	}
+
+	// HU-23 RF-25: las cuentas de antes de la búsqueda por nombre no tienen el texto de búsqueda
+	@Test
+	void completaLaBusquedaDeLasCuentasQueNoLaTienen() {
+		Long id = em.persistAndGetId(Usuario.registrarCliente("José", "Peña", "jose.busqueda@mail.com", "$2a$10$hash",
+				null, LocalDateTime.of(2026, 10, 10, 9, 0)), Long.class);
+		em.flush();
+		em.getEntityManager().createNativeQuery("update usuario set busqueda = null").executeUpdate();
+		em.clear();
+
+		busquedaAlArrancar.completar();
+		em.flush();
+		em.clear();
+
+		assertThat(em.find(Usuario.class, id).getBusqueda()).isEqualTo("jose pena");
+	}
 }

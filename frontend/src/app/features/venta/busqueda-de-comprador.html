@@ -1,0 +1,52 @@
+<form class="buscar-comprador" (submit)="$event.preventDefault(); buscar()">
+  <div class="campo">
+    <label for="texto-comprador">Nombre, apellido o correo del cliente</label>
+    <input
+      id="texto-comprador"
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      maxlength="254"
+      enterkeyhint="search"
+      [value]="texto()"
+      [readOnly]="bloqueada()"
+      [attr.aria-invalid]="error() ? 'true' : null"
+      [attr.aria-describedby]="error() ? 'error-comprador' : null"
+      (input)="escribir($any($event.target).value)"
+    />
+  </div>
+  <button type="submit" class="secundario" [attr.aria-disabled]="bloqueada() ? 'true' : null">
+    Buscar
+  </button>
+</form>
+@if (error()) {
+  <p class="error-campo" id="error-comprador" role="alert">{{ error() }}</p>
+}
+<!-- RF-25, RF-29: cuántas hay, o que no hay ninguna, se anuncia al llegar. La región está siempre, vacía o no: una que
+     aparece ya con su texto no se anuncia -->
+<p class="mensaje" aria-live="polite">
+  @if (buscando()) {
+    Buscando clientes…
+  } @else if (encontrados(); as lista) {
+    @if (lista.cuentas.length === 0 || lista.hayMas) {
+      {{ cuantas(lista) }}
+    } @else {
+      <span class="solo-lectores">{{ cuantas(lista) }}</span>
+    }
+  }
+</p>
+<!-- Con el QR a la vista o mientras se registra, la lista se va: no se puede cambiar el comprador (RF-27) -->
+@if (encontrados(); as lista) {
+  @if (lista.cuentas.length > 0 && !bloqueada()) {
+    <ul class="resultados" aria-label="Clientes encontrados">
+      @for (cuenta of lista.cuentas; track cuenta.idUsuario) {
+        <li>
+          <button type="button" class="resultado" (click)="tocar(cuenta)">
+            <span class="nombre">{{ cuenta.nombre }}</span>
+            <span class="correo">{{ cuenta.correo }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+}

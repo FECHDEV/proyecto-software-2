@@ -34,11 +34,28 @@ export interface ProductoParaVenta {
 	disponible: number;
 }
 
-// La cuenta de Cliente a cuyo nombre queda la venta (RF-4)
+// La cuenta de Cliente a cuyo nombre queda la venta (RF-4). Buscada por
+// nombre (RF-25, RF-26), el correo llega enmascarado
 export interface Comprador {
 	idUsuario: number;
 	nombre: string;
 	correo: string;
+}
+
+// Como VentaTiendaService.MINIMO_LETRAS (RF-29)
+export const MINIMO_LETRAS_DE_COMPRADOR = 3;
+
+// Las letras de un texto sin tildes ni espacios, como las cuenta el servidor para el texto que escribe una persona
+// (RF-29): un texto que la pantalla deja pasar con menos letras recibiría una lista vacía en vez del aviso. Con
+// espacios Unicode raros la pantalla es más estricta que el servidor, nunca al revés
+export function letrasDe(texto: string): number {
+	return texto.normalize('NFD').replace(/\p{M}/gu, '').replace(/\s/gu, '').length;
+}
+
+// Espejo de CompradoresResponse: hasta 10 cuentas y si hay más con ese texto (RF-25)
+export interface CompradoresEncontrados {
+	cuentas: Comprador[];
+	hayMas: boolean;
 }
 
 // Lo que se manda al registrar (RF-5 a RF-7). idCliente null: consumidor final; recibido solo en efectivo

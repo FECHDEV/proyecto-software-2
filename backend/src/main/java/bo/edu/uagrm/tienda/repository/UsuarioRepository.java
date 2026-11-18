@@ -58,4 +58,17 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 	static boolean esCorreoDuplicado(DataIntegrityViolationException ex) {
 		return ViolacionesDeIntegridad.esViolacionUnica(ex);
 	}
+
+	// Las cuentas de antes de la búsqueda por nombre (HU-23 RF-25)
+	List<Usuario> findByBusquedaIsNull();
+
+	// El comprador del mostrador por nombre o apellido (HU-23 RF-25, RF-28): el rol y el estado van en la consulta, para
+	// que el personal y las cuentas desactivadas no ocupen lugares de los 10; el correo no se mira
+	@Query("""
+			select u from Usuario u
+			where u.rol = bo.edu.uagrm.tienda.entity.Rol.CLIENTE
+				and u.estado = bo.edu.uagrm.tienda.entity.EstadoCuenta.ACTIVA
+				and u.busqueda like :patron escape '!'
+			""")
+	List<Usuario> compradoresPorNombre(@Param("patron") String patron, Pageable pagina);
 }

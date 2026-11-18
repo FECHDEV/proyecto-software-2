@@ -76,7 +76,7 @@
   </div>
 
   <div class="columna">
-    <!-- RF-4: consumidor final de entrada, o una cuenta de Cliente buscada por correo -->
+    <!-- RF-4, RF-25 a RF-27: consumidor final de entrada, o una cuenta de Cliente buscada por correo o por nombre -->
     <section class="bloque" aria-labelledby="titulo-comprador">
       <h2 id="titulo-comprador">Comprador</h2>
       @if (comprador(); as cuenta) {
@@ -85,6 +85,7 @@
           <span>{{ cuenta.correo }}</span>
         </p>
         <button
+          id="volver-consumidor-final"
           type="button"
           class="secundario"
           [attr.aria-disabled]="bloqueada() ? 'true' : null"
@@ -94,32 +95,7 @@
         </button>
       } @else {
         <p class="comprador"><strong>Consumidor final</strong></p>
-        <form class="buscar-comprador" (submit)="$event.preventDefault(); buscarComprador()">
-          <div class="campo">
-            <label for="correo-comprador">Correo del cliente, si tiene cuenta</label>
-            <input
-              id="correo-comprador"
-              type="email"
-              autocomplete="off"
-              spellcheck="false"
-              maxlength="254"
-              [value]="correo()"
-              [attr.aria-invalid]="errorDeComprador() ? 'true' : null"
-              [attr.aria-describedby]="errorDeComprador() ? 'error-comprador' : null"
-              (input)="correo.set($any($event.target).value)"
-            />
-          </div>
-          <button
-            type="submit"
-            class="secundario"
-            [attr.aria-disabled]="buscandoComprador() || bloqueada() ? 'true' : null"
-          >
-            Buscar
-          </button>
-        </form>
-        @if (errorDeComprador()) {
-          <p class="error-campo" id="error-comprador" role="alert">{{ errorDeComprador() }}</p>
-        }
+        <app-busqueda-de-comprador [bloqueada]="bloqueada()" (elegir)="elegirComprador($event)" />
       }
     </section>
 

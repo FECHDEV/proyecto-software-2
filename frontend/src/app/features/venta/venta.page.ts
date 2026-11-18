@@ -29,6 +29,7 @@ import {
 import { cantidadConPaso, leerCantidad, problemaDeCantidad } from '../../shared/formato/cantidades';
 import { cantidad, precio } from '../../shared/formato/precios';
 import { PasoDeCantidad } from '../../shared/paso-de-cantidad/paso-de-cantidad';
+import { BusquedaDeComprador } from './busqueda-de-comprador';
 import { BusquedaDeProductos } from './busqueda-de-productos';
 import { QrDeVenta } from './qr-de-venta';
 
@@ -49,7 +50,7 @@ interface LineaEnVenta {
 // pantalla hasta cobrar: con QR, cancelar las deja para cobrar de otra forma
 @Component({
 	selector: 'app-venta',
-	imports: [BusquedaDeProductos, LucideTrash2, PasoDeCantidad, QrDeVenta],
+	imports: [BusquedaDeComprador, BusquedaDeProductos, LucideTrash2, PasoDeCantidad, QrDeVenta],
 	templateUrl: './venta.page.html',
 	styleUrl: './venta.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -77,12 +78,9 @@ export class VentaPage {
 	);
 	protected readonly hayProblemas = computed(() => this.lineas().some((linea) => this.problema(linea) !== null));
 
-	// --- El comprador (RF-4) ---
+	// --- El comprador (RF-4, RF-25 a RF-27): lo busca BusquedaDeComprador ---
 
-	protected readonly correo = signal('');
 	protected readonly comprador = signal<Comprador | null>(null);
-	protected readonly buscandoComprador = signal(false);
-	protected readonly errorDeComprador = signal('');
 
 	// --- El cobro (RF-5 a RF-9) ---
 
@@ -196,36 +194,25 @@ export class VentaPage {
 
 	// --- Comprador ---
 
-	protected async buscarComprador(): Promise<void> {
-		const correo = this.correo().trim();
-		if (this.buscandoComprador() || this.bloqueada()) {
+	// RF-27: el botón que se tocó desaparece; el foco pasa a lo que lo reemplaza y no se pierde en la página
+	// (revisión de interfaz, 18/11/2026)
+	protected elegirComprador(cuenta: Comprador): void {
+		if (this.bloqueada()) {
 			return;
 		}
-		if (correo === '') {
-			this.errorDeComprador.set('Escriba el correo del cliente.');
-			return;
-		}
-		this.errorDeComprador.set('');
-		this.buscandoComprador.set(true);
-		try {
-			this.comprador.set(await this.ventas.buscarCliente(correo));
-			this.correo.set('');
-		} catch (rechazo: unknown) {
-			const error = comoError(rechazo);
-			this.errorDeComprador.set(
-				error.codigo === 'USUARIO_NO_ENCONTRADO'
-					? 'No hay una cuenta de cliente activa con ese correo.'
-					: mensajeDeError(error),
-			);
-		} finally {
-			this.buscandoComprador.set(false);
-		}
+		this.comprador.set(cuenta);
+		this.enfocar('volver-consumidor-final');
 	}
 
 	protected aConsumidorFinal(): void {
 		if (!this.bloqueada()) {
 			this.comprador.set(null);
+			this.enfocar('texto-comprador');
 		}
+	}
+
+	private enfocar(id: string): void {
+		afterNextRender(() => document.getElementById(id)?.focus(), { injector: this.injector });
 	}
 
 	// --- Cobro ---
