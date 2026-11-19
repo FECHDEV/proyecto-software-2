@@ -61,7 +61,7 @@ class ExportadorExcelTest {
 			libro.forEach(hoja -> nombres.add(hoja.getSheetName()));
 			assertThat(nombres).containsExactly("Resumen", "Por fecha", "Por día de la semana", "Por hora",
 					"Por categoría", "Por tipo de cliente", "Más vendidos", "Menos vendidos", "Sin venderse",
-					"Pedidos perdidos", "Clientes inactivos");
+					"Pedidos perdidos", "Clientes que compran", "Clientes inactivos");
 		}
 	}
 
@@ -150,6 +150,28 @@ class ExportadorExcelTest {
 			assertThat(ana.getCell(2).getStringCellValue()).isEqualTo("70000000");
 			assertThat(ana.getCell(3).getStringCellValue()).isEqualTo("Contratista");
 			assertThat(ana.getCell(6).getNumericCellValue()).isEqualTo(1200.0);
+		}
+	}
+
+	// HU-18 RF-26: «Clientes que compran», con sus cifras como números, el aviso y la cuenta desactivada
+	@Test
+	void losClientesQueCompranTraenSusCifras() throws IOException {
+		try (Workbook libro = leer(ReporteDePrueba.conVentas())) {
+			Sheet compran = libro.getSheet("Clientes que compran");
+			assertThat(textos(compran)).contains("Contiene datos personales de clientes: uso interno.",
+					"Una sola compra");
+			Row ana = filaQueEmpiezaCon(compran, "Ana Paz");
+			assertThat(ana.getCell(1).getStringCellValue()).isEqualTo("ana@mail.com");
+			assertThat(ana.getCell(4).getStringCellValue()).isEqualTo("Los dos");
+			assertThat(ana.getCell(5).getNumericCellValue()).isEqualTo(3.0);
+			assertThat(ana.getCell(6).getNumericCellValue()).isEqualTo(600.0);
+			assertThat(ana.getCell(7).getNumericCellValue()).isEqualTo(200.0);
+			assertThat(ana.getCell(10).getNumericCellValue()).isEqualTo(10.0);
+			// RF-24: dos compras el mismo día, con el texto de la pantalla
+			assertThat(filaQueEmpiezaCon(compran, "Eva Rojas").getCell(10).getStringCellValue())
+					.isEqualTo("El mismo día");
+			Row beto = filaQueEmpiezaCon(compran, "Beto Rojas (cuenta desactivada)");
+			assertThat(beto.getCell(4).getStringCellValue()).isEqualTo("En tienda");
 		}
 	}
 

@@ -1417,6 +1417,24 @@ después de los 30 minutos del pedido.
 - **Pedidos perdidos:** los vencidos y cancelados entre los confirmados del
   período; *05/11/2026 (HU-23):* solo los pedidos en línea. La proporción de vendidos no cuenta los que esperan el pago ni los
   «Pago a devolver», que se pagaron pero no fueron venta (revisión de código).
+- *18/11/2026 (ampliación de HU-18, RF-23 a RF-27; Fabio eligió la opción B
+  recortada de `docs/lista-de-cambios.md` punto 4).* **«Clientes que
+  compran»:** una sección nueva con cada cuenta que compró en el período
+  (venta como siempre: «Pagado» o «Entregado», en la fecha del pago), con sus
+  compras, el total gastado, el ticket promedio, la primera y la última
+  compra del período, cada cuántos días compra y el canal, **del mayor gasto
+  al menor**. Respeta el período, el tipo y el canal: con un canal, solo lo
+  de ese canal (al revés que «Clientes inactivos», que busca a quien dejó de
+  comprar y mira todos). El consumidor final no tiene cuenta y no entra. La
+  sección de RF-16 pasa a llamarse «Clientes inactivos». **Pendiente de
+  confirmar (P1 a P5 del plan `2026-11-18-reportes-clientes.md`):** el
+  nombre de las secciones, mostrar correo y teléfono, las cuentas
+  desactivadas, el orden y las fechas dentro del período; está escrito con la
+  recomendación. **Fuera, por el plazo:** lo que más compra cada cliente,
+  clientes nuevos y los que vuelven, el ranking por cantidad y las ventas por
+  Empleado. **Motivo:** el Contador veía solo a quien dejó de comprar; la
+  lista de quien compra se arma con una consulta agrupada más, con los
+  mismos filtros y la misma regla de venta, y cabe en el plazo.
 - **Sin venderse:** productos activos con stock, por días desde la última
   venta o desde el alta, con el dinero inmovilizado (stock × costo, o × precio
   sin costo). **Clientes inactivos:** clientes activos que compraron alguna
@@ -1467,6 +1485,10 @@ tienen en pantalla, en **Excel (.xlsx) o PDF**.
 - **Clientes inactivos con nombre, correo y teléfono,** porque el archivo
   sirve para llamarlos, con el aviso «Contiene datos personales de
   clientes: uso interno».
+- *18/11/2026 (HU-18 RF-26).* **«Clientes que compran» va al archivo** como
+  una hoja más (y una sección más del PDF), completa y sin paginar, antes de
+  «Clientes inactivos», con el mismo aviso de datos personales si lleva el
+  contacto (P2).
 
 **Motivo:** el Contador entrega los números (Excel para seguir trabajando,
 PDF para entregar o imprimir); armarlo en el backend evita repetir los

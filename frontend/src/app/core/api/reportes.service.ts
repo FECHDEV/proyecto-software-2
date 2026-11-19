@@ -7,6 +7,7 @@ import { comoErrorApi } from '../modelos/error-api';
 import { Pagina } from '../modelos/pagina';
 import {
 	ClienteInactivo,
+	ClienteQueCompra,
 	FiltrosDeReportes,
 	ProductoPerdido,
 	ProductoSinVenta,
@@ -88,6 +89,14 @@ export class ReportesService {
 		return httpResource<Pagina<ClienteInactivo>>(() => ({
 			url: `${REPORTES}/clientes-inactivos`,
 			params: { dias: filtros().dias, ...tipo(filtros()), ...canal(filtros()), ...pagina(filtros()) },
+		}));
+	}
+
+	// HU-18 RF-23 a RF-25: los clientes que compraron en el período
+	compradores(filtros: Signal<FiltrosDeReportes>): HttpResourceRef<Pagina<ClienteQueCompra> | undefined> {
+		return httpResource<Pagina<ClienteQueCompra>>(() => ({
+			url: `${REPORTES}/compradores`,
+			params: { ...periodo(filtros()), ...tipo(filtros()), ...canal(filtros()), ...pagina(filtros()) },
 		}));
 	}
 

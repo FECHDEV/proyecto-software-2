@@ -1,0 +1,24 @@
+// La tabla y los estados de _lista.scss, como «Clientes inactivos»
+@use '../../../styles/lista';
+@use 'reporte';
+
+.suave {
+	margin: 0;
+	max-width: 70ch;
+}
+
+.contacto,
+.cifra {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-1);
+}
+
+.cifra {
+	align-items: flex-end;
+}
+
+.contacto a {
+	color: var(--app-acento-texto);
+	overflow-wrap: anywhere;
+}

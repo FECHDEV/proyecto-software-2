@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import bo.edu.uagrm.tienda.dto.reportes.ClienteInactivo;
+import bo.edu.uagrm.tienda.dto.reportes.ClienteQueCompra;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoPerdido;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoSinVenta;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoVendido;
@@ -65,6 +66,15 @@ final class ReporteDePrueba {
 				List.of(new ProductoSinVenta(5L, "HER-0005", "Rastrillo", UnidadVenta.UNIDAD, bs("3"), bs("20.00"),
 						null, null, 100, bs("60.00"), true)),
 				List.of(new ProductoPerdido(1L, "HER-0001", "Taladro", UnidadVenta.UNIDAD, bs("1"), bs("120.00"))),
+				List.of(new ClienteQueCompra(8L, "Beto", "Rojas", "beto@mail.com", "71111111", TipoCliente.EMPRESA,
+						false, 1, bs("800.00"), bs("800.00"), LocalDateTime.of(2025, 10, 5, 12, 0),
+						LocalDateTime.of(2025, 10, 5, 12, 0), null, 0, 1),
+						new ClienteQueCompra(9L, "Ana", "Paz", "ana@mail.com", "70000000", TipoCliente.CONTRATISTA,
+								true, 3, bs("600.00"), bs("200.00"), LocalDateTime.of(2025, 10, 1, 10, 0),
+								LocalDateTime.of(2025, 10, 21, 10, 0), bs("10.0"), 2, 1),
+						new ClienteQueCompra(10L, "Eva", "Rojas", "eva@mail.com", null, TipoCliente.PUBLICO_GENERAL,
+								true, 2, bs("100.00"), bs("50.00"), LocalDateTime.of(2025, 10, 7, 9, 0),
+								LocalDateTime.of(2025, 10, 7, 18, 0), bs("0.0"), 2, 0)),
 				List.of(new ClienteInactivo(9L, "Ana", "Paz", "ana@mail.com", "70000000", TipoCliente.CONTRATISTA,
 						LocalDateTime.of(2025, 7, 1, 10, 0), 4, bs("1200.00"))),
 				TipoCliente.CONTRATISTA, null, 60, GENERADO, "Fabio Cruz");
@@ -84,7 +94,7 @@ final class ReporteDePrueba {
 				List.of(vendido(4L, "Sierra", "0", "0.00", null)),
 				List.of(new ProductoSinVenta(5L, "HER-0005", "Rastrillo", UnidadVenta.UNIDAD, bs("3"), bs("20.00"),
 						null, null, 100, bs("60.00"), true)),
-				List.of(), List.of(), null, null, 30, GENERADO, "Fabio Cruz");
+				List.of(), List.of(), List.of(), null, null, 30, GENERADO, "Fabio Cruz");
 	}
 
 	// Un año: por mes, 13 filas (de octubre de 2024 a octubre de 2025)
@@ -102,7 +112,8 @@ final class ReporteDePrueba {
 				actual, base.ventas().anterior(), meses, porDiaSemana(bs("130.00"), 13), porHora(bs("130.00"), 13),
 				List.of(), porTipo(bs("130.00"), 13), List.of(), List.of());
 		return new ReporteCompleto(ventas, base.perdidos(), base.masVendidos(), base.menosVendidos(),
-				base.sinVenta(), base.productosPerdidos(), base.clientesInactivos(), null, null, 30, GENERADO,
+				base.sinVenta(), base.productosPerdidos(), base.clientesQueCompran(), base.clientesInactivos(), null,
+				null, 30, GENERADO,
 				"Fabio Cruz");
 	}
 

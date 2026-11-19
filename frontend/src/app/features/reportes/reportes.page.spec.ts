@@ -74,7 +74,15 @@ describe('ReportesPage', () => {
     await abrir();
 
     const secciones = Array.from(pantalla().querySelectorAll('.secciones a')).map((cada) => cada.textContent?.trim());
-    expect(secciones).toEqual(['Resumen', 'Productos', 'Sin venderse', 'Clientes', 'Pedidos perdidos']);
+    // HU-18 RF-27: «Clientes que compran» y «Clientes inactivos»
+    expect(secciones).toEqual([
+      'Resumen',
+      'Productos',
+      'Sin venderse',
+      'Clientes que compran',
+      'Clientes inactivos',
+      'Pedidos perdidos',
+    ]);
     expect(enlace('Resumen').getAttribute('aria-current')).toBe('page');
     expect(reportes.pedidas).toEqual(['ventas']);
     expect(reportes.filtros!()).toMatchObject({ desde: '2026-10-01', hasta: '2026-10-22', tipo: null });
@@ -140,6 +148,12 @@ describe('ReportesPage', () => {
     await abrir('/reportes?seccion=clientes');
     expect(pantalla().querySelector('#filtro-desde')).toBeNull();
     expect(pantalla().querySelector('#filtro-tipo')).not.toBeNull();
+
+    // HU-18 RF-25, RF-27: «Clientes que compran» usa el período, el tipo y el canal
+    await abrir('/reportes?seccion=compradores');
+    expect(pantalla().querySelector('#filtro-desde')).not.toBeNull();
+    expect(pantalla().querySelector('#filtro-tipo')).not.toBeNull();
+    expect(reportes.pedidas).toContain('compradores');
   });
 
   // HU-18 RF-11: la página de una lista conserva los filtros; otro filtro vuelve a la primera

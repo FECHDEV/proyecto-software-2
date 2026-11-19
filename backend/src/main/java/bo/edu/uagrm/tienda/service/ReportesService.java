@@ -24,7 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 import bo.edu.uagrm.tienda.dto.PaginaResponse;
 import bo.edu.uagrm.tienda.dto.reportes.CategoriaFila;
 import bo.edu.uagrm.tienda.dto.reportes.ClienteInactivo;
+import bo.edu.uagrm.tienda.dto.reportes.ClienteQueCompra;
 import bo.edu.uagrm.tienda.dto.reportes.CompraFila;
+import bo.edu.uagrm.tienda.dto.reportes.CompradorFila;
 import bo.edu.uagrm.tienda.dto.reportes.DescuentosFila;
 import bo.edu.uagrm.tienda.dto.reportes.EstadoFila;
 import bo.edu.uagrm.tienda.dto.reportes.LineasFila;
@@ -175,6 +177,49 @@ public class ReportesService {
 		}).toList();
 	}
 
+	// HU-18 RF-23 a RF-25: los que compraron en el período, del mayor total al menor y, a igual total, por más
+	// compras, de a 10
+	@Transactional(readOnly = true)
+	public PaginaResponse<ClienteQueCompra> compradores(String desde, String hasta, TipoCliente tipo, Canal canal,
+			int pagina) {
+		PaginaResponse<CompradorFila> deLaPagina = paginar(
+				compradores(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo, canal), pagina);
+		return new PaginaResponse<>(conCuenta(deLaPagina.contenido()), deLaPagina.pagina(), deLaPagina.tamano(),
+				deLaPagina.totalElementos(), deLaPagina.totalPaginas());
+	}
+
+	private List<CompradorFila> compradores(Periodo periodo, TipoCliente tipo, Canal canal) {
+		return reportesRepository.compradores(VENDIDOS, periodo.inicio(), periodo.fin(), tipo, canal).stream()
+				.sorted(Comparator.comparing(CompradorFila::total).reversed()
+						.thenComparing(Comparator.comparing(CompradorFila::compras).reversed())
+						.thenComparing(CompradorFila::idUsuario))
+				.toList();
+	}
+
+	// Las cuentas se leen de una vez. Una desactivada hoy sale igual: sus compras fueron ventas (P3)
+	private List<ClienteQueCompra> conCuenta(List<CompradorFila> filas) {
+		Map<Long, Usuario> usuarios = usuarioRepository
+				.findAllById(filas.stream().map(CompradorFila::idUsuario).toList()).stream()
+				.collect(Collectors.toMap(Usuario::getIdUsuario, Function.identity()));
+		return filas.stream().map(fila -> {
+			Usuario usuario = usuarios.get(fila.idUsuario());
+			BigDecimal total = fila.total().setScale(2);
+			return new ClienteQueCompra(usuario.getIdUsuario(), usuario.getNombre(), usuario.getApellido(),
+					usuario.getCorreo(), usuario.getTelefono(), usuario.getTipoCliente(), usuario.estaActiva(),
+					fila.compras(), total, promedio(total, fila.compras()), fila.primera(), fila.ultima(),
+					cadaCuanto(fila), fila.enLinea(), fila.enTienda());
+		}).toList();
+	}
+
+	// RF-24: días de calendario entre la primera y la última compra ÷ (compras − 1), con un decimal; nulo con una
+	static BigDecimal cadaCuanto(CompradorFila fila) {
+		if (fila.compras() < 2) {
+			return null;
+		}
+		long dias = ChronoUnit.DAYS.between(fila.primera().toLocalDate(), fila.ultima().toLocalDate());
+		return BigDecimal.valueOf(dias).divide(BigDecimal.valueOf(fila.compras() - 1), 1, RoundingMode.HALF_UP);
+	}
+
 	// RF-18: por importe perdido, de mayor a menor
 	@Transactional(readOnly = true)
 	public PaginaResponse<ProductoPerdido> perdidos(String desde, String hasta, TipoCliente tipo, Canal canal,
@@ -207,7 +252,8 @@ public class ReportesService {
 		Map<Long, LineasFila> vendidos = vendidos(periodo, tipo, canal);
 		return new ReporteCompleto(ventas(periodo, tipo, canal), perdidos(periodo, tipo, canal),
 				productos(vendidos, false), productos(vendidos, true), sinVenta(minimo, canal, ahora),
-				productosPerdidos(periodo, tipo, canal), clientes(comprasHasta(minimo, tipo, canal, ahora)), tipo, canal,
+				productosPerdidos(periodo, tipo, canal), conCuenta(compradores(periodo, tipo, canal)),
+				clientes(comprasHasta(minimo, tipo, canal, ahora)), tipo, canal,
 				minimo, ahora,
 				autor.getNombre() + " " + autor.getApellido());
 	}

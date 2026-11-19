@@ -60,6 +60,7 @@ describe('ReportesService', () => {
       servicio.productos(signal(filtros));
       servicio.sinVenta(signal(enTienda));
       servicio.clientesInactivos(signal(enTienda));
+      servicio.compradores(signal(enTienda));
       servicio.perdidos(signal(filtros));
       servicio.resumenDePerdidos(signal(filtros));
     });
@@ -75,6 +76,11 @@ describe('ReportesService', () => {
     const clientes = pedido('/api/reportes/clientes-inactivos');
     expect(clientes.request.params.keys().sort()).toEqual(['canal', 'dias', 'pagina', 'tipo']);
     expect(clientes.request.params.get('canal')).toBe('TIENDA');
+    // HU-18 RF-25: los compradores, con el período, el tipo, el canal y la página
+    const compradores = pedido('/api/reportes/compradores');
+    expect(compradores.request.params.keys().sort()).toEqual(['canal', 'desde', 'hasta', 'pagina', 'tipo']);
+    expect(compradores.request.params.get('canal')).toBe('TIENDA');
+    compradores.flush(PAGINA);
     const perdidos = pedido('/api/reportes/perdidos');
     expect(perdidos.request.params.keys().sort()).toEqual(['desde', 'hasta', 'pagina', 'tipo']);
     expect(perdidos.request.params.get('pagina')).toBe('2');

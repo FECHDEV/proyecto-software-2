@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import bo.edu.uagrm.tienda.dto.PaginaResponse;
 import bo.edu.uagrm.tienda.dto.reportes.ClienteInactivo;
+import bo.edu.uagrm.tienda.dto.reportes.ClienteQueCompra;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoPerdido;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoSinVenta;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoVendido;
@@ -57,6 +58,14 @@ public class ReportesController {
 	public PaginaResponse<ProductoSinVenta> sinVenta(@RequestParam(required = false) String dias,
 			@RequestParam(required = false) String canal, @RequestParam(required = false) String pagina) {
 		return reportesService.sinVenta(dias, Canal.deTexto(canal), Paginas.numeroDePagina(pagina));
+	}
+
+	// HU-18 RF-23 a RF-25: los clientes que compraron en el período
+	@GetMapping("/compradores")
+	public PaginaResponse<ClienteQueCompra> compradores(@RequestParam(required = false) String desde,
+			@RequestParam(required = false) String hasta, @RequestParam(required = false) TipoCliente tipo,
+			@RequestParam(required = false) String canal, @RequestParam(required = false) String pagina) {
+		return reportesService.compradores(desde, hasta, tipo, Canal.deTexto(canal), Paginas.numeroDePagina(pagina));
 	}
 
 	@GetMapping("/clientes-inactivos")
