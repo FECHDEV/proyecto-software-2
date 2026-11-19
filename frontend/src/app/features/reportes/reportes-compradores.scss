@@ -1,4 +1,5 @@
-// La tabla y los estados de _lista.scss, como «Clientes inactivos»
+// La tabla y los estados de _lista.scss, como «Clientes inactivos». Las cifras apiladas son .apilado: .cifra es la
+// tarjeta del Resumen (_reporte.scss) y le ponía borde y fondo a la celda (revisión de interfaz)
 @use '../../../styles/lista';
 @use 'reporte';
 
@@ -8,17 +9,36 @@
 }
 
 .contacto,
-.cifra {
+.apilado {
 	display: flex;
 	flex-direction: column;
 	gap: var(--app-espacio-1);
 }
 
-.cifra {
+.apilado {
 	align-items: flex-end;
 }
 
 .contacto a {
 	color: var(--app-acento-texto);
 	overflow-wrap: anywhere;
+}
+
+// Un nombre largo sin espacios se partía fuera de la tarjeta a 320 px
+tbody th > span {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.sin-corte {
+	white-space: nowrap;
+}
+
+// En el celular, el correo y el teléfono son blancos tocables de 44 px
+@media (max-width: 640px) {
+	.contacto a {
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--app-area-tocable);
+	}
 }

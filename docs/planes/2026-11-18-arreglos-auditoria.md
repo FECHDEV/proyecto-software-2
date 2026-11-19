@@ -436,7 +436,12 @@ pruebas, `ng lint` y `ng build` sin avisos.
 - `/security-review` (subagente Fable): sin hallazgos. El aviso sigue sin
   confirmar nada por sí solo, `url_retorno` la arma el servidor y las rutas
   siguen con sus roles.
-- **Interfaz (pendiente):** necesita la tienda levantada con esta rama;
-  Docker corre ahora la de HU-24.
+- **Interfaz (subagente Fable, 19/11/2026, con `main` en Docker):** sin
+  hallazgos en lo de esta rama. «Nueva venta» pregunta al salir con líneas
+  («Seguir con la venta» se queda; sin líneas no pregunta), «Imprimir» sale
+  en Entregado y no en Cancelado, el resumen muestra En línea, QR y
+  Efectivo, y el rótulo «Correo» de `/usuarios` se lee a 393 y 320 px. El
+  diálogo con QR y «Cancelando…» se revisaron en el código: no se generan
+  cobros reales en la revisión.
 
 **Prueba manual:** pendiente. Fabio la hace al final, junto con las demás.

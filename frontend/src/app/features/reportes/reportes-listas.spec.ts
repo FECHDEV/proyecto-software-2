@@ -163,14 +163,17 @@ describe('Listas de los reportes', () => {
             { ...ANA, idUsuario: 1, compras: 1, diasEntreCompras: null, primera: ANA.ultima, enLinea: 0, enTienda: 1 },
             { ...ANA, idUsuario: 2, compras: 2, diasEntreCompras: 0, enLinea: 1, enTienda: 1 },
             { ...ANA, idUsuario: 3, diasEntreCompras: 2.5 },
+            { ...ANA, idUsuario: 4, diasEntreCompras: 1 },
           ]),
         ),
       { seccion: 'compradores' },
     );
 
-    expect(filas().map((fila) => fila[5])).toEqual(['Una sola compra', 'El mismo día', 'Cada 2,5 días']);
+    expect(filas().map((fila) => fila[5])).toEqual(['Una sola compra', 'El mismo día', 'Cada 2,5 días', 'Cada día']);
     expect(filas()[0][4]).toBe('21/10/2026');
-    expect(filas().map((fila) => fila[2])).toEqual(['1 En tienda', '2 Los dos', '3 En línea']);
+    expect(filas().map((fila) => fila[2])).toEqual(['1 En tienda', '2 Los dos', '3 En línea', '3 En línea']);
+    // Revisión de interfaz: las cifras apiladas no usan la clase de las tarjetas del Resumen (.cifra)
+    expect(pantalla().querySelector('tbody .cifra')).toBeNull();
   });
 
   it('RF-23: la cuenta desactivada se marca', async () => {

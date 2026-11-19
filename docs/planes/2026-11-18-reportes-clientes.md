@@ -365,7 +365,15 @@ barra, «muestra las secciones y cambia la dirección».
   binding de Angular. Corregido el menor: con 0 días, el Excel y el PDF
   decían «0,0» y ahora dicen «El mismo día», como la pantalla (con su
   prueba).
-- **Interfaz (pendiente):** se hace junto con la de #121, con `main` ya
-  mezclado en Docker.
+- **Interfaz (subagente Fable, 19/11/2026, con `main` en Docker; Edge,
+  escritorio oscuro, iPhone 15 claro y 320 px; datos reales y simulados,
+  sin escribir en la base):** corregidos en un PR aparte las celdas de
+  compras y total, que salían como tarjetas (la clase `.cifra` chocaba con
+  la de las cifras del Resumen: ahora `.apilado`); el nombre largo sin
+  espacios que se cortaba a 320 px; «Cada 1 día» pasa a «Cada día»; las
+  fechas y «Cada cuánto» ya no se parten en varias líneas; y el correo y el
+  teléfono, blancos de 44 px en el celular. **Queda como estaba:** en el
+  comprobante del mostrador con «Imprimir» y «Anular venta», el último botón
+  baja a otra línea en escritorio (es de antes).
 
 **Prueba manual:** pendiente. Fabio la hace al final, junto con las demás.
