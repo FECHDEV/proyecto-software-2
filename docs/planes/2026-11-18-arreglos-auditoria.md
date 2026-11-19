@@ -444,4 +444,4 @@ pruebas, `ng lint` y `ng build` sin avisos.
   diálogo con QR y «Cancelando…» se revisaron en el código: no se generan
   cobros reales en la revisión.
 
-**Prueba manual:** pendiente. Fabio la hace al final, junto con las demás.
+**Prueba manual:** *19/11/2026, Fabio:* aprobada, junto con las demás pruebas del cierre (compra en línea con pago real, mostrador, descuentos, reportes y permisos). Los vencimientos y el pago tardío no se volvieron a probar a mano: los da por cumplidos porque ya andaban; los cubren las pruebas automáticas.

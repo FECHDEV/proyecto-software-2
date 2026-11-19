@@ -379,4 +379,4 @@ barra, «muestra las secciones y cambia la dirección».
   que 22 o más compras en dos días seguidos daban «Cada 0,0» y se leía «El
   mismo día»; en días distintos, como mínimo 0,1 (`CadaCuantoTest`).
 
-**Prueba manual:** pendiente. Fabio la hace al final, junto con las demás.
+**Prueba manual:** *19/11/2026, Fabio:* aprobada, junto con las demás pruebas del cierre (compra en línea con pago real, mostrador, descuentos, reportes y permisos). Los vencimientos y el pago tardío no se volvieron a probar a mano: los da por cumplidos porque ya andaban; los cubren las pruebas automáticas.
