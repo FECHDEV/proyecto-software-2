@@ -166,5 +166,27 @@ function cifras(actual: Totales, anterior: Totales): Cifra[] {
 			comparacion: comparacion(actual.devolverImporte, anterior.devolverImporte, precio, 'sin pagos a devolver antes'),
 			negativo: false,
 		},
+		// HU-24 RF-19
+		{
+			nombre: 'Descontado',
+			valor: precio(actual.descontado),
+			detalle: '',
+			comparacion: comparacion(actual.descontado, anterior.descontado, precio, 'sin descuentos antes'),
+			negativo: false,
+		},
+		{
+			nombre: 'Vendido con descuento',
+			valor: precio(actual.vendidoConDescuento),
+			detalle: '',
+			comparacion: comparacion(actual.vendidoConDescuento, anterior.vendidoConDescuento, precio, 'sin descuentos antes'),
+			negativo: false,
+		},
+		{
+			nombre: 'Pedidos con descuento',
+			valor: cantidad(actual.pedidosConDescuento),
+			detalle: '',
+			comparacion: comparacion(actual.pedidosConDescuento, anterior.pedidosConDescuento, cantidad, 'sin descuentos antes'),
+			negativo: false,
+		},
 	];
 }

@@ -98,6 +98,20 @@ class ExportadorExcelTest {
 		}
 	}
 
+	// HU-24 RF-20: las cifras de los descuentos van al resumen del Excel, con la anterior
+	@Test
+	void elExcelLlevaLasCifrasDeDescuentos() throws IOException {
+		try (Workbook libro = leer(ReporteDePrueba.conVentas())) {
+			Sheet resumen = libro.getSheet("Resumen");
+			assertThat(filaQueEmpiezaCon(resumen, "Descontado").getCell(1).getNumericCellValue()).isEqualTo(30.0);
+			assertThat(filaQueEmpiezaCon(resumen, "Vendido con descuento").getCell(1).getNumericCellValue())
+					.isEqualTo(170.0);
+			Row pedidos = filaQueEmpiezaCon(resumen, "Pedidos con descuento");
+			assertThat(pedidos.getCell(1).getNumericCellValue()).isEqualTo(1.0);
+			assertThat(pedidos.getCell(2).getNumericCellValue()).isEqualTo(0.0);
+		}
+	}
+
 	// HU-19 RF-10: las fechas son fechas, no texto
 	@Test
 	void lasFechasSonFechas() throws IOException {

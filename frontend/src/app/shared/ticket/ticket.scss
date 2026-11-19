@@ -120,6 +120,12 @@ tfoot tr:first-child td {
 	font-weight: 800;
 }
 
+// HU-24 RF-18: lo que ahorró, a la vista bajo el total; sin color, que al imprimir sale en negro
+.ahorro th,
+.ahorro td {
+	font-weight: 700;
+}
+
 .anulacion {
 	margin: 0;
 	padding: var(--app-espacio-2);

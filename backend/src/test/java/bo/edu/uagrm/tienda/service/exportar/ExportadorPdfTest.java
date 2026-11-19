@@ -90,6 +90,15 @@ class ExportadorPdfTest {
 				"sin costo");
 	}
 
+	// HU-24 RF-20: las cifras de los descuentos también en el PDF
+	@Test
+	void elPdfLlevaLasCifrasDeDescuentos() throws IOException {
+		String todo = String.join("\n", paginas(exportador.exportar(ReporteDePrueba.conVentas())));
+
+		assertThat(todo).contains("Descontado", "Bs 30,00", "Vendido con descuento", "Bs 170,00",
+				"Pedidos con descuento");
+	}
+
 	// HU-19 RF-9
 	@Test
 	void sinVentasLoDice() throws IOException {
