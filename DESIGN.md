@@ -401,6 +401,12 @@ adentro, siempre derechos.
   Marca del producto en rótulo de 12 px (dato, no antetítulo), nombre,
   precio en condensada. Agotado: la foto baja a 0.55 y se cose la etiqueta
   «Agotado» en paralelogramo con ícono.
+- **Precio con descuento** (*18/11/2026*, HU-24; `shared/precio`): el normal
+  tachado, a 0.75 del tamaño (nunca menos de 12 px) y del mismo color, antes
+  del que se cobra, y la marca «−15 %» a 0.55 del tamaño (nunca menos de
+  13 px) en una etiqueta `ambar` con `sobre-ambar`, cortada en sesgo como
+  «Agotado» (el amarillo es relleno, no texto). Hereda la letra de quien
+  lo usa; los lectores oyen «Precio normal …, ahora …, 15 % de descuento».
 - **Tarjeta del panel:** `superficie`, borde de 1 px `borde`, 2 px de esquina,
   24 px de relleno.
 

@@ -31,6 +31,7 @@ import {
 import { cantidadConPaso, leerCantidad, problemaDeCantidad } from '../../shared/formato/cantidades';
 import { cantidad, precio } from '../../shared/formato/precios';
 import { DialogoConfirmacion, PedidoDeConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
+import { Precio } from '../../shared/precio/precio';
 import { PasoDeCantidad } from '../../shared/paso-de-cantidad/paso-de-cantidad';
 import { BusquedaDeComprador } from './busqueda-de-comprador';
 import { BusquedaDeProductos } from './busqueda-de-productos';
@@ -69,6 +70,7 @@ const SALIR_SIN_COBRAR: PedidoDeConfirmacion = {
 @Component({
 	selector: 'app-venta',
 	imports: [BusquedaDeComprador, BusquedaDeProductos, DialogoConfirmacion, LucideTrash2, PasoDeCantidad, QrDeVenta],
+	imports: [BusquedaDeComprador, BusquedaDeProductos, LucideTrash2, PasoDeCantidad, Precio, QrDeVenta],
 	templateUrl: './venta.page.html',
 	styleUrl: './venta.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -392,7 +394,7 @@ export class VentaPage implements ConCambiosSinGuardar {
 			this.lineas().map(async (linea) => {
 				try {
 					const deHoy = await this.ventas.precioDeHoy(linea.producto.idProducto);
-					return { ...linea, producto: { ...linea.producto, precio: deHoy } };
+					return { ...linea, producto: { ...linea.producto, ...deHoy } };
 				} catch {
 					return linea;
 				}

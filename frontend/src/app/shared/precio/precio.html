@@ -1,0 +1,10 @@
+@if (rebaja(); as rebaja) {
+  <span class="solo-lectores">Precio normal {{ rebaja.normal }}, ahora {{ cobrado() }}, {{ rebaja.descuento }} % de descuento</span>
+  <span class="con-descuento" aria-hidden="true">
+    <s class="normal">{{ rebaja.normal }}</s>
+    <span class="cobrado">{{ cobrado() }}</span>
+    <span class="marca">−{{ rebaja.descuento }} %</span>
+  </span>
+} @else {
+  {{ cobrado() }}
+}

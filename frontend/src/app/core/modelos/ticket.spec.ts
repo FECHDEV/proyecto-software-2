@@ -11,7 +11,7 @@ describe('ticket', () => {
 
   it('lineasDelTicket: cantidad, unidad y precio, y el importe', () => {
     const [linea] = lineasDelTicket([
-      { idProducto: 2, nombre: 'Cable', unidad: 'METRO', precio: 4.5, cantidad: 2.5, subtotal: 11.25 },
+      { idProducto: 2, nombre: 'Cable', unidad: 'METRO', precio: 4.5, precioNormal: null, descuento: null, descontado: null, cantidad: 2.5, subtotal: 11.25 },
     ]);
 
     expect(linea.nombre).toBe('Cable');

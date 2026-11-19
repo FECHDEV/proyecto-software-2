@@ -50,6 +50,7 @@ describe('rutas', () => {
   beforeAll(async () => {
     await import('./features/inicio-sesion/inicio-sesion.page');
     await import('./features/categorias/categorias.page');
+    await import('./features/descuentos/descuentos.page');
     await import('./features/productos/productos.page');
     await import('./features/producto/producto.page');
     await import('./features/inventario/inventario.page');
@@ -92,6 +93,13 @@ describe('rutas', () => {
   it('la gestión de categorías es solo del administrador', async () => {
     expect(await navegarComo('ADMINISTRADOR', '/categorias')).toBe('/categorias');
     expect(await navegarComo('EMPLEADO', '/categorias')).toBe('/panel');
+  });
+
+  // HU-24 RF-7: los descuentos son del administrador
+  it('RF-7: la gestión de descuentos es solo del administrador', async () => {
+    expect(await navegarComo('ADMINISTRADOR', '/descuentos')).toBe('/descuentos');
+    expect(await navegarComo('EMPLEADO', '/descuentos')).toBe('/panel');
+    expect(await navegarComo('CONTADOR', '/descuentos')).toBe('/panel');
   });
 
   // HU-07 RF-1: la gestión de productos es del administrador

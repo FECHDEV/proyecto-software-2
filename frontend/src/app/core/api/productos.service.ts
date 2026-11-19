@@ -41,6 +41,15 @@ export class ProductosService {
 		return httpResource<Pagina<ProductoResumen>>(() => ({ url: GESTION, params: parametros(filtros()) }));
 	}
 
+	// Los activos que coinciden con el texto, para elegir uno (el producto de un descuento, HU-24 RF-1). Sin texto no
+	// pide nada
+	buscarActivos(texto: Signal<string>): HttpResourceRef<Pagina<ProductoResumen> | undefined> {
+		return httpResource<Pagina<ProductoResumen>>(() => {
+			const buscado = texto().trim();
+			return buscado === '' ? undefined : { url: GESTION, params: { texto: buscado, activo: 'true' } };
+		});
+	}
+
 	// Sin id (un producto nuevo) no pide nada
 	producto(idProducto: Signal<number | null>): HttpResourceRef<Producto | undefined> {
 		return httpResource<Producto>(() => {

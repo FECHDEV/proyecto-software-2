@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } fro
 import { RouterLink } from '@angular/router';
 import { LucideCircleSlash, LucideWrench } from '@lucide/angular';
 
-import { precio } from '../formato/precios';
+import { Precio } from '../precio/precio';
 
 // Lo que muestra la tarjeta, ya resuelto por la pantalla: shared/ no conoce los
 // modelos de core/. unidad va en minúsculas, o null cuando no se escribe
@@ -10,6 +10,9 @@ export interface DatosDeTarjeta {
 	nombre: string;
 	marca: string | null;
 	precio: number;
+	// Con descuento, el normal y el porcentaje (HU-24 RF-11); null sin descuento
+	precioNormal: number | null;
+	descuento: number | null;
 	unidad: string | null;
 	imagen: string | null;
 	agotado: boolean;
@@ -23,7 +26,7 @@ export interface DatosDeTarjeta {
 // Toda la placa es un solo enlace al detalle
 @Component({
 	selector: 'app-tarjeta-producto',
-	imports: [RouterLink, LucideCircleSlash, LucideWrench],
+	imports: [RouterLink, LucideCircleSlash, LucideWrench, Precio],
 	templateUrl: './tarjeta-producto.html',
 	styleUrl: './tarjeta-producto.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,8 +34,6 @@ export interface DatosDeTarjeta {
 export class TarjetaProducto {
 	readonly datos = input.required<DatosDeTarjeta>();
 
-	// La unidad va en su propia línea, más chica: el monto nunca se corta
-	protected readonly precio = computed(() => precio(this.datos().precio));
 	// Una foto que no carga muestra el ícono; vuelve a probar si cambia la foto
 	protected readonly fotoRota = linkedSignal({ source: () => this.datos().imagen, computation: () => false });
 	// Sin foto, o con la foto rota: el fondo oscuro, y la marca «3D» invertida

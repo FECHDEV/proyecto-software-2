@@ -15,8 +15,8 @@ const PENDIENTE: Pedido = {
   idPedido: 12,
   estado: 'PENDIENTE_PAGO',
   lineas: [
-    { idProducto: 7, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85.5, cantidad: 2, subtotal: 171 },
-    { idProducto: 9, nombre: 'Cable', unidad: 'METRO', precio: 12, cantidad: 3.5, subtotal: 42 },
+    { idProducto: 7, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85.5, precioNormal: null, descuento: null, descontado: null, cantidad: 2, subtotal: 171 },
+    { idProducto: 9, nombre: 'Cable', unidad: 'METRO', precio: 12, precioNormal: null, descuento: null, descontado: null, cantidad: 3.5, subtotal: 42 },
   ],
   total: 213,
   nombreRetira: 'Luis Rojas',

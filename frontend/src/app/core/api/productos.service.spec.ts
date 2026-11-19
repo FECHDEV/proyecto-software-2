@@ -90,6 +90,21 @@ describe('ProductosService', () => {
     peticion.flush(PAGINA);
   });
 
+  // HU-24 RF-1: el producto de un descuento se elige entre los activos; sin texto no pide nada
+  it('busca solo activos con el texto recortado', () => {
+    const texto = signal('  ');
+    TestBed.runInInjectionContext(() => servicio.buscarActivos(texto));
+    TestBed.tick();
+    http.expectNone((pedido) => pedido.url === '/api/gestion/productos');
+
+    texto.set(' rastrillo ');
+    TestBed.tick();
+    const peticion = http.expectOne((pedido) => pedido.url === '/api/gestion/productos');
+    expect(peticion.request.params.get('texto')).toBe('rastrillo');
+    expect(peticion.request.params.get('activo')).toBe('true');
+    peticion.flush(PAGINA);
+  });
+
   // Un producto nuevo todavía no tiene nada que leer
   it('lee un producto por su id y no pide nada sin id', () => {
     const id = signal<number | null>(null);

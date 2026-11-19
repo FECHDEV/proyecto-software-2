@@ -30,9 +30,16 @@ export interface ProductoParaVenta {
 	nombre: string;
 	imagen: string | null;
 	precio: number;
+	// Con descuento (HU-24 RF-11, RF-12): precio es el que se cobra, y estos dos el normal y el porcentaje; null sin
+	// descuento
+	precioNormal: number | null;
+	descuento: number | null;
 	unidad: UnidadVenta;
 	disponible: number;
 }
+
+// El precio de hoy de un producto ya agregado, con su descuento (RF-14; HU-24 RF-16)
+export type PrecioDeHoy = Pick<ProductoParaVenta, 'precio' | 'precioNormal' | 'descuento'>;
 
 // La cuenta de Cliente a cuyo nombre queda la venta (RF-4). Buscada por
 // nombre (RF-25, RF-26), el correo llega enmascarado
