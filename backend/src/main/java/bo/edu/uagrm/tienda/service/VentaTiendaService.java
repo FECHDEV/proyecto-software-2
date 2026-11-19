@@ -37,6 +37,7 @@ import bo.edu.uagrm.tienda.entity.LineaPedido;
 import bo.edu.uagrm.tienda.entity.MedioPago;
 import bo.edu.uagrm.tienda.entity.MovimientoStock;
 import bo.edu.uagrm.tienda.entity.Pedido;
+import bo.edu.uagrm.tienda.entity.PrecioDeVenta;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.Rol;
 import bo.edu.uagrm.tienda.entity.Usuario;
@@ -85,6 +86,7 @@ public class VentaTiendaService {
 	private final CobroRepository cobroRepository;
 	private final PedidoService pedidoService;
 	private final ConciliacionDePagos conciliacionDePagos;
+	private final PreciosDeVenta preciosDeVenta;
 	private final IPago iPago;
 	private final Clock clock;
 	private final String marca;
@@ -94,7 +96,7 @@ public class VentaTiendaService {
 	public VentaTiendaService(PedidoRepository pedidoRepository, ProductoRepository productoRepository,
 			UsuarioRepository usuarioRepository, MovimientoStockRepository movimientoRepository,
 			CobroRepository cobroRepository, PedidoService pedidoService, ConciliacionDePagos conciliacionDePagos,
-			IPago iPago, Clock clock, @Value("${tienda.correo.marca}") String marca,
+			PreciosDeVenta preciosDeVenta, IPago iPago, Clock clock, @Value("${tienda.correo.marca}") String marca,
 			@Value("${tienda.pago.proveedor:simulador}") String proveedor,
 			PlatformTransactionManager transactionManager) {
 		this.pedidoRepository = pedidoRepository;
@@ -104,6 +106,7 @@ public class VentaTiendaService {
 		this.cobroRepository = cobroRepository;
 		this.pedidoService = pedidoService;
 		this.conciliacionDePagos = conciliacionDePagos;
+		this.preciosDeVenta = preciosDeVenta;
 		this.iPago = iPago;
 		this.clock = clock;
 		this.marca = marca;
@@ -119,9 +122,12 @@ public class VentaTiendaService {
 		if (patron == null) {
 			return List.of();
 		}
-		return productoRepository.catalogo(patron, null, null, null, null, false,
-				PageRequest.of(0, RESULTADOS, Sort.by("nombre", "idProducto"))).map(ProductoVentaResponse::from)
-				.getContent();
+		List<Producto> encontrados = productoRepository.catalogo(patron, null, null, null, null, false,
+				PageRequest.of(0, RESULTADOS, Sort.by("nombre", "idProducto"))).getContent();
+		// HU-24 RF-12: con el precio que se cobra hoy, el mismo con el que se registra la venta
+		Map<Long, PrecioDeVenta> precios = preciosDeVenta.para(encontrados);
+		return encontrados.stream()
+				.map(producto -> ProductoVentaResponse.from(producto, precios.get(producto.getIdProducto()))).toList();
 	}
 
 	// RF-4: el correo exacto, sin distinguir mayúsculas; solo una cuenta de Cliente activa. Si no, 404
@@ -214,7 +220,10 @@ public class VentaTiendaService {
 		if (!rechazadas.isEmpty()) {
 			throw StockInsuficienteException.enLaVenta(rechazadas); // RF-12
 		}
-		venta.lineas().forEach(linea -> pedido.agregarLinea(productos.get(linea.idProducto()), linea.cantidad()));
+		// HU-24 RF-15: el mostrador también cobra el precio con descuento de hoy (ya no «sin rebajas»)
+		Map<Long, PrecioDeVenta> precios = preciosDeVenta.para(productos.values());
+		venta.lineas().forEach(linea -> pedido.agregarLinea(productos.get(linea.idProducto()), linea.cantidad(),
+				precios.get(linea.idProducto())));
 		// Con los precios del servidor; el de la pantalla solo se compara (RF-14)
 		if (pedido.getTotal().compareTo(venta.totalEsperado()) != 0) {
 			throw new TotalCambiadoException(pedido.getTotal());

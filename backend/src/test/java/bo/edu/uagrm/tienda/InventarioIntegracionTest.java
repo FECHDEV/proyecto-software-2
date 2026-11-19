@@ -30,6 +30,8 @@ import com.jayway.jsonpath.JsonPath;
 
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.Pedido;
+import bo.edu.uagrm.tienda.entity.PrecioDeVenta;
+import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
 import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
@@ -403,7 +405,8 @@ class InventarioIntegracionTest {
 		Usuario usuario = usuarioRepository.findByCorreo("cli.hu08@mail.com").orElseThrow();
 		LocalDateTime ahora = LocalDateTime.now();
 		Pedido pedido = Pedido.confirmar(usuario, "Eva Paz", "70000000", null, ahora, ahora.plusMinutes(30));
-		pedido.agregarLinea(productoRepository.findById(idProducto.longValue()).orElseThrow(), new BigDecimal(cantidad));
+		Producto producto = productoRepository.findById(idProducto.longValue()).orElseThrow();
+		pedido.agregarLinea(producto, new BigDecimal(cantidad), PrecioDeVenta.sinDescuento(producto.getPrecio()));
 		switch (estado) {
 			case PENDIENTE_PAGO -> {
 			}

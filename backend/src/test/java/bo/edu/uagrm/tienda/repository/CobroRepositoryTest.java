@@ -20,6 +20,7 @@ import bo.edu.uagrm.tienda.entity.Cobro;
 import bo.edu.uagrm.tienda.entity.EstadoCobro;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.Pedido;
+import bo.edu.uagrm.tienda.entity.PrecioDeVenta;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.UnidadVenta;
 import bo.edu.uagrm.tienda.entity.Usuario;
@@ -54,7 +55,7 @@ class CobroRepositoryTest {
 
 	private Pedido pedido(LocalDateTime confirmado) {
 		Pedido pedido = Pedido.confirmar(ana, "Ana Paz", "70000000", null, confirmado, confirmado.plusMinutes(30));
-		pedido.agregarLinea(martillo, new BigDecimal("2"));
+		pedido.agregarLinea(martillo, new BigDecimal("2"), PrecioDeVenta.sinDescuento(martillo.getPrecio()));
 		return em.persist(pedido);
 	}
 

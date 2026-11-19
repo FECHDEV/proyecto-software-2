@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,6 +48,7 @@ import com.jayway.jsonpath.JsonPath;
 
 import bo.edu.uagrm.tienda.PedidoIntegracionTest.RelojDePrueba;
 import bo.edu.uagrm.tienda.entity.Cobro;
+import bo.edu.uagrm.tienda.entity.Descuento;
 import bo.edu.uagrm.tienda.entity.EstadoCobro;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.LineaCarrito;
@@ -54,6 +56,7 @@ import bo.edu.uagrm.tienda.entity.TipoMovimiento;
 import bo.edu.uagrm.tienda.entity.UnidadVenta;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
+import bo.edu.uagrm.tienda.repository.DescuentoRepository;
 import bo.edu.uagrm.tienda.repository.CobroRepository;
 import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
@@ -150,6 +153,9 @@ class PagoIntegracionTest {
 	private UsuarioRepository usuarioRepository;
 
 	@Autowired
+	private DescuentoRepository descuentoRepository;
+
+	@Autowired
 	private org.springframework.transaction.PlatformTransactionManager transacciones;
 
 	private String admin;
@@ -179,6 +185,7 @@ class PagoIntegracionTest {
 		movimientoRepository.deleteAll();
 		cobroRepository.deleteAll();
 		pedidoRepository.deleteAll();
+		descuentoRepository.deleteAll();
 		productoRepository.deleteAll();
 		categoriaRepository.deleteAll();
 		CORREOS.forEach(correo -> usuarioRepository.findByCorreo(correo).ifPresent(usuarioRepository::delete));
@@ -650,6 +657,27 @@ class PagoIntegracionTest {
 		MvcTestResult carrito = get(CARRITO, ana);
 		assertThat(carrito).bodyJson().extractingPath("$.lineas[*].idProducto").asArray().containsExactly(martillo);
 		assertThat(carrito).bodyJson().extractingPath("$.lineas[0].cantidad").isEqualTo(1.0);
+	}
+
+	// HU-24 RF-17: un pago que llega después del fin del descuento deja el pedido con el total que se cobró
+	@Test
+	void pagoTardioDespuesDelFinDelDescuentoQuedaConSuTotal() throws Exception {
+		LocalDate hoy = LocalDate.now(reloj);
+		descuentoRepository.save(Descuento.deProducto(productoRepository.findById(martillo.longValue()).orElseThrow(),
+				20, hoy, hoy, usuarioRepository.findByCorreo(ADMIN).orElseThrow(), LocalDateTime.now(reloj)));
+		agregar(ana, martillo, "2");
+		Integer idPedido = confirmado(ana, "136.80");
+		Cobro cobro = conCobro(ana, idPedido);
+		assertThat(cancelar(ana, idPedido)).hasStatus(HttpStatus.OK);
+		reloj.avanzar(Duration.ofDays(1));
+		elBancoPaga(cobro);
+
+		conciliacion.conciliar(cobro.getIdCobro());
+
+		assertThat(estado(idPedido)).isEqualTo(EstadoPedido.PAGADO);
+		assertThat(pedidoRepository.findById(idPedido.longValue()).orElseThrow().getTotal())
+				.isEqualByComparingTo("136.80");
+		assertThat(cobro.getMonto()).isEqualByComparingTo("136.80");
 	}
 
 	// HU-13 RF-9, RF-15: sin stock, queda para devolver sin tocar el stock ni el carrito

@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -40,10 +42,12 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import com.jayway.jsonpath.JsonPath;
 
 import bo.edu.uagrm.tienda.dto.RetiroResponse;
+import bo.edu.uagrm.tienda.entity.Descuento;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.TipoMovimiento;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
+import bo.edu.uagrm.tienda.repository.DescuentoRepository;
 import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
 import bo.edu.uagrm.tienda.repository.PedidoRepository;
@@ -108,6 +112,9 @@ class PedidoIntegracionTest {
 	private UsuarioRepository usuarioRepository;
 
 	@Autowired
+	private DescuentoRepository descuentoRepository;
+
+	@Autowired
 	private JdbcTemplate jdbc;
 
 	// HU-23: las ventas del mostrador de prueba, con el simulador de pago
@@ -149,6 +156,7 @@ class PedidoIntegracionTest {
 		movimientoRepository.deleteAll();
 		cobroRepository.deleteAll();
 		pedidoRepository.deleteAll();
+		descuentoRepository.deleteAll();
 		productoRepository.deleteAll();
 		categoriaRepository.deleteAll();
 		CORREOS.forEach(correo -> usuarioRepository.findByCorreo(correo).ifPresent(usuarioRepository::delete));
@@ -932,6 +940,111 @@ class PedidoIntegracionTest {
 		assertThat(stock(cable)).isEqualTo(97.0);
 	}
 
+
+	// --- HU-24: el pedido con descuento ---
+
+	private LocalDate hoy() {
+		return LocalDate.now(reloj);
+	}
+
+	// Directo en la base: la gestión de descuentos se prueba en DescuentosIntegracionTest
+	private Descuento descuento(Integer idProducto, int porcentaje, LocalDate inicio, LocalDate fin) {
+		return descuentoRepository.save(Descuento.deProducto(productoRepository.findById(idProducto.longValue())
+				.orElseThrow(), porcentaje, inicio, fin, usuarioRepository.findByCorreo(ADMIN).orElseThrow(),
+				LocalDateTime.now(reloj)));
+	}
+
+	// La sesión dura 8 h (tienda.jwt.duracion): al día siguiente, Ana vuelve a iniciarla
+	private void mananaDeNuevo() throws Exception {
+		reloj.avanzar(Duration.ofDays(1));
+		ana = token("ana.hu12@mail.com", "secreta12");
+	}
+
+	// HU-24 RF-15: el martillo de Bs 85,50 al −20 % sale Bs 68,40; el pedido guarda lo cobrado y el cobro pide ese
+	// total
+	@Test
+	void confirmaConElPrecioConDescuentoYElCobroPideEseTotal() throws Exception {
+		descuento(martillo, 20, hoy(), hoy().plusDays(3));
+		agregar(ana, martillo, "2");
+
+		MvcTestResult pedido = confirmar(ana, "136.80");
+
+		assertThat(pedido).hasStatus(HttpStatus.CREATED);
+		assertThat(pedido).bodyJson().extractingPath("$.total").isEqualTo(136.8);
+		assertThat(pedido).bodyJson().extractingPath("$.lineas[0].precio").isEqualTo(68.4);
+		assertThat(pedido).bodyJson().extractingPath("$.lineas[0].precioNormal").isEqualTo(85.5);
+		assertThat(pedido).bodyJson().extractingPath("$.lineas[0].descuento").isEqualTo(20);
+		assertThat(pedido).bodyJson().extractingPath("$.lineas[0].descontado").isEqualTo(34.2);
+		Integer idPedido = id(pedido, "$.idPedido");
+		assertThat(post(PEDIDOS + "/{id}/cobro", ana, "", idPedido)).hasStatus(HttpStatus.OK);
+		assertThat(cobroRepository.findAll()).singleElement()
+				.satisfies(cobro -> assertThat(cobro.getMonto()).isEqualByComparingTo("136.80"));
+	}
+
+	// HU-24 RF-16: un descuento que empieza a la medianoche entre ver el total y confirmar no se cobra a ciegas
+	@Test
+	void descuentoQueEmpiezaEntreVerYConfirmarDaTotalCambiado() throws Exception {
+		descuento(martillo, 20, hoy().plusDays(1), hoy().plusDays(3));
+		agregar(ana, martillo, "2");
+		mananaDeNuevo();
+
+		MvcTestResult rechazo = confirmar(ana, "171");
+
+		assertThat(rechazo).hasStatus(HttpStatus.CONFLICT);
+		assertThat(rechazo).bodyJson().extractingPath("$.codigo").isEqualTo("TOTAL_CAMBIADO");
+		assertThat(rechazo).bodyJson().extractingPath("$.total").isEqualTo(136.8);
+		assertThat(pedidoRepository.count()).isZero();
+	}
+
+	// HU-24 RF-16, RF-10: el que termina hoy ya no vale mañana
+	@Test
+	void descuentoQueTerminaEntreVerYConfirmarDaTotalCambiado() throws Exception {
+		descuento(martillo, 20, hoy(), hoy());
+		agregar(ana, martillo, "2");
+		mananaDeNuevo();
+
+		MvcTestResult rechazo = confirmar(ana, "136.80");
+
+		assertThat(rechazo).hasStatus(HttpStatus.CONFLICT);
+		assertThat(rechazo).bodyJson().extractingPath("$.total").isEqualTo(171.0);
+		assertThat(confirmar(ana, "171.00")).hasStatus(HttpStatus.CREATED);
+	}
+
+	// HU-24 RF-17: lo confirmado no cambia si después se termina o se cambia el descuento, o cambia el precio
+	@Test
+	void terminarEditarElDescuentoOCambiarElPrecioNoTocaElPedido() throws Exception {
+		Descuento descuento = descuento(martillo, 20, hoy(), hoy().plusDays(3));
+		agregar(ana, martillo, "2");
+		Integer idPedido = confirmado(ana, "136.80");
+
+		descuento.cambiar(50, hoy(), hoy().plusDays(5));
+		descuentoRepository.save(descuento);
+		assertThat(put("/api/gestion/productos/{id}", admin, """
+				{"nombre":"Martillo","idCategoria":%d,"unidad":"UNIDAD","precio":99}""".formatted(herramientas),
+				martillo)).hasStatus(HttpStatus.OK);
+		descuentoRepository.deleteAll();
+
+		MvcTestResult pedido = get(PEDIDOS + "/{id}", ana, idPedido);
+		assertThat(pedido).bodyJson().extractingPath("$.total").isEqualTo(136.8);
+		assertThat(pedido).bodyJson().extractingPath("$.lineas[0].precio").isEqualTo(68.4);
+		assertThat(pedido).bodyJson().extractingPath("$.lineas[0].descuento").isEqualTo(20);
+	}
+
+	// HU-24 RF-17 y casos límite: si el pedido vence después del fin del descuento, lo que vuelve al carrito se
+	// confirma con el precio de ese día
+	@Test
+	void vencidoVuelveAlCarritoConElPrecioDelDia() throws Exception {
+		descuento(martillo, 20, hoy(), hoy());
+		agregar(ana, martillo, "2");
+		Integer idPedido = confirmado(ana, "136.80");
+		mananaDeNuevo();
+
+		assertThat(get(PEDIDOS + "/{id}", ana, idPedido)).hasStatus(HttpStatus.OK);
+		assertThat(estado(idPedido)).isEqualTo(EstadoPedido.VENCIDO);
+
+		assertThat(confirmar(ana, "136.80")).bodyJson().extractingPath("$.total").isEqualTo(171.0);
+		assertThat(confirmar(ana, "171")).hasStatus(HttpStatus.CREATED);
+	}
 
 	// Arranca en la hora real y avanza solo cuando la prueba lo pide. En microsegundos, como el de la aplicación
 	// (ClockConfig)

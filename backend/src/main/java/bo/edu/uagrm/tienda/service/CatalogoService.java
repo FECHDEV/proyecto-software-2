@@ -2,9 +2,12 @@ package bo.edu.uagrm.tienda.service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,8 @@ import bo.edu.uagrm.tienda.dto.PortadaResponse;
 import bo.edu.uagrm.tienda.dto.ProductoDetalleResponse;
 import bo.edu.uagrm.tienda.dto.ProductoTarjetaResponse;
 import bo.edu.uagrm.tienda.dto.SeccionResponse;
+import bo.edu.uagrm.tienda.entity.Categoria;
+import bo.edu.uagrm.tienda.entity.PrecioDeVenta;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.exception.CamposInvalidosException;
 import bo.edu.uagrm.tienda.exception.CamposInvalidosException.CampoInvalido;
@@ -36,6 +41,7 @@ public class CatalogoService {
 
 	private final ProductoRepository productoRepository;
 	private final CategoriaRepository categoriaRepository;
+	private final PreciosDeVenta preciosDeVenta;
 
 	public record Filtros(String texto, Long idCategoria, String marca, BigDecimal precioMin, BigDecimal precioMax,
 			boolean soloDisponibles, OrdenCatalogo orden, int pagina) {
@@ -51,31 +57,48 @@ public class CatalogoService {
 		PageRequest paginacion = PageRequest.of(Busquedas.paginaValida(filtros.pagina(), POR_PAGINA), POR_PAGINA,
 				orden.orden());
 		String patron = Busquedas.patron(filtros.texto(), Producto::textoDeBusqueda);
-		return PaginaResponse.from(productoRepository.catalogo(patron, filtros.idCategoria(),
-				marca, filtros.precioMin(), filtros.precioMax(), filtros.soloDisponibles(), paginacion),
-				ProductoTarjetaResponse::from);
+		Page<Producto> pagina = productoRepository.catalogo(patron, filtros.idCategoria(), marca, filtros.precioMin(),
+				filtros.precioMax(), filtros.soloDisponibles(), paginacion);
+		// HU-24 RF-12: los precios de toda la página en una sola lectura de los descuentos
+		Map<Long, PrecioDeVenta> precios = preciosDeVenta.para(pagina.getContent());
+		return PaginaResponse.from(pagina,
+				producto -> ProductoTarjetaResponse.from(producto, precios.get(producto.getIdProducto())));
 	}
 
+	// HU-24 RF-12: todos los carruseles juntos piden sus precios en una sola lectura de los descuentos
 	@Transactional(readOnly = true)
 	public PortadaResponse portada() {
-		List<SeccionResponse> categorias = new ArrayList<>();
+		List<Producto> destacados = vitrina(null, true, POR_CARRUSEL);
+		List<Producto> recientes = vitrina(null, false, POR_CARRUSEL);
+		Map<Categoria, List<Producto>> porCategoria = new LinkedHashMap<>();
 		categoriaRepository.findByVisibleTrueOrderByNombreClave().forEach(categoria -> {
-			List<ProductoTarjetaResponse> productos = vitrina(categoria.getIdCategoria(), false);
+			List<Producto> productos = vitrina(categoria.getIdCategoria(), false, POR_CARRUSEL);
 			if (!productos.isEmpty()) {
-				categorias.add(new SeccionResponse(categoria.getIdCategoria(), categoria.getNombre(), productos));
+				porCategoria.put(categoria, productos);
 			}
 		});
-		return new PortadaResponse(vitrina(null, true), vitrina(null, false), categorias);
+		List<Producto> todos = new ArrayList<>(destacados);
+		todos.addAll(recientes);
+		porCategoria.values().forEach(todos::addAll);
+		Map<Long, PrecioDeVenta> precios = preciosDeVenta.para(todos);
+		List<SeccionResponse> categorias = porCategoria.entrySet().stream()
+				.map(seccion -> new SeccionResponse(seccion.getKey().getIdCategoria(), seccion.getKey().getNombre(),
+						tarjetas(seccion.getValue(), precios)))
+				.toList();
+		return new PortadaResponse(tarjetas(destacados, precios), tarjetas(recientes, precios), categorias);
 	}
 
 	// HU-10: el detalle con hasta 12 de su categoría; se piden 13 por si el producto está entre ellos
 	@Transactional(readOnly = true)
 	public ProductoDetalleResponse detalle(Long idProducto) {
 		Producto producto = productoRepository.publico(idProducto).orElseThrow(ProductoNoEncontradoException::new);
-		List<ProductoTarjetaResponse> relacionados = vitrina(producto.getCategoria().getIdCategoria(), false,
-				POR_CARRUSEL + 1).stream().filter(otro -> !otro.idProducto().equals(idProducto)).limit(POR_CARRUSEL)
-				.toList();
-		return ProductoDetalleResponse.from(producto, relacionados);
+		List<Producto> relacionados = vitrina(producto.getCategoria().getIdCategoria(), false, POR_CARRUSEL + 1)
+				.stream().filter(otro -> !otro.getIdProducto().equals(idProducto)).limit(POR_CARRUSEL).toList();
+		// HU-24 RF-12, RF-14: el del producto y los de sus relacionados, en una sola lectura de los descuentos
+		List<Producto> todos = new ArrayList<>(relacionados);
+		todos.add(producto);
+		Map<Long, PrecioDeVenta> precios = preciosDeVenta.para(todos);
+		return ProductoDetalleResponse.from(producto, precios.get(idProducto), tarjetas(relacionados, precios));
 	}
 
 	// Lo que lista el mapa del sitio: la misma regla que el catálogo, también agotado (plan 2026-11-07-seo)
@@ -89,15 +112,15 @@ public class CatalogoService {
 		return productoRepository.marcasDelCatalogo();
 	}
 
-	private List<ProductoTarjetaResponse> vitrina(Long idCategoria, boolean soloDestacados) {
-		return vitrina(idCategoria, soloDestacados, POR_CARRUSEL);
+	// Los carruseles de la portada y «Más de…» del detalle: la misma regla y el mismo orden
+	private List<Producto> vitrina(Long idCategoria, boolean soloDestacados, int cantidad) {
+		return productoRepository
+				.vitrina(idCategoria, soloDestacados, PageRequest.of(0, cantidad, OrdenCatalogo.RECIENTES.orden()));
 	}
 
-	// Los carruseles de la portada y «Más de…» del detalle: la misma regla y el mismo orden
-	private List<ProductoTarjetaResponse> vitrina(Long idCategoria, boolean soloDestacados, int cantidad) {
-		return productoRepository
-				.vitrina(idCategoria, soloDestacados, PageRequest.of(0, cantidad, OrdenCatalogo.RECIENTES.orden()))
-				.stream().map(ProductoTarjetaResponse::from).toList();
+	private static List<ProductoTarjetaResponse> tarjetas(List<Producto> productos, Map<Long, PrecioDeVenta> precios) {
+		return productos.stream()
+				.map(producto -> ProductoTarjetaResponse.from(producto, precios.get(producto.getIdProducto()))).toList();
 	}
 
 	// HU-09 RF-13, RF-14: lo que la pantalla ya descarta, la API lo rechaza

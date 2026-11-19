@@ -14,6 +14,7 @@ import bo.edu.uagrm.tienda.entity.LineaPedido;
 import bo.edu.uagrm.tienda.entity.MedioPago;
 import bo.edu.uagrm.tienda.entity.MovimientoStock;
 import bo.edu.uagrm.tienda.entity.Pedido;
+import bo.edu.uagrm.tienda.entity.PrecioDeVenta;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CobroRepository;
@@ -50,8 +51,10 @@ record VentasDePrueba(PedidoRepository pedidos, ProductoRepository productos, Us
 			Usuario vendedor = usuarios.findByCorreo(correoVendedor).orElseThrow();
 			Pedido venta = Pedido.enTienda(comprador, vendedor, medio,
 					medio == MedioPago.EFECTIVO ? new BigDecimal("999999.99") : null, ahora, VIGENCIA);
-			lineas.forEach((id, cantidad) -> venta.agregarLinea(productos.findById(id.longValue()).orElseThrow(),
-					new BigDecimal(cantidad)));
+			lineas.forEach((id, cantidad) -> {
+				Producto producto = productos.findById(id.longValue()).orElseThrow();
+				venta.agregarLinea(producto, new BigDecimal(cantidad), PrecioDeVenta.sinDescuento(producto.getPrecio()));
+			});
 			pedidos.save(venta);
 			for (LineaPedido linea : venta.lineasPorProducto()) {
 				Producto producto = productos.findConBloqueoByIdProducto(linea.getIdProducto()).orElseThrow();

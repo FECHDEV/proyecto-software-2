@@ -45,12 +45,14 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import com.jayway.jsonpath.JsonPath;
 
 import bo.edu.uagrm.tienda.PedidoIntegracionTest.RelojDePrueba;
+import bo.edu.uagrm.tienda.entity.Descuento;
 import bo.edu.uagrm.tienda.entity.EstadoCobro;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.TipoMovimiento;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
 import bo.edu.uagrm.tienda.repository.CobroRepository;
+import bo.edu.uagrm.tienda.repository.DescuentoRepository;
 import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
 import bo.edu.uagrm.tienda.repository.PedidoRepository;
@@ -134,6 +136,9 @@ class VentaTiendaIntegracionTest {
 	@Autowired
 	private UsuarioRepository usuarioRepository;
 
+	@Autowired
+	private DescuentoRepository descuentoRepository;
+
 	private String admin;
 	private String empleado;
 	private String contador;
@@ -165,6 +170,7 @@ class VentaTiendaIntegracionTest {
 		movimientoRepository.deleteAll();
 		cobroRepository.deleteAll();
 		pedidoRepository.deleteAll();
+		descuentoRepository.deleteAll();
 		productoRepository.deleteAll();
 		categoriaRepository.deleteAll();
 		CORREOS.forEach(correo -> usuarioRepository.findByCorreo(correo).ifPresent(usuarioRepository::delete));
@@ -303,6 +309,83 @@ class VentaTiendaIntegracionTest {
 		// La API también rechaza vender a esa cuenta
 		assertThat(vender(empleado, LINEAS.formatted(martillo, cable), idAna, "EFECTIVO", "100", "96.25"))
 				.hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
+	// --- HU-24: el mostrador cobra el precio con descuento ---
+
+	// El martillo de Bs 85 al −20 %, Bs 68: con 2,5 m de cable, Bs 79,25. Directo en la base: la gestión de descuentos
+	// se prueba en DescuentosIntegracionTest
+	private void martilloAlVeintePorCiento() {
+		LocalDate hoy = LocalDate.now(reloj);
+		descuentoRepository.save(Descuento.deProducto(productoRepository.findById(martillo.longValue()).orElseThrow(),
+				20, hoy, hoy.plusDays(3), usuarioRepository.findByCorreo(ADMIN).orElseThrow(), LocalDateTime.now(reloj)));
+	}
+
+	// HU-24 RF-12: la búsqueda da el precio que se cobra, el mismo con el que la pantalla calcula el total (RF-14)
+	@Test
+	void laBusquedaDaElPrecioConDescuento() throws Exception {
+		martilloAlVeintePorCiento();
+
+		MvcTestResult resultado = get(VENTAS + "/productos?texto=martillo", empleado);
+
+		assertThat(resultado).bodyJson().extractingPath("$[0].precio").isEqualTo(68.0);
+		assertThat(resultado).bodyJson().extractingPath("$[0].precioNormal").isEqualTo(85.0);
+		assertThat(resultado).bodyJson().extractingPath("$[0].descuento").isEqualTo(20);
+	}
+
+	// HU-24 RF-15: total, recibido y cambio con el precio con descuento
+	@Test
+	void ventaEnEfectivoCobraElPrecioConDescuento() throws Exception {
+		martilloAlVeintePorCiento();
+
+		MvcTestResult venta = vender(empleado, LINEAS.formatted(martillo, cable), null, "EFECTIVO", "100", "79.25");
+
+		assertThat(venta).hasStatus(HttpStatus.CREATED);
+		assertThat(venta).bodyJson().extractingPath("$.total").isEqualTo(79.25);
+		assertThat(venta).bodyJson().extractingPath("$.cambio").isEqualTo(20.75);
+		assertThat(venta).bodyJson().extractingPath("$.lineas[0].precio").isEqualTo(68.0);
+		assertThat(venta).bodyJson().extractingPath("$.lineas[0].precioNormal").isEqualTo(85.0);
+		assertThat(venta).bodyJson().extractingPath("$.lineas[0].descuento").isEqualTo(20);
+		assertThat(venta).bodyJson().extractingPath("$.lineas[1].descuento").isNull();
+	}
+
+	// HU-24 RF-15: con QR, el cobro pide el total con descuento
+	@Test
+	void ventaConQrGeneraElCobroConElTotalConDescuento() throws Exception {
+		martilloAlVeintePorCiento();
+
+		MvcTestResult venta = vender(empleado, LINEAS.formatted(martillo, cable), null, "QR", "null", "79.25");
+
+		assertThat(venta).hasStatus(HttpStatus.CREATED);
+		assertThat(cobroRepository.findAll()).singleElement()
+				.satisfies(cobro -> assertThat(cobro.getMonto()).isEqualByComparingTo("79.25"));
+	}
+
+	// HU-24 RF-16: la pantalla que vio el precio sin el descuento recibe el total nuevo
+	@Test
+	void totalDeLaPantallaSinDescuentoDaTotalCambiado() throws Exception {
+		martilloAlVeintePorCiento();
+
+		MvcTestResult rechazo = vender(empleado, LINEAS.formatted(martillo, cable), null, "EFECTIVO", "100", "96.25");
+
+		assertThat(rechazo).hasStatus(HttpStatus.CONFLICT);
+		assertThat(rechazo).bodyJson().extractingPath("$.codigo").isEqualTo("TOTAL_CAMBIADO");
+		assertThat(rechazo).bodyJson().extractingPath("$.total").isEqualTo(79.25);
+		assertThat(pedidoRepository.count()).isZero();
+	}
+
+	// HU-24 RF-17: anular una venta con descuento devuelve el stock como cualquier otra
+	@Test
+	void anularUnaVentaConDescuentoDevuelveElStock() throws Exception {
+		martilloAlVeintePorCiento();
+		Integer venta = id(vender(empleado, LINEAS.formatted(martillo, cable), null, "EFECTIVO", "100", "79.25"),
+				"$.idPedido");
+
+		assertThat(post(VENTAS + "/{id}/anulacion", admin, "{\"motivo\":\"Error\"}", venta)).hasStatus(HttpStatus.OK);
+
+		assertThat(stock(martillo)).isEqualTo(10.0);
+		assertThat(stock(cable)).isEqualTo(100.0);
+		assertThat(estado(venta)).isEqualTo(EstadoPedido.ANULADO);
 	}
 
 	// --- RF-5, RF-6: efectivo ---

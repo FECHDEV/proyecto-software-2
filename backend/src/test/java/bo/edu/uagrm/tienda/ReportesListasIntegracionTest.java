@@ -26,6 +26,7 @@ import com.jayway.jsonpath.JsonPath;
 
 import bo.edu.uagrm.tienda.entity.Categoria;
 import bo.edu.uagrm.tienda.entity.Pedido;
+import bo.edu.uagrm.tienda.entity.PrecioDeVenta;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.Rol;
 import bo.edu.uagrm.tienda.entity.TipoCliente;
@@ -149,7 +150,7 @@ class ReportesListasIntegracionTest {
 	private Pedido confirmado(Usuario cliente, LocalDateTime cuando, Object... lineas) {
 		Pedido pedido = Pedido.confirmar(cliente, "Ana Paz", "70000000", null, cuando, cuando.plusMinutes(30));
 		for (int i = 0; i < lineas.length; i += 2) {
-			pedido.agregarLinea((Producto) lineas[i], new BigDecimal(lineas[i + 1].toString()));
+			pedido.agregarLinea((Producto) lineas[i], new BigDecimal(lineas[i + 1].toString()), PrecioDeVenta.sinDescuento(((Producto) lineas[i]).getPrecio()));
 		}
 		return pedido;
 	}
