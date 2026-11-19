@@ -69,8 +69,7 @@ const SALIR_SIN_COBRAR: PedidoDeConfirmacion = {
 
 @Component({
 	selector: 'app-venta',
-	imports: [DialogoConfirmacion, LucideTrash2, PasoDeCantidad, QrDeVenta],
-	imports: [BusquedaDeComprador, BusquedaDeProductos,  Precio],
+	imports: [DialogoConfirmacion, LucideTrash2, PasoDeCantidad, QrDeVenta, BusquedaDeComprador, BusquedaDeProductos,  Precio],
 	templateUrl: './venta.page.html',
 	styleUrl: './venta.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
