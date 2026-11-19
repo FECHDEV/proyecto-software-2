@@ -660,3 +660,45 @@ cambia en este PR: 926 pruebas con la mezcla.
 
 **Prueba manual:** pendiente. Fabio la hace al final, junto con las demás.
 La tienda ya corre con esta rama en Docker (`http://localhost`).
+
+### PR 3 — Ticket y reportes
+
+*19/11/2026.* Tareas 11 y 12 con TDD por Claude (Opus); las revisiones, de
+Fable.
+
+**Cobertura RF → pruebas:**
+
+| RF | Pruebas |
+|---|---|
+| RF-18 | `core/modelos/ticket.spec.ts`: la línea con descuento lleva «(−15 %)» y no se parte al imprimir; el ahorro suma en centavos; las líneas sin descuento (y una respuesta sin los campos) no cambian ni ahorran. `ticket.spec.ts`: «Usted ahorró» con ahorro y sin él. `comprobante.page.spec.ts` y `comprobante-cliente.page.spec.ts`: el ticket con descuento |
+| RF-19 | `ReportesIntegracionTest`: `resumenSumaLoDescontadoYLoVendidoConDescuento` (el escenario del Contador: 220 / 30 / 170 / 1), `losDescuentosSeComparanConElPeriodoAnterior`, `losDescuentosRespetanLosFiltrosDeTipoYCanal`, `anuladaPagoADevolverYLineasSinDescuentoNoSuman`; `reportes-resumen.spec.ts` (las tres cifras con su comparación) |
+| RF-20 | `ExportadorExcelTest.elExcelLlevaLasCifrasDeDescuentos`, `ExportadorPdfTest.elPdfLlevaLasCifrasDeDescuentos` |
+
+**Suites:** backend **930 pruebas**, 0 fallas; frontend **1024 pruebas**,
+`ng lint` y `ng build` sin avisos. En una corrida de la suite completa,
+`app.routes.spec.ts` se pasó del límite de 60 s al cargar todas las
+pantallas (carga de la PC); sola y en la corrida siguiente, pasa.
+
+**Distinto de lo planeado:** las pruebas «anulada y pago a devolver» y
+«líneas viejas sin descuento» van en una sola
+(`anuladaPagoADevolverYLineasSinDescuentoNoSuman`); la exportación se prueba
+en `ExportadorExcelTest` y `ExportadorPdfTest` (con `ReporteDePrueba`) en
+lugar de `ReportesExportarIntegracionTest`, que arma el mismo `Totales`.
+
+**Revisiones:**
+
+- **`/code-review` y `/security-review` (un subagente Fable):** nada
+  importante. La consulta usa la regla de venta y los filtros de
+  `lineasPorProducto`; los tipos del record funcionan en H2 y MySQL; sin
+  endpoints nuevos. Menor, sin cambio: `DescuentosFila` usa `long` donde las
+  otras filas usan `Long` (funciona igual).
+- **Interfaz (subagente Fable, Edge, escritorio oscuro, iPhone 15 claro y
+  vista de impresión de 80 mm, con respuestas simuladas, sin crear datos):**
+  corregido el «(−53 %)» que al imprimir se partía antes del «%» (espacio
+  duro y espacio fino duro, con su prueba). También dos menores: «Usted
+  ahorró» en negrita (`.ahorro`) y `== null` para que una respuesta sin los
+  campos no diga «(−undefined %)». **Queda como está:** la línea no muestra
+  el precio normal (RF-18 no lo pide). No se probó el comprobante del
+  Cliente en el navegador (usa el mismo ticket).
+
+**Prueba manual:** pendiente. Fabio la hace al final, junto con las demás.

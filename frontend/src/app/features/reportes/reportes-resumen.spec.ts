@@ -60,6 +60,18 @@ describe('ReportesResumen', () => {
     expect(texto()).toContain('Comparado con el 09/09/2026 al 30/09/2026');
   });
 
+  // HU-24 RF-19: lo descontado, lo vendido con descuento y los pedidos con descuento, cada uno con el anterior
+  it('RF-19: muestra lo descontado, lo vendido con descuento y los pedidos con descuento', async () => {
+    await abrir((falso) => falso.ventasRecurso.value.set(ventas()));
+
+    expect(cifra('Descontado').textContent).toContain('30,00');
+    expect(cifra('Descontado').textContent).toContain('20,00, subió 50 %');
+    expect(cifra('Vendido con descuento').textContent).toContain('170,00');
+    expect(cifra('Vendido con descuento').textContent).toContain('80,00');
+    expect(cifra('Pedidos con descuento').textContent).toContain('1');
+    expect(cifra('Pedidos con descuento').textContent).toContain('antes 2, bajó 50 %');
+  });
+
   // HU-18 RF-8: el margen con su porcentaje y lo vendido sin costo; negativo en el tono de error
   it('margen negativo y sin costo', async () => {
     await abrir((falso) => falso.ventasRecurso.value.set(ventas()));

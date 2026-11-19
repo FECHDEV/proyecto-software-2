@@ -175,7 +175,18 @@ final class SeccionesDelReporte {
 				List.of(Celda.texto("Pagos a devolver (importe)"), new Dinero(actual.devolverImporte()),
 						new Dinero(anterior.devolverImporte()),
 						diferencia(actual.devolverImporte(), anterior.devolverImporte(),
-								"sin pagos a devolver antes", true)));
+								"sin pagos a devolver antes", true)),
+				// HU-24 RF-20: los descuentos, como en la pantalla
+				List.of(Celda.texto("Descontado"), new Dinero(actual.descontado()), new Dinero(anterior.descontado()),
+						diferencia(actual.descontado(), anterior.descontado(), "sin descuentos antes", true)),
+				List.of(Celda.texto("Vendido con descuento"), new Dinero(actual.vendidoConDescuento()),
+						new Dinero(anterior.vendidoConDescuento()),
+						diferencia(actual.vendidoConDescuento(), anterior.vendidoConDescuento(),
+								"sin descuentos antes", true)),
+				List.of(Celda.texto("Pedidos con descuento"), new Numero(actual.pedidosConDescuento()),
+						new Numero(anterior.pedidosConDescuento()),
+						diferencia(BigDecimal.valueOf(actual.pedidosConDescuento()),
+								BigDecimal.valueOf(anterior.pedidosConDescuento()), "sin descuentos antes", true)));
 		return new Seccion("Cifras del período", sinVentas ? List.of(sinVentasTexto) : List.of(),
 				List.of("Cifra", "Este período", "Período anterior", "Diferencia"), filas, "");
 	}

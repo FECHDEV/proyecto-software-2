@@ -49,8 +49,9 @@ final class ReporteDePrueba {
 
 	static ReporteCompleto conMasVendidos(List<ProductoVendido> masVendidos) {
 		Totales actual = new Totales(bs("970.00"), 3, bs("323.33"), bs("145.00"), bs("15.6"), bs("50.00"), 1,
-				bs("80.00"));
-		Totales anterior = new Totales(bs("500.00"), 2, bs("250.00"), null, null, bs("500.00"), 0, bs("0.00"));
+				bs("80.00"), bs("30.00"), bs("170.00"), 1);
+		Totales anterior = new Totales(bs("500.00"), 2, bs("250.00"), null, null, bs("500.00"), 0, bs("0.00"),
+				bs("0.00"), bs("0.00"), 0);
 		List<PorFecha> porFecha = IntStream.rangeClosed(1, 22)
 				.mapToObj(dia -> new PorFecha(DESDE.withDayOfMonth(dia).toString(),
 						dia == 2 ? bs("970.00") : bs("0.00"), dia == 2 ? 3 : 0))
@@ -71,7 +72,8 @@ final class ReporteDePrueba {
 
 	// Sin ventas en el período: las listas que no dependen de él siguen con filas (RF-9)
 	static ReporteCompleto sinVentas() {
-		Totales cero = new Totales(bs("0.00"), 0, null, null, null, bs("0.00"), 0, bs("0.00"));
+		Totales cero = new Totales(bs("0.00"), 0, null, null, null, bs("0.00"), 0, bs("0.00"), bs("0.00"), bs("0.00"),
+				0);
 		List<PorFecha> porFecha = IntStream.rangeClosed(1, 22)
 				.mapToObj(dia -> new PorFecha(DESDE.withDayOfMonth(dia).toString(), bs("0.00"), 0)).toList();
 		VentasResponse ventas = new VentasResponse(
@@ -93,7 +95,8 @@ final class ReporteDePrueba {
 		for (int i = 0; i < 13; i++) {
 			meses.add(new PorFecha(desde.plusMonths(i).toString().substring(0, 7), bs("10.00"), 1));
 		}
-		Totales actual = new Totales(bs("130.00"), 13, bs("10.00"), null, null, bs("130.00"), 0, bs("0.00"));
+		Totales actual = new Totales(bs("130.00"), 13, bs("10.00"), null, null, bs("130.00"), 0, bs("0.00"),
+				bs("0.00"), bs("0.00"), 0);
 		VentasResponse ventas = new VentasResponse(
 				new PeriodoResponse(desde, HASTA, LocalDate.of(2023, 10, 21), LocalDate.of(2024, 10, 21), "MES"),
 				actual, base.ventas().anterior(), meses, porDiaSemana(bs("130.00"), 13), porHora(bs("130.00"), 13),

@@ -114,6 +114,18 @@ describe('ComprobanteClientePage', () => {
     expect(fila('Cambio')).toBe('Bs 29,00');
   });
 
+  // HU-24 RF-18: el comprobante del Cliente, con el descuento y lo ahorrado
+  it('RF-18: el ticket con descuento', async () => {
+    await abrir('/mis-pedidos/12/comprobante', {
+      ...EN_LINEA,
+      lineas: [{ idProducto: 9, nombre: 'Rastrillo', unidad: 'UNIDAD', precio: 85, precioNormal: 100, descuento: 15, descontado: 30, cantidad: 2, subtotal: 170 }],
+      total: 170,
+    });
+
+    expect(texto()).toContain('2 unidades × Bs 85,00 (−15 %)');
+    expect(fila('Usted ahorró')).toBe('Bs 30,00');
+  });
+
   it('RF-11: «Imprimir» llama a window.print', async () => {
     await abrir();
     const imprimir = vi.spyOn(window, 'print').mockImplementation(() => undefined);

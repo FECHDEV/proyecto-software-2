@@ -18,7 +18,7 @@ import { VentasService } from '../../core/api/ventas.service';
 import { MARCA } from '../../core/marca';
 import { comoError, comoErrorApi } from '../../core/modelos/error-api';
 import { NOMBRES_DE_ESTADO, TONO_DE_ESTADO } from '../../core/modelos/pedido';
-import { fechaYHora, lineasDelTicket, pagosDelTicket } from '../../core/modelos/ticket';
+import { ahorroDelTicket, fechaYHora, lineasDelTicket, pagosDelTicket } from '../../core/modelos/ticket';
 import { Venta } from '../../core/modelos/venta';
 import { puedeEntrar } from '../../core/sesion/modulos';
 import { SesionService } from '../../core/sesion/sesion.service';
@@ -82,6 +82,7 @@ export class ComprobantePage {
 			],
 			lineas: lineasDelTicket(venta.lineas),
 			total: precio(venta.total),
+			ahorro: ahorroDelTicket(venta.lineas),
 			pagos: pagosDelTicket(venta.medio, venta.recibido, venta.cambio),
 			anulacion: venta.anulado
 				? `Anulada el ${fechaYHora(venta.anulado)} por ${venta.anuladoPor}: ${venta.motivoAnulacion}`

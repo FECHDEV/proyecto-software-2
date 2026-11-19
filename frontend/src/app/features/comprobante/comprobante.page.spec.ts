@@ -143,6 +143,28 @@ describe('ComprobantePage', () => {
     expect(imprimir).toHaveBeenCalled();
   });
 
+  // HU-24 RF-18: dos rastrillos con −15 % y el cable sin descuento
+  it('RF-18: el ticket con descuento', async () => {
+    await abrir('/ventas/31', 'EMPLEADO', {
+      ...EN_EFECTIVO,
+      lineas: [
+        { idProducto: 9, nombre: 'Rastrillo', unidad: 'UNIDAD', precio: 85, precioNormal: 100, descuento: 15, descontado: 30, cantidad: 2, subtotal: 170 },
+        EN_EFECTIVO.lineas[1],
+      ],
+      total: 181.25,
+    });
+
+    expect(ticket()).toContain('2 unidades × Bs 85,00 (−15 %)');
+    expect(ticket()).toContain('2,5 metros × Bs 4,50');
+    expect(fila('Usted ahorró')).toBe('Bs 30,00');
+  });
+
+  it('RF-18: sin descuentos no dice «Usted ahorró»', async () => {
+    await abrir();
+
+    expect(fila('Usted ahorró')).toBeUndefined();
+  });
+
   // HU-23 RF-15: en efectivo, lo recibido y el cambio; sin cuenta, «Consumidor final»
   it('enEfectivoMuestraRecibidoYCambio', async () => {
     await abrir('/ventas/31', 'EMPLEADO', { ...EN_EFECTIVO, comprador: null });

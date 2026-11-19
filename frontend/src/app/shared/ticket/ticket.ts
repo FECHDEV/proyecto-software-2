@@ -11,6 +11,8 @@ export interface DatosDelTicket {
 	datos: { etiqueta: string; valor: string }[];
 	lineas: { nombre: string; detalle: string; importe: string }[];
 	total: string;
+	// «Usted ahorró», bajo el total; null sin descuentos (HU-24 RF-18)
+	ahorro: string | null;
 	// Pago, Recibido, Cambio…
 	pagos: { etiqueta: string; valor: string }[];
 	anulacion: string | null;

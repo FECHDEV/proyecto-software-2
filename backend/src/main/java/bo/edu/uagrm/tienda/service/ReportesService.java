@@ -25,6 +25,7 @@ import bo.edu.uagrm.tienda.dto.PaginaResponse;
 import bo.edu.uagrm.tienda.dto.reportes.CategoriaFila;
 import bo.edu.uagrm.tienda.dto.reportes.ClienteInactivo;
 import bo.edu.uagrm.tienda.dto.reportes.CompraFila;
+import bo.edu.uagrm.tienda.dto.reportes.DescuentosFila;
 import bo.edu.uagrm.tienda.dto.reportes.EstadoFila;
 import bo.edu.uagrm.tienda.dto.reportes.LineasFila;
 import bo.edu.uagrm.tienda.dto.reportes.MedioDelResumen;
@@ -264,9 +265,12 @@ public class ReportesService {
 		BigDecimal margen = margen(sumar(lineas, LineasFila::margen), conCosto);
 		List<VentaFila> devoluciones = reportesRepository.pagados(A_DEVOLVER, periodo.inicio(), periodo.fin(), tipo,
 				canal);
+		DescuentosFila descuentos = reportesRepository.descuentos(VENDIDOS, periodo.inicio(), periodo.fin(), tipo,
+				canal);
 		return new Totales(ingresos, ventas.size(), promedio(ingresos, ventas.size()), margen,
 				margen == null ? null : porcentaje(margen, conCosto), sinCosto, devoluciones.size(),
-				sumar(devoluciones, VentaFila::total));
+				sumar(devoluciones, VentaFila::total), descuentos.descontado().setScale(2),
+				descuentos.vendido().setScale(2), descuentos.pedidos());
 	}
 
 	// Todos los días (o meses) del período, también los que no vendieron (RF-9)
