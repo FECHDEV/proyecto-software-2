@@ -432,6 +432,20 @@ Rama `feature/hu-24-descuentos`. Primer commit: la historia, las decisiones,
     HU-09: el conteo usa `:hoy` y no `:porPrecio`)
 - **H2 y MySQL:** el CI corre sobre H2. En la prueba manual, con Docker
   (MySQL 8.4), se repiten el filtro «desde 3,83» y el orden.
+- **Resultado (19/11/2026, PR aparte después de PR 3):** hecha como estaba
+  planeada. Pruebas: `filtroHastaNoventaIncluyeElDeCienConQuince`,
+  `ordenPorPrecioUsaElPrecioConDescuento`,
+  `laConsultaRedondeaIgualQuePrecioDeVenta` y
+  `agotadosAlFinalYConteoConElOrdenPorPrecio` (una sola para los agotados y
+  el conteo); `ProductoRepositoryTest` pasa `hoy` y `porPrecio`. Backend
+  **930 pruebas**, 0 fallas. En el MySQL 8.4 de Docker, `ROUND` da lo mismo
+  que `PrecioDeVenta` (3,825 → 3,83; 1,125 → 1,13; 0,00 → piso 0,01).
+  **`/code-review` (Fable):** sin hallazgos; el `countQuery` ignora
+  `:porPrecio` (Spring Data lo enlaza en modo permisivo). Menores, sin
+  cambio: «hoy» se lee en la consulta y otra vez en `PreciosDeVenta` (cruzar
+  la medianoche en el mismo pedido); la subconsulta se repite hasta ocho
+  veces por fila (alcanza para una tienda chica; si crece, `greatest` o un
+  join); falta una prueba del desempate por número de producto.
 
 ## PR 3 — Ticket y reportes
 

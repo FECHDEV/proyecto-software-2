@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -197,8 +198,8 @@ class ProductoRepositoryTest {
 			boolean soloDisponibles, OrdenCatalogo orden) {
 		return productoRepository
 				.catalogo(texto, idCategoria, marca, precioMin == null ? null : new BigDecimal(precioMin),
-						precioMax == null ? null : new BigDecimal(precioMax), soloDisponibles,
-						PageRequest.of(0, 24, orden.orden()))
+						precioMax == null ? null : new BigDecimal(precioMax), soloDisponibles, LocalDate.of(2026, 1, 1),
+						orden.porPrecio(), PageRequest.of(0, 24, orden.orden()))
 				.map(Producto::getNombre).getContent();
 	}
 
