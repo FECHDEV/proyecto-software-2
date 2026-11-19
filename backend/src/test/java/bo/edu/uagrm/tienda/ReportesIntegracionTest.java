@@ -682,6 +682,8 @@ class ReportesIntegracionTest {
 		assertThat(resumen).bodyJson().extractingPath("$.actual.descontado").isEqualTo(0.0);
 		assertThat(resumen).bodyJson().extractingPath("$.actual.vendidoConDescuento").isEqualTo(0.0);
 		assertThat(resumen).bodyJson().extractingPath("$.actual.pedidosConDescuento").isEqualTo(0);
+	}
+
 	private MvcTestResult inactivos(String filtros) {
 		return mvc.get().uri("/api/reportes/clientes-inactivos?dias=30" + filtros)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + contador).exchange();
