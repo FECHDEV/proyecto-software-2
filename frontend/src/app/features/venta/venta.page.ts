@@ -8,12 +8,14 @@ import {
 	Injector,
 	NgZone,
 	signal,
+	viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideTrash2 } from '@lucide/angular';
 
 import { mensajeDeError } from '../../core/api/mensajes-error';
 import { VentasService } from '../../core/api/ventas.service';
+import { ConCambiosSinGuardar } from '../../core/guards/cambios-sin-guardar.guard';
 import { comoError, ErrorApi } from '../../core/modelos/error-api';
 import { DECIMALES_DE_UNIDAD } from '../../core/modelos/inventario';
 import { AVISOS_DE_RECHAZO, ResultadoSimulado } from '../../core/modelos/pedido';
@@ -28,6 +30,7 @@ import {
 } from '../../core/modelos/venta';
 import { cantidadConPaso, leerCantidad, problemaDeCantidad } from '../../shared/formato/cantidades';
 import { cantidad, precio } from '../../shared/formato/precios';
+import { DialogoConfirmacion, PedidoDeConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
 import { PasoDeCantidad } from '../../shared/paso-de-cantidad/paso-de-cantidad';
 import { BusquedaDeComprador } from './busqueda-de-comprador';
 import { BusquedaDeProductos } from './busqueda-de-productos';
@@ -48,18 +51,37 @@ interface LineaEnVenta {
 // precio, el stock y el total los decide el servidor: la pantalla los muestra y
 // manda el total que vio, que solo se compara (RF-14). Las líneas viven en la
 // pantalla hasta cobrar: con QR, cancelar las deja para cobrar de otra forma
+// RF-33: salir con el QR a la vista no cancela la venta, que espera el pago hasta vencer (RF-10)
+const SALIR_CON_QR: PedidoDeConfirmacion = {
+	titulo: 'Hay un cobro con QR en curso',
+	mensaje: 'Si sale, la venta sigue esperando el pago hasta que venza a los 10 minutos.',
+	confirmar: 'Salir',
+	desistir: 'Quedarme',
+};
+
+const SALIR_SIN_COBRAR: PedidoDeConfirmacion = {
+	titulo: 'La venta no se cobró',
+	mensaje: 'Si sale ahora, se pierden los productos armados.',
+	confirmar: 'Salir sin cobrar',
+	desistir: 'Seguir con la venta',
+};
+
 @Component({
 	selector: 'app-venta',
-	imports: [BusquedaDeComprador, BusquedaDeProductos, LucideTrash2, PasoDeCantidad, QrDeVenta],
+	imports: [BusquedaDeComprador, BusquedaDeProductos, DialogoConfirmacion, LucideTrash2, PasoDeCantidad, QrDeVenta],
 	templateUrl: './venta.page.html',
 	styleUrl: './venta.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: { '(window:beforeunload)': 'alCerrarLaPestana($event)' },
 })
-export class VentaPage {
+export class VentaPage implements ConCambiosSinGuardar {
 	private readonly ventas = inject(VentasService);
 	private readonly router = inject(Router);
 	private readonly zona = inject(NgZone);
 	private readonly injector = inject(Injector);
+	private readonly dialogo = viewChild.required(DialogoConfirmacion);
+	// RF-33: ya cobrada, ir al comprobante no pregunta. Se marca antes de navegar: si no, el guard preguntaría
+	private readonly cobrada = signal(false);
 
 	protected readonly precio = precio;
 	protected readonly cantidad = cantidad;
@@ -235,6 +257,7 @@ export class VentaPage {
 		}
 		const venta = await this.registrar('EFECTIVO', recibido);
 		if (venta !== null) {
+			this.cobrada.set(true);
 			void this.router.navigate(['/ventas', venta.idPedido]);
 		}
 	}
@@ -405,9 +428,28 @@ export class VentaPage {
 		}
 	}
 
+	// --- Salir (RF-33) ---
+
+	// Con líneas armadas o un QR a la vista, salir pregunta; ya cobrada, no
+	tieneCambiosSinGuardar(): boolean {
+		return !this.cobrada() && (this.conQr() !== null || this.lineas().length > 0);
+	}
+
+	confirmarSalida(): Promise<boolean> {
+		return this.dialogo().abrir(this.conQr() !== null ? SALIR_CON_QR : SALIR_SIN_COBRAR);
+	}
+
+	// Cerrar la pestaña o recargar: el navegador muestra su propio aviso
+	protected alCerrarLaPestana(evento: BeforeUnloadEvent): void {
+		if (this.tieneCambiosSinGuardar()) {
+			evento.preventDefault();
+		}
+	}
+
 	// Cobrada, al comprobante; cancelada o vencida, de vuelta a armar con las mismas líneas
 	private alCambiar(venta: Venta): void {
 		if (venta.estado === 'ENTREGADO' || venta.estado === 'PAGADO') {
+			this.cobrada.set(true);
 			this.conQr.set(null);
 			void this.router.navigate(['/ventas', venta.idPedido]);
 			return;

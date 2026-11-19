@@ -297,7 +297,8 @@ public class PedidoService {
 			movimientoRepository.save(MovimientoStock.reserva(producto, linea.getCantidad(), nuevo, pedido, ahora));
 		}
 		pedido.pagar(fechaPago);
-		// Una venta del mostrador no salió de ningún carrito ni volvió a él (HU-23 RF-11)
+		// Una venta del mostrador no salió de ningún carrito ni volvió a él (HU-23 RF-11). Del mostrador solo llega la
+		// vencida: la cancelada queda para devolver en ConciliacionDePagos (HU-23 RF-32)
 		if (!pedido.esEnTienda()) {
 			restarDelCarrito(pedido);
 		}

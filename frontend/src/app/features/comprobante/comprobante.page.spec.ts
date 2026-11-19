@@ -207,4 +207,19 @@ describe('ComprobantePage', () => {
     expect(pantalla().textContent).toContain('No encontramos esa venta');
     expect(pantalla().querySelector('a[href="/pedidos"]')).not.toBeNull();
   });
+
+  // HU-23 RF-34: «Imprimir» solo en una venta hecha
+  it('RF-34: «Imprimir» en Entregado, Pagado y Anulado', async () => {
+    for (const estado of ['ENTREGADO', 'PAGADO', 'ANULADO'] as const) {
+      await abrir('/ventas/31', 'ADMINISTRADOR', { ...EN_EFECTIVO, estado });
+      expect(boton('Imprimir'), estado).toBeDefined();
+    }
+  });
+
+  it('RF-34: sin «Imprimir» en Pendiente, Cancelado, Vencido y Pago a devolver', async () => {
+    for (const estado of ['PENDIENTE_PAGO', 'CANCELADO', 'VENCIDO', 'PAGO_A_DEVOLVER'] as const) {
+      await abrir('/ventas/31', 'ADMINISTRADOR', { ...EN_EFECTIVO, estado });
+      expect(boton('Imprimir'), estado).toBeUndefined();
+    }
+  });
 });

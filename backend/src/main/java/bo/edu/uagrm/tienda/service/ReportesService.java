@@ -27,6 +27,7 @@ import bo.edu.uagrm.tienda.dto.reportes.ClienteInactivo;
 import bo.edu.uagrm.tienda.dto.reportes.CompraFila;
 import bo.edu.uagrm.tienda.dto.reportes.EstadoFila;
 import bo.edu.uagrm.tienda.dto.reportes.LineasFila;
+import bo.edu.uagrm.tienda.dto.reportes.MedioDelResumen;
 import bo.edu.uagrm.tienda.dto.reportes.PerdidoFila;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoPerdido;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoSinVenta;
@@ -46,7 +47,6 @@ import bo.edu.uagrm.tienda.dto.reportes.VentasResponse.Totales;
 import bo.edu.uagrm.tienda.entity.Canal;
 import bo.edu.uagrm.tienda.entity.EstadoCuenta;
 import bo.edu.uagrm.tienda.entity.EstadoPedido;
-import bo.edu.uagrm.tienda.entity.MedioPago;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.Rol;
 import bo.edu.uagrm.tienda.entity.TipoCliente;
@@ -102,13 +102,17 @@ public class ReportesService {
 	@Transactional(readOnly = true)
 	public PaginaResponse<ProductoVendido> productos(String desde, String hasta, TipoCliente tipo, Canal canal,
 			boolean menos, int pagina) {
-		return paginar(productos(Periodo.de(desde, hasta, LocalDate.now(clock)), tipo, canal, menos), pagina);
+		Periodo periodo = Periodo.de(desde, hasta, LocalDate.now(clock));
+		return paginar(productos(vendidos(periodo, tipo, canal), menos), pagina);
 	}
 
-	private List<ProductoVendido> productos(Periodo periodo, TipoCliente tipo, Canal canal, boolean menos) {
-		Map<Long, LineasFila> vendidos = reportesRepository
-				.lineasPorProducto(VENDIDOS, periodo.inicio(), periodo.fin(), tipo, canal).stream()
+	// Lo vendido por producto en el período: una lectura que comparten los dos rankings del reporte completo
+	private Map<Long, LineasFila> vendidos(Periodo periodo, TipoCliente tipo, Canal canal) {
+		return reportesRepository.lineasPorProducto(VENDIDOS, periodo.inicio(), periodo.fin(), tipo, canal).stream()
 				.collect(Collectors.toMap(LineasFila::idProducto, Function.identity()));
+	}
+
+	private List<ProductoVendido> productos(Map<Long, LineasFila> vendidos, boolean menos) {
 		List<Producto> productos = menos ? productoRepository.findByActivoTrue()
 				: productoRepository.findAllById(vendidos.keySet());
 		Comparator<ProductoVendido> porImporte = Comparator.comparing(ProductoVendido::importe);
@@ -199,8 +203,9 @@ public class ReportesService {
 		LocalDateTime ahora = LocalDateTime.now(clock);
 		Periodo periodo = Periodo.de(desde, hasta, ahora.toLocalDate());
 		Usuario autor = usuarioRepository.findById(idUsuario).orElseThrow(UsuarioNoEncontradoException::new);
+		Map<Long, LineasFila> vendidos = vendidos(periodo, tipo, canal);
 		return new ReporteCompleto(ventas(periodo, tipo, canal), perdidos(periodo, tipo, canal),
-				productos(periodo, tipo, canal, false), productos(periodo, tipo, canal, true), sinVenta(minimo, canal, ahora),
+				productos(vendidos, false), productos(vendidos, true), sinVenta(minimo, canal, ahora),
 				productosPerdidos(periodo, tipo, canal), clientes(comprasHasta(minimo, tipo, canal, ahora)), tipo, canal,
 				minimo, ahora,
 				autor.getNombre() + " " + autor.getApellido());
@@ -339,9 +344,10 @@ public class ReportesService {
 
 	// HU-23 RF-22: efectivo y QR; en línea siempre es QR
 	private static List<PorMedio> porMedio(List<VentaFila> ventas) {
-		Acumulado[] medios = acumular(MedioPago.values().length, ventas, venta -> venta.medioDePago().ordinal());
+		Acumulado[] medios = acumular(MedioDelResumen.values().length, ventas,
+				venta -> venta.medioDelResumen().ordinal());
 		List<PorMedio> resultado = new ArrayList<>();
-		for (MedioPago medio : MedioPago.values()) {
+		for (MedioDelResumen medio : MedioDelResumen.values()) {
 			resultado.add(new PorMedio(medio, medios[medio.ordinal()].ingresos, medios[medio.ordinal()].pedidos));
 		}
 		return resultado;

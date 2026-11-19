@@ -3,8 +3,11 @@ package bo.edu.uagrm.tienda;
 import static bo.edu.uagrm.tienda.IpsDePrueba.ipNueva;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -55,6 +58,7 @@ import bo.edu.uagrm.tienda.repository.ProductoRepository;
 import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import bo.edu.uagrm.tienda.service.AdministradorInicial;
 import bo.edu.uagrm.tienda.service.ConciliacionDePagos;
+import bo.edu.uagrm.tienda.service.NotificadorCorreo;
 import bo.edu.uagrm.tienda.service.VencimientoPedidos;
 import bo.edu.uagrm.tienda.service.VentaTiendaService;
 import bo.edu.uagrm.tienda.service.pago.EstadoDelCobro;
@@ -101,6 +105,10 @@ class VentaTiendaIntegracionTest {
 
 	@MockitoSpyBean
 	private SimuladorDePago simulador;
+
+	// La venta del mostrador no manda correos (CLAUDE.md → Correos)
+	@MockitoSpyBean
+	private NotificadorCorreo notificador;
 
 	@Autowired
 	private VentaTiendaService ventaTiendaService;
@@ -375,6 +383,84 @@ class VentaTiendaIntegracionTest {
 		assertThat(post(VENTAS + "/{id}/cancelacion", empleado, "", venta)).hasStatus(HttpStatus.CONFLICT);
 	}
 
+	// HU-23 RF-31: cancelar consulta antes; si el pago ya llegó, la venta queda entregada y no se cancela
+	@Test
+	void cancelarUnaVentaYaPagadaNoLaCancela() throws Exception {
+		Integer venta = conQr(empleado);
+		elBancoPaga(venta);
+
+		MvcTestResult cancelada = post(VENTAS + "/{id}/cancelacion", empleado, "", venta);
+
+		assertThat(cancelada).hasStatus(HttpStatus.CONFLICT);
+		assertThat(cancelada).bodyJson().extractingPath("$.codigo").isEqualTo("PEDIDO_NO_PENDIENTE");
+		assertThat(estado(venta)).isEqualTo(EstadoPedido.ENTREGADO);
+		assertThat(stock(martillo)).isEqualTo(9.0);
+		assertThat(stock(cable)).isEqualTo(97.5);
+		assertThat(movimientoRepository.findAll()).filteredOn(m -> m.getTipo() == TipoMovimiento.LIBERACION).isEmpty();
+	}
+
+	// HU-23 RF-31 (Fabio, D2): si el sistema de pago no responde, se cancela igual
+	@Test
+	void cancelarConElSistemaDePagoCaidoCancelaIgual() throws Exception {
+		Integer venta = conQr(empleado);
+		doThrow(new SistemaDePagoNoDisponibleException("sin conexión", null)).when(simulador).consultar(any());
+
+		MvcTestResult cancelada = post(VENTAS + "/{id}/cancelacion", empleado, "", venta);
+
+		assertThat(cancelada).hasStatus(HttpStatus.OK);
+		assertThat(cancelada).bodyJson().extractingPath("$.estado").isEqualTo("CANCELADO");
+		assertThat(stock(martillo)).isEqualTo(10.0);
+		assertThat(stock(cable)).isEqualTo(100.0);
+	}
+
+	// HU-23 RF-32: el pago de una venta cancelada queda para devolver, sin tocar el stock aunque alcance y sin correos
+	@Test
+	void elPagoDeUnaVentaCanceladaQuedaParaDevolver() throws Exception {
+		Integer venta = conQr(empleado);
+		assertThat(post(VENTAS + "/{id}/cancelacion", empleado, "", venta)).hasStatus(HttpStatus.OK);
+		elBancoPaga(venta);
+
+		conciliacion.conciliar(idCobro(venta));
+
+		assertThat(estado(venta)).isEqualTo(EstadoPedido.PAGO_A_DEVOLVER);
+		assertThat(stock(martillo)).isEqualTo(10.0);
+		assertThat(stock(cable)).isEqualTo(100.0);
+		verify(notificador, never()).enviarPedidoPagado(any());
+		verify(notificador, never()).enviarPagoADevolver(any());
+	}
+
+	// HU-23 RF-31, RF-32 (casos límite): cancelar mientras llega el pago termina entregada o para devolver, nunca
+	// pagada, y el stock cuadra
+	@Test
+	void cancelarYPagarALaVezTerminaEntregadoOParaDevolver() throws Exception {
+		Integer venta = conQr(empleado);
+		Long idCobro = idCobro(venta);
+		CountDownLatch salida = new CountDownLatch(1);
+		ExecutorService hilos = Executors.newFixedThreadPool(2);
+		try {
+			Future<Integer> cancela = hilos.submit(() -> {
+				salida.await();
+				return post(VENTAS + "/{id}/cancelacion", empleado, "", venta).getResponse().getStatus();
+			});
+			Future<Boolean> paga = hilos.submit(() -> {
+				salida.await();
+				elBancoPaga(venta);
+				return conciliacion.conciliar(idCobro);
+			});
+			salida.countDown();
+			assertThat(cancela.get()).isIn(200, 409);
+			paga.get();
+		} finally {
+			hilos.shutdownNow();
+		}
+		conciliacion.conciliar(idCobro);
+
+		EstadoPedido quedo = estado(venta);
+		assertThat(quedo).isIn(EstadoPedido.ENTREGADO, EstadoPedido.PAGO_A_DEVOLVER);
+		assertThat(stock(martillo)).isEqualTo(quedo == EstadoPedido.ENTREGADO ? 9.0 : 10.0);
+		assertThat(stock(cable)).isEqualTo(quedo == EstadoPedido.ENTREGADO ? 97.5 : 100.0);
+	}
+
 	// HU-23 RF-10: a los 10 minutos vence, pero antes se consulta el cobro: si se pagó, queda entregada
 	@Test
 	void venceALosDiezMinutosYConsultaAntes() throws Exception {
@@ -393,15 +479,18 @@ class VentaTiendaIntegracionTest {
 		assertThat(stock(martillo)).isEqualTo(9.0);
 	}
 
-	// HU-23 RF-11: el pago tardío vuelve a reservar si alcanza (queda para entregar) y si no, queda para devolver
+	// HU-23 RF-11: el pago tardío de una venta vencida vuelve a reservar si alcanza (queda para entregar) y si no, queda para devolver
 	@Test
 	void elPagoTardioReservaDeNuevoOQuedaParaDevolver() throws Exception {
 		Integer revive = conQr(empleado);
 		MvcTestResult otra = vender(empleado, "[{\"idProducto\":%d,\"cantidad\":3}]".formatted(cable), null, "QR",
 				"null", "13.5");
 		Integer aDevolver = id(otra, "$.idPedido");
-		assertThat(post(VENTAS + "/{id}/cancelacion", empleado, "", revive)).hasStatus(HttpStatus.OK);
-		assertThat(post(VENTAS + "/{id}/cancelacion", empleado, "", aDevolver)).hasStatus(HttpStatus.OK);
+		// Vencidas, no canceladas: la cancelada queda siempre para devolver (RF-32)
+		reloj.avanzar(Duration.ofMinutes(11));
+		vencimiento.vencer();
+		assertThat(estado(revive)).isEqualTo(EstadoPedido.VENCIDO);
+		assertThat(estado(aDevolver)).isEqualTo(EstadoPedido.VENCIDO);
 		assertThat(post("/api/inventario/{id}/ajustes", admin, "{\"contada\":0,\"motivo\":\"CONTEO\"}", cable))
 				.hasStatus(HttpStatus.CREATED);
 		elBancoPaga(aDevolver);
@@ -418,11 +507,20 @@ class VentaTiendaIntegracionTest {
 		assertThat(stock(cable)).isEqualTo(97.5);
 	}
 
+	// HU-23 RF-7 (auditoría): el QR del mostrador no manda a «Mis pedidos» a quien paga desde su celular
+	@Test
+	void elQrDelMostradorNoVuelveAMisPedidos() throws Exception {
+		assertThat(vender(empleado, LINEAS.formatted(martillo, cable), null, "QR", "null", "96.25"))
+				.hasStatus(HttpStatus.CREATED);
+
+		verify(simulador).generarCobro(any(), any(), any(), isNull());
+	}
+
 	// HU-23 (casos límite): si el sistema de pago no genera el QR, la venta se cancela y el stock vuelve
 	@Test
 	void siElSistemaDePagoNoGeneraElQrLaVentaSeCancela() throws Exception {
 		doThrow(new SistemaDePagoNoDisponibleException("sin conexión", null)).when(simulador)
-				.generarCobro(any(), any(), any());
+				.generarCobro(any(), any(), any(), any());
 
 		MvcTestResult venta = vender(empleado, LINEAS.formatted(martillo, cable), null, "QR", "null", "96.25");
 
@@ -441,7 +539,7 @@ class VentaTiendaIntegracionTest {
 		doAnswer(llamada -> {
 			ventaTiendaService.cancelar(llamada.getArgument(0));
 			throw new SistemaDePagoNoDisponibleException("sin conexión", null);
-		}).when(simulador).generarCobro(any(), any(), any());
+		}).when(simulador).generarCobro(any(), any(), any(), any());
 
 		MvcTestResult venta = vender(empleado, LINEAS.formatted(martillo, cable), null, "QR", "null", "96.25");
 

@@ -314,7 +314,7 @@ class PagoIntegracionTest {
 
 	private void caido() {
 		SistemaDePagoNoDisponibleException falla = new SistemaDePagoNoDisponibleException("sin conexión", null);
-		doThrow(falla).when(simulador).generarCobro(any(), any(), any());
+		doThrow(falla).when(simulador).generarCobro(any(), any(), any(), any());
 		doThrow(falla).when(simulador).consultar(any());
 	}
 
@@ -338,7 +338,7 @@ class PagoIntegracionTest {
 		Cobro cobro = cobroPendiente(idPedido);
 		assertThat(cobro.getMonto()).isEqualByComparingTo("171.00");
 		verify(simulador).generarCobro(eq(idPedido.longValue()), any(), eq("Pedido N.º " + idPedido
-				+ " — Tienda Montero"));
+				+ " — Tienda Montero"), eq("/mis-pedidos/" + idPedido));
 		// Al abrir el pedido, el QR sigue ahí
 		assertThat(get(PEDIDOS + "/{id}", ana, idPedido)).bodyJson().extractingPath("$.cobro.codigoQr")
 				.isEqualTo(cobro.getCodigoQr());
@@ -573,23 +573,41 @@ class PagoIntegracionTest {
 
 	// HU-13 RF-8: la tarea mira los cobros pendientes de las últimas 24 horas
 	@Test
-	void laTareaConciliaLosDeLasUltimas24Horas() throws Exception {
+	void laTareaConciliaLosDeLasUltimas48Horas() throws Exception {
 		Integer viejo = pedidoDeMartillos(ana);
 		Cobro cobroViejo = conCobro(ana, viejo);
 		assertThat(cancelar(ana, viejo)).hasStatus(HttpStatus.OK);
 		lineaRepository.deleteAll();
-		reloj.avanzar(Duration.ofHours(25));
+		reloj.avanzar(Duration.ofHours(19));
 		// El token dura 8 horas
 		beto = token("beto.hu13@mail.com", "secreta12");
-		Integer reciente = pedidoDeMartillos(beto);
-		Cobro cobroReciente = conCobro(beto, reciente);
+		Integer deTreintaHoras = pedidoDeMartillos(beto);
+		Cobro cobroDeTreintaHoras = conCobro(beto, deTreintaHoras);
+		reloj.avanzar(Duration.ofHours(30));
 		elBancoPaga(cobroViejo);
-		elBancoPaga(cobroReciente);
+		elBancoPaga(cobroDeTreintaHoras);
 
 		conciliacionAutomatica.conciliarPendientes();
 
-		assertThat(estado(reciente)).isEqualTo(EstadoPedido.PAGADO);
+		assertThat(estado(deTreintaHoras)).isEqualTo(EstadoPedido.PAGADO);
 		assertThat(estado(viejo)).isEqualTo(EstadoPedido.CANCELADO);
+	}
+
+	// HU-13 RF-8: la deuda vence al terminar el día siguiente; un cobro de las 23:45 se paga a las 23:50 del otro día
+	@Test
+	void elCobroDeLas2345SePuedePagarHastaLas2359DelDiaSiguiente() throws Exception {
+		LocalDateTime ahora = LocalDateTime.now(reloj);
+		LocalDateTime a2345 = ahora.toLocalDate().atTime(23, 45);
+		reloj.avanzar(Duration.between(ahora, a2345.isAfter(ahora) ? a2345 : a2345.plusDays(1)));
+		beto = token("beto.hu13@mail.com", "secreta12");
+		Integer pedido = pedidoDeMartillos(beto);
+		Cobro cobro = conCobro(beto, pedido);
+		reloj.avanzar(Duration.ofHours(24).plusMinutes(5));
+		elBancoPaga(cobro);
+
+		conciliacionAutomatica.conciliarPendientes();
+
+		assertThat(estado(pedido)).isEqualTo(EstadoPedido.PAGADO);
 	}
 
 	// HU-13 RF-8: un cobro que no se puede consultar no frena a los demás

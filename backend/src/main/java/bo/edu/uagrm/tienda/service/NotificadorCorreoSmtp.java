@@ -50,24 +50,24 @@ public class NotificadorCorreoSmtp implements NotificadorCorreo {
 		String texto = """
 				Hola, %s:
 
-				Recibimos una solicitud para recuperar la contraseña de tu cuenta de %s. Para elegir una \
-				contraseña nueva, abre este enlace:
+				Recibimos una solicitud para recuperar la contraseña de su cuenta de %s. Para elegir una \
+				contraseña nueva, abra este enlace:
 
 				%s
 
-				El enlace vence en 1 hora y sirve una sola vez. Si no pediste recuperar tu contraseña, ignora este \
-				correo: tu contraseña sigue siendo la misma.
+				El enlace vence en 1 hora y sirve una sola vez. Si no pidió recuperar su contraseña, ignore este \
+				correo: su contraseña sigue siendo la misma.
 				""".formatted(nombre, marca, enlace);
 		String html = """
 				<p>Hola, %s:</p>
-				<p>Recibimos una solicitud para recuperar la contraseña de tu cuenta de %s.</p>
+				<p>Recibimos una solicitud para recuperar la contraseña de su cuenta de %s.</p>
 				%s
-				<p>O copia este enlace en tu navegador:<br><a href="%s" style="color:#8a5a00;word-break:break-all">%s</a></p>
-				<p style="color:#5d636b">El enlace vence en 1 hora y sirve una sola vez. Si no pediste recuperar tu \
-				contraseña, ignora este correo: tu contraseña sigue siendo la misma.</p>
+				<p>O copie este enlace en su navegador:<br><a href="%s" style="color:#8a5a00;word-break:break-all">%s</a></p>
+				<p style="color:#5d636b">El enlace vence en 1 hora y sirve una sola vez. Si no pidió recuperar su \
+				contraseña, ignore este correo: su contraseña sigue siendo la misma.</p>
 				""".formatted(escapar(nombre), escapar(marca), boton("Elegir una contraseña nueva", enlace),
 				enlace, enlace);
-		enviar("recuperación", correo, "Recupera tu contraseña de " + marca, texto, html);
+		enviar("recuperación", correo, "Recupere su contraseña de " + marca, texto, html);
 	}
 
 	// De usted, como la tienda (HU-20 RF-14)
