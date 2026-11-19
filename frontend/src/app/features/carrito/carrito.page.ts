@@ -25,6 +25,7 @@ import { reenvioDeVerificacion } from '../../core/sesion/reenvio-de-verificacion
 import { DialogoConfirmacion } from '../../shared/dialogo-confirmacion/dialogo-confirmacion';
 import { leerCantidad, problemaDeCantidad } from '../../shared/formato/cantidades';
 import { cantidad, precio } from '../../shared/formato/precios';
+import { Precio } from '../../shared/precio/precio';
 import { PasoDeCantidad } from '../../shared/paso-de-cantidad/paso-de-cantidad';
 
 // El carrito del Cliente (HU-11): cada línea con su foto, el precio de hoy, la
@@ -37,6 +38,7 @@ import { PasoDeCantidad } from '../../shared/paso-de-cantidad/paso-de-cantidad';
 		RouterLink,
 		DialogoConfirmacion,
 		PasoDeCantidad,
+		Precio,
 		LucideCircleSlash,
 		LucideClock,
 		LucideMail,

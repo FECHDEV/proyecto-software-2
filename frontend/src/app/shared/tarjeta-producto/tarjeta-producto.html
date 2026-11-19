@@ -28,7 +28,7 @@
     }
     <span class="pie">
       <span class="precio">
-        {{ precio() }}
+        <app-precio [precio]="datos().precio" [precioNormal]="datos().precioNormal" [descuento]="datos().descuento" />
         @if (datos().unidad; as unidad) {
           <span class="unidad">/ {{ unidad }}</span>
         }

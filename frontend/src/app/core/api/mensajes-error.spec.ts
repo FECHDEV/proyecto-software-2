@@ -6,6 +6,22 @@ function error(codigo: string | undefined, detail = 'detalle técnico del backen
 }
 
 describe('mensajeDeError', () => {
+  // HU-24 RF-2: dice con cuál se cruza; sin los datos, el mensaje general del código
+  it('dice con qué descuento se cruza', () => {
+    const rechazo: ErrorApi = {
+      status: 409,
+      detail: 'x',
+      codigo: 'DESCUENTO_SOLAPADO',
+      porcentaje: 10,
+      inicio: '2026-11-20',
+      fin: '2026-11-30',
+    };
+    expect(mensajeDeError(rechazo)).toBe('Se cruza con el descuento del 10 % del 20/11/2026 al 30/11/2026.');
+    expect(mensajeDeError({ status: 409, detail: 'x', codigo: 'DESCUENTO_SOLAPADO' })).toBe(
+      'Se cruza con otro descuento en las mismas fechas.',
+    );
+  });
+
   // HU-08 RF-18: con lo comprometido, si vino; sin él, el mensaje general del código
   it('dice cuánto está comprometido en un conteo menor', () => {
     const rechazo: ErrorApi = { status: 409, detail: 'x', codigo: 'CONTEO_MENOR_QUE_COMPROMETIDO', comprometido: 12.5 };

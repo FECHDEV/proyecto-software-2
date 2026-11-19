@@ -16,7 +16,7 @@ import { CARGAR_VISOR_3D } from '../../shared/visor-3d/visor-3d';
 import { DetallePage } from './detalle.page';
 
 function tarjeta(idProducto: number, nombre: string): ProductoEnTienda {
-  return { idProducto, nombre, marca: null, precio: 85, unidad: 'UNIDAD', imagenPrincipal: null, disponible: true, conModelo: false };
+  return { idProducto, nombre, marca: null, precio: 85, precioNormal: null, descuento: null, unidad: 'UNIDAD', imagenPrincipal: null, disponible: true, conModelo: false };
 }
 
 // Como responde GET /api/productos/7 (CatalogoIntegracionTest)
@@ -28,6 +28,9 @@ const TALADRO: ProductoEnDetalle = {
   idCategoria: 3,
   categoria: 'Herramientas',
   precio: 420,
+  precioNormal: null,
+  descuento: null,
+  finDescuento: null,
   unidad: 'UNIDAD',
   descripcion: 'Para concreto y madera.\nCon maletín.',
   ficha: [
@@ -211,6 +214,18 @@ describe('DetallePage', () => {
     expect(texto()).toContain('Bs 12,50 / metro');
   });
 
+  // HU-24 RF-11
+  it('RF-11: el detalle con descuento', async () => {
+    await abrir('/producto/7', null, false);
+    catalogo.recurso.value.set({ ...TALADRO, precio: 357, precioNormal: 420, descuento: 15, finDescuento: '2026-11-30' });
+    await harness.fixture.whenStable();
+
+    const precio = pantalla().querySelector('.precio')!;
+    expect(precio.querySelector('s')?.textContent).toContain('420,00');
+    expect(precio.querySelector('.cobrado')?.textContent).toContain('357,00');
+    expect(precio.querySelector('.marca')?.textContent?.trim()).toBe('−15 %');
+  });
+
   // HU-10 RF-2
   it('sin marca, descripción ni ficha esas partes no salen', async () => {
     await abrir('/producto/7', null, false);
@@ -354,6 +369,25 @@ describe('DetallePage', () => {
         itemCondition: 'https://schema.org/NewCondition',
       },
     });
+  });
+
+  // HU-24 RF-14: el precio con descuento, válido hasta su último día
+  it('RF-14: con descuento, el precio con descuento y priceValidUntil', async () => {
+    await abrir('/producto/7', null, false);
+    catalogo.respuestas.set(7, { ...TALADRO, precio: 357, precioNormal: 420, descuento: 15, finDescuento: '2026-11-30' });
+    catalogo.responder();
+    await harness.fixture.whenStable();
+
+    expect(datosEstructurados()!['offers']).toEqual(
+      expect.objectContaining({ price: '357.00', priceValidUntil: '2026-11-30' }),
+    );
+  });
+
+  // HU-24 RF-14
+  it('RF-14: sin descuento, sin priceValidUntil', async () => {
+    await abrir();
+
+    expect(datosEstructurados()!['offers']).not.toHaveProperty('priceValidUntil');
   });
 
   it('agotadoYSinMarcaNiFotosNiDescripcion', async () => {

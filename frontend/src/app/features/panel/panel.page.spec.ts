@@ -108,6 +108,17 @@ describe('PanelPage', () => {
     expect(crear().querySelector('a[href="/categorias"]')?.textContent).toContain('Categorías');
   });
 
+  // HU-24 RF-7: el acceso a descuentos solo para el administrador
+  it('RF-7: el administrador tiene el acceso a descuentos y los demás no', () => {
+    sesion.iniciar(sesionCon('ADMINISTRADOR'));
+    expect(crear().querySelector('a[href="/descuentos"]')?.textContent).toContain('Descuentos');
+
+    for (const rol of ['EMPLEADO', 'CONTADOR', 'CLIENTE'] as const) {
+      sesion.iniciar(sesionCon(rol));
+      expect(crear().querySelector('a[href="/descuentos"]')).toBeNull();
+    }
+  });
+
   // HU-08 RF-1
   it('el empleado, el contador y el administrador tienen el acceso al inventario', () => {
     for (const rol of ['EMPLEADO', 'CONTADOR', 'ADMINISTRADOR'] as const) {

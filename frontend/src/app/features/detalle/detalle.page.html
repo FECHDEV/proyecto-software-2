@@ -26,7 +26,7 @@
       }}</a>
 
       <p class="precio">
-        {{ precio() }}
+        <app-precio [precio]="producto.precio" [precioNormal]="producto.precioNormal" [descuento]="producto.descuento" />
         @if (unidad(); as unidad) {
           <span class="unidad">/ {{ unidad }}</span>
         }

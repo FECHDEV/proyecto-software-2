@@ -19,6 +19,10 @@ export interface LineaDeCarrito {
 	// null si el producto no tiene fotos
 	imagen: string | null;
 	precio: number;
+	// Con descuento (HU-24 RF-11, RF-12): precio es el que se cobra, y estos dos el normal y el porcentaje; null sin
+	// descuento
+	precioNormal: number | null;
+	descuento: number | null;
 	unidad: UnidadVenta;
 	cantidad: number;
 	// null si la línea no se puede comprar: no suma al total

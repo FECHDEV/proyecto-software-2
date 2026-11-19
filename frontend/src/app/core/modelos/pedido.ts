@@ -48,7 +48,12 @@ export interface LineaDePedido {
 	idProducto: number;
 	nombre: string;
 	unidad: UnidadVenta;
+	// El que se cobró; con descuento, también el normal, el porcentaje y lo ahorrado en la línea (HU-24 RF-15).
+	// null sin descuento y en los pedidos de antes
 	precio: number;
+	precioNormal: number | null;
+	descuento: number | null;
+	descontado: number | null;
 	cantidad: number;
 	subtotal: number;
 }

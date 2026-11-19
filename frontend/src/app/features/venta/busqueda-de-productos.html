@@ -27,7 +27,10 @@
             (click)="tocar(producto)"
           >
             <span class="nombre">{{ producto.nombre }}</span>
-            <span class="precio">{{ precio(producto.precio) }} / {{ unidadPara(producto.unidad, 1) }}</span>
+            <span class="precio">
+              <app-precio [precio]="producto.precio" [precioNormal]="producto.precioNormal" [descuento]="producto.descuento" />
+              / {{ unidadPara(producto.unidad, 1) }}
+            </span>
             <span class="disponible" [class.sin-stock]="producto.disponible === 0">
               Disponible: {{ disponible(producto) }}
             </span>

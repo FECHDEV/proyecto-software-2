@@ -16,6 +16,8 @@ const CON_MARTILLO: Carrito = {
       nombre: 'Martillo',
       imagen: null,
       precio: 85.5,
+      precioNormal: null,
+      descuento: null,
       unidad: 'UNIDAD',
       cantidad: 2,
       subtotal: 171,

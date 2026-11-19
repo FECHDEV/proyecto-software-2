@@ -8,6 +8,8 @@ const MARTILLO: DatosDeTarjeta = {
   nombre: 'Martillo de carpintero 16 oz',
   marca: 'Truper',
   precio: 85,
+  precioNormal: null,
+  descuento: null,
   unidad: null,
   imagen: '/api/productos/7/imagenes/a.jpg',
   agotado: false,
@@ -43,6 +45,17 @@ describe('TarjetaProducto', () => {
   function texto(): string {
     return (fijo.nativeElement.textContent ?? '').replace(/\s+/g, ' ');
   }
+
+  // HU-24 RF-11
+  it('RF-11: muestra el descuento que recibe', async () => {
+    await con({ precio: 85, precioNormal: 100, descuento: 15, unidad: 'metro' });
+
+    const precio = fijo.nativeElement.querySelector('.precio');
+    expect(precio.querySelector('s').textContent).toContain('100,00');
+    expect(precio.querySelector('.cobrado').textContent).toContain('85,00');
+    expect(precio.querySelector('.marca').textContent.trim()).toBe('−15 %');
+    expect(texto()).toContain('/ metro');
+  });
 
   // HU-16 RF-11
   it('marca 3D con texto para lectores si tiene modelo', async () => {

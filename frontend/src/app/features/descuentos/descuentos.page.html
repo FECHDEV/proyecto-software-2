@@ -1,0 +1,264 @@
+<h1>Descuentos</h1>
+
+<section class="tarjeta" aria-labelledby="titulo-formulario">
+  <h2 id="titulo-formulario">{{ titulo() }}</h2>
+
+  <form (submit)="guardar($event)" novalidate>
+    @if (!editando()) {
+      <fieldset class="destino">
+        <legend>Se aplica a</legend>
+        <label>
+          <input
+            type="radio"
+            name="destino"
+            [checked]="destino() === 'producto'"
+            (change)="elegirDestino('producto')"
+          />
+          Un producto
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="destino"
+            [checked]="destino() === 'categoria'"
+            (change)="elegirDestino('categoria')"
+          />
+          Una categoría
+        </label>
+      </fieldset>
+
+      @if (destino() === 'producto') {
+        <div class="campo">
+          @if (producto(); as elegido) {
+            <p class="elegido">
+              Producto: <strong>{{ elegido.nombre }}</strong>
+              <button type="button" class="boton secundario" (click)="cambiarProducto()">Cambiar</button>
+            </p>
+          } @else {
+            <label for="texto-producto">Producto</label>
+            <div class="buscar">
+              <input
+                id="texto-producto"
+                type="search"
+                enterkeyhint="search"
+                [value]="textoDeProducto()"
+                (input)="textoDeProducto.set($any($event.target).value); errorDelDestino.set('')"
+                (keydown.enter)="buscarProducto($event)"
+                [attr.aria-invalid]="errorDelDestino() ? 'true' : null"
+                [attr.aria-describedby]="errorDelDestino() ? 'error-destino' : null"
+              />
+              <button type="button" class="boton secundario" (click)="buscarProducto()">Buscar</button>
+            </div>
+            @if (encontrados.hasValue()) {
+              @let resultado = encontrados.value()!;
+              @if (resultado.contenido.length === 0) {
+                <p class="sin-resultados" role="status">No hay productos activos con ese nombre.</p>
+              } @else {
+                <ul class="resultados" aria-label="Productos encontrados">
+                  @for (cada of resultado.contenido; track cada.idProducto) {
+                    <li>
+                      <button type="button" class="resultado" (click)="elegirProducto(cada)">
+                        {{ cada.nombre }} <span class="codigo">{{ cada.codigo }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            } @else if (encontrados.isLoading()) {
+              <p class="sin-resultados" role="status">Buscando…</p>
+            }
+          }
+          @if (errorDelDestino()) {
+            <p class="error" id="error-destino">{{ errorDelDestino() }}</p>
+          }
+        </div>
+      } @else {
+        <div class="campo">
+          <label for="categoria">Categoría</label>
+          <select
+            id="categoria"
+            [value]="idCategoria() ?? ''"
+            (change)="idCategoria.set($any($event.target).value === '' ? null : +$any($event.target).value); errorDelDestino.set('')"
+            [attr.aria-invalid]="errorDelDestino() ? 'true' : null"
+            [attr.aria-describedby]="errorDelDestino() ? 'error-destino' : null"
+          >
+            <option value="">Elija una categoría</option>
+            @for (categoria of categorias.value() ?? []; track categoria.idCategoria) {
+              <option [value]="categoria.idCategoria">{{ categoria.nombre }}</option>
+            }
+          </select>
+          @if (errorDelDestino()) {
+            <p class="error" id="error-destino">{{ errorDelDestino() }}</p>
+          }
+        </div>
+      }
+    }
+
+    <div class="fila">
+      <div class="campo">
+        @let errorPorcentaje = mensajeDe('porcentaje');
+        <label for="porcentaje">Descuento (%)</label>
+        <input
+          id="porcentaje"
+          type="text"
+          inputmode="numeric"
+          [formField]="formulario.porcentaje"
+          [attr.aria-invalid]="errorPorcentaje ? 'true' : null"
+          [attr.aria-describedby]="errorPorcentaje ? 'error-porcentaje' : 'ayuda-porcentaje'"
+        />
+        @if (errorPorcentaje) {
+          <p class="error" id="error-porcentaje">{{ errorPorcentaje }}</p>
+        } @else {
+          <p class="ayuda" id="ayuda-porcentaje">De 1 a 90.</p>
+        }
+      </div>
+
+      <div class="campo">
+        @let errorInicio = mensajeDe('inicio');
+        <label for="inicio">Desde</label>
+        <input
+          id="inicio"
+          type="date"
+          [min]="hoy()"
+          [formField]="formulario.inicio"
+          [attr.aria-invalid]="errorInicio ? 'true' : null"
+          [attr.aria-describedby]="errorInicio ? 'error-inicio' : null"
+        />
+        @if (errorInicio) {
+          <p class="error" id="error-inicio">{{ errorInicio }}</p>
+        }
+      </div>
+
+      <div class="campo">
+        @let errorFin = mensajeDe('fin');
+        <label for="fin">Hasta (incluido)</label>
+        <input
+          id="fin"
+          type="date"
+          [min]="formulario.inicio().value() || hoy()"
+          [formField]="formulario.fin"
+          [attr.aria-invalid]="errorFin ? 'true' : null"
+          [attr.aria-describedby]="errorFin ? 'error-fin' : null"
+        />
+        @if (errorFin) {
+          <p class="error" id="error-fin">{{ errorFin }}</p>
+        }
+      </div>
+    </div>
+
+    <div class="acciones">
+      <button type="submit" class="boton" [attr.aria-disabled]="guardando() ? 'true' : null">
+        {{ guardando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Crear descuento' }}
+      </button>
+      @if (editando()) {
+        <button type="button" class="boton secundario" (click)="cancelarEdicion()">Cancelar</button>
+      }
+    </div>
+  </form>
+</section>
+
+<div class="avisos" aria-live="polite">
+  @if (aviso()) {
+    <p class="aviso" [class.exito]="aviso() === 'Descuento guardado.'">{{ aviso() }}</p>
+  }
+  @if (bajoElCosto(); as bajo) {
+    <div class="aviso bajo-el-costo">
+      <p>
+        Se guardó, pero {{ bajo.totalBajoElCosto === 1 ? 'este producto queda' : 'estos productos quedan' }} por
+        debajo de su costo:
+      </p>
+      <ul>
+        @for (nombre of bajo.bajoElCosto; track $index) {
+          <li>{{ nombre }}</li>
+        }
+      </ul>
+      @if (bajo.totalBajoElCosto > bajo.bajoElCosto.length) {
+        <p>Y {{ bajo.totalBajoElCosto - bajo.bajoElCosto.length }} más.</p>
+      }
+    </div>
+  }
+</div>
+
+@if (lista(); as pagina) {
+  @if (pagina.contenido.length === 0 && pagina.pagina === 0) {
+    <p class="vacio">Todavía no hay descuentos. Cree el primero con el formulario de arriba.</p>
+  } @else {
+    <ul class="lista" aria-label="Descuentos">
+      @for (descuento of pagina.contenido; track descuento.idDescuento) {
+        <li class="descuento" [class.vencido]="descuento.estado === 'VENCIDO'">
+          <div class="datos">
+            <p class="objetivo">{{ objetivoDe(descuento) }}</p>
+            <p class="detalle">
+              <span class="porcentaje">−{{ descuento.porcentaje }} %</span>
+              · del {{ fechaCorta(descuento.inicio) }} al {{ fechaCorta(descuento.fin) }}
+            </p>
+            <p [class]="'estado ' + descuento.estado.toLowerCase()">
+              {{ nombresDeEstado[descuento.estado] }}
+            </p>
+          </div>
+          <div class="botones">
+            @if (descuento.estado === 'PROGRAMADO') {
+              <button
+                type="button"
+                class="boton secundario"
+                [id]="'editar-' + descuento.idDescuento"
+                [attr.aria-label]="'Editar el descuento de ' + delObjetivo(descuento)"
+                (click)="editar(descuento)"
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                class="boton secundario peligro"
+                [attr.aria-label]="'Borrar el descuento de ' + delObjetivo(descuento)"
+                [attr.aria-disabled]="ocupado(descuento) ? 'true' : null"
+                (click)="borrar(descuento)"
+              >
+                Borrar
+              </button>
+            } @else if (descuento.estado === 'VIGENTE') {
+              <button
+                type="button"
+                class="boton secundario"
+                [attr.aria-label]="'Terminar el descuento de ' + delObjetivo(descuento)"
+                [attr.aria-disabled]="ocupado(descuento) ? 'true' : null"
+                (click)="terminar(descuento)"
+              >
+                Terminar
+              </button>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+
+    @if (pagina.totalPaginas > 1) {
+      <nav class="paginacion" aria-label="Páginas de la lista">
+        <button
+          type="button"
+          class="boton secundario"
+          [attr.aria-disabled]="pagina.pagina === 0 || listado.isLoading() ? 'true' : null"
+          (click)="irAPagina(pagina.pagina - 1)"
+        >
+          Anterior
+        </button>
+        <p>Página {{ pagina.pagina + 1 }} de {{ pagina.totalPaginas }}</p>
+        <button
+          type="button"
+          class="boton secundario"
+          [attr.aria-disabled]="pagina.pagina + 1 >= pagina.totalPaginas || listado.isLoading() ? 'true' : null"
+          (click)="irAPagina(pagina.pagina + 1)"
+        >
+          Siguiente
+        </button>
+      </nav>
+    }
+  }
+} @else if (listado.error()) {
+  <p class="aviso" role="alert">No pudimos cargar los descuentos.</p>
+  <button type="button" class="boton" (click)="listado.reload()">Reintentar</button>
+} @else {
+  <p class="cargando" role="status">Cargando los descuentos…</p>
+}
+
+<app-dialogo-confirmacion />

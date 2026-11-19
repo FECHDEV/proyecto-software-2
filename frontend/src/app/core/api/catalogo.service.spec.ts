@@ -14,6 +14,8 @@ const MANGUERA: ProductoEnTienda = {
   nombre: 'Manguera reforzada',
   marca: null,
   precio: 12.5,
+  precioNormal: null,
+  descuento: null,
   unidad: 'METRO',
   imagenPrincipal: 'b.webp',
   disponible: false,
@@ -87,6 +89,8 @@ describe('CatalogoService', () => {
       nombre: 'Manguera reforzada',
       marca: null,
       precio: 12.5,
+      precioNormal: null,
+      descuento: null,
       unidad: 'metro',
       imagen: '/api/productos/9/imagenes/b.webp?ancho=400',
       agotado: true,
@@ -97,6 +101,10 @@ describe('CatalogoService', () => {
     expect(aTarjeta({ ...MANGUERA, conModelo: true }).conModelo).toBe(true);
     expect(aTarjeta({ ...MANGUERA, unidad: 'UNIDAD', imagenPrincipal: null }).unidad).toBeNull();
     expect(aTarjeta({ ...MANGUERA, imagenPrincipal: null }).imagen).toBeNull();
+    // HU-24 RF-11: pasa el descuento a la tarjeta
+    expect(aTarjeta({ ...MANGUERA, precio: 10.63, precioNormal: 12.5, descuento: 15 })).toEqual(
+      expect.objectContaining({ precio: 10.63, precioNormal: 12.5, descuento: 15 }),
+    );
   });
 
   // HU-10 RF-1

@@ -1,0 +1,281 @@
+// Formulario y botones de _formulario.scss; acá a qué se aplica, la lista de descuentos y su estado
+@use '../../../styles/formulario';
+@use '../../../styles/pagina';
+
+:host {
+	@include pagina.pagina-angosta(720px);
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-6);
+}
+
+h1 {
+	font-size: 34px;
+}
+
+h2 {
+	font-size: 22px;
+	overflow-wrap: anywhere;
+}
+
+.tarjeta {
+	max-width: none;
+	margin: 0;
+}
+
+.destino {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-2) var(--app-espacio-6);
+	margin: 0;
+	padding: 0;
+	border: none;
+}
+
+.destino legend {
+	margin-bottom: var(--app-espacio-2);
+	padding: 0;
+	font-weight: 600;
+}
+
+.destino label {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--app-espacio-2);
+	min-height: var(--app-area-tocable);
+	cursor: pointer;
+}
+
+.destino input {
+	width: auto;
+	accent-color: var(--app-ambar);
+}
+
+.buscar {
+	display: flex;
+	gap: var(--app-espacio-2);
+}
+
+.buscar input {
+	flex: 1;
+	min-width: 0;
+}
+
+.resultados {
+	display: flex;
+	flex-direction: column;
+	margin: var(--app-espacio-2) 0 0;
+	padding: 0;
+	list-style: none;
+	border: 1px solid var(--app-borde);
+	border-top: none;
+	border-radius: var(--app-radio);
+	max-height: 260px;
+	overflow-y: auto;
+}
+
+.resultado {
+	width: 100%;
+	min-height: var(--app-area-tocable);
+	padding: var(--app-espacio-2) var(--app-espacio-3);
+	border: none;
+	border-top: 1px solid var(--app-borde);
+	background: transparent;
+	color: var(--app-texto);
+	font: inherit;
+	text-align: left;
+	overflow-wrap: anywhere;
+	cursor: pointer;
+}
+
+.resultado:hover {
+	background: var(--app-superficie-alta);
+}
+
+// La lista corta lo que sale de ella (overflow): el anillo de foco va adentro
+.resultado:focus-visible {
+	outline-offset: -3px;
+}
+
+.codigo {
+	color: var(--app-texto-suave);
+	font-family: var(--app-familia-datos);
+	font-size: 13px;
+}
+
+.elegido {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--app-espacio-3);
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.sin-resultados,
+.ayuda {
+	margin: var(--app-espacio-1) 0 0;
+	color: var(--app-texto-suave);
+	font-size: 14px;
+}
+
+// Porcentaje y fechas en una fila; en el celular, uno debajo del otro
+.fila {
+	display: grid;
+	grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1fr);
+	gap: var(--app-espacio-4);
+}
+
+@media (max-width: 560px) {
+	.fila {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.acciones,
+.botones {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--app-espacio-2);
+}
+
+// Un botón ya centra su texto y .boton ya pone el cursor
+.boton.secundario {
+	background: transparent;
+	border-color: var(--app-borde-control);
+	color: var(--app-texto);
+}
+
+.boton.secundario:hover:not([disabled], [aria-disabled='true']) {
+	background: var(--app-superficie-alta);
+}
+
+.boton.peligro {
+	color: var(--app-error);
+}
+
+.avisos:empty {
+	display: none;
+}
+
+.avisos {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-3);
+}
+
+.bajo-el-costo p,
+.bajo-el-costo ul {
+	margin: 0;
+}
+
+.bajo-el-costo ul {
+	padding-left: var(--app-espacio-6);
+	overflow-wrap: anywhere;
+}
+
+.lista {
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-3);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.descuento {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--app-espacio-3) var(--app-espacio-4);
+	padding: var(--app-espacio-4);
+	border: 1px solid var(--app-borde);
+	border-radius: var(--app-radio);
+	background: var(--app-superficie);
+}
+
+// Vencido: el estado se lee también en el texto, no solo en el borde
+.vencido {
+	border-style: dashed;
+}
+
+.datos {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--app-espacio-1);
+}
+
+.objetivo {
+	margin: 0;
+	font-family: var(--app-familia-titulos);
+	font-size: 20px;
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+.detalle {
+	margin: 0;
+	color: var(--app-texto-suave);
+	font-size: 14px;
+}
+
+.porcentaje {
+	color: var(--app-texto);
+	font-family: var(--app-familia-datos);
+	font-weight: 600;
+}
+
+// El estado con un punto de forma distinta en cada uno, además del color
+.estado {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--app-espacio-2);
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.estado::before {
+	content: '';
+	width: 8px;
+	height: 8px;
+	background: currentColor;
+}
+
+.estado.vigente {
+	color: var(--app-exito);
+}
+
+.estado.vigente::before {
+	border-radius: 50%;
+}
+
+.estado.programado {
+	color: var(--app-aviso);
+}
+
+.estado.vencido {
+	color: var(--app-texto-suave);
+}
+
+.estado.vencido::before {
+	width: 10px;
+	height: 2px;
+}
+
+.paginacion {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--app-espacio-3);
+}
+
+.paginacion p,
+.cargando,
+.vacio {
+	margin: 0;
+	color: var(--app-texto-suave);
+}
