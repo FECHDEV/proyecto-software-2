@@ -22,7 +22,7 @@ Integral del Norte, Montero, Santa Cruz, Bolivia. Metodología **Scrum**.
 | Capa | Tecnología |
 |---|---|
 | Frontend | Angular 22 (Signal Forms, Vitest sobre jsdom) |
-| Backend | Java 21 / Spring Boot 4.1.1 |
+| Backend | Java 21 / Spring Boot 4.1 (el parche exacto, en `backend/pom.xml`: lo sube Dependabot) |
 | Base de datos | MySQL 8.4 LTS (*20/10/2026*, antes 8.0, sin soporte desde abril de 2026); H2 en las pruebas |
 | Correo | Gmail por SMTP con una cuenta del proyecto y una contraseña de aplicación en `.env`: por defecto en Docker (*26/10/2026*), y sin usuario ni contraseña la API no arranca; simulador en desarrollo y pruebas |
 | Pago | Detrás de la interfaz propia `IPago`: Libélula por defecto en Docker, simulador en desarrollo y pruebas |
@@ -107,7 +107,10 @@ El repositorio puede ser **público**:
   → merge. **Antes de empezar una historia, o un cambio a una historia, leer
   `docs/flujo-sdd.md`**: Scrum, variantes, numeración de los RF, formato de los
   planes, Definition of Done y revisiones antes del PR.
-- **Todo entra a `main` por PR,** con el CI en verde (el ruleset lo exige).
+- **Todo entra a `main` por PR,** con el CI en verde. El ruleset exige los
+  checks Backend y Frontend; el de extremo a extremo corre en cada PR pero no
+  es obligatorio (*19/11/2026*, lo decidió Fabio en el plan de las pruebas de
+  extremo a extremo): en rojo, tampoco se mergea.
   Ramas: `feature/hu-XX-nombre-corto`, `fix/…`, `chore/…`, `docs/…`. Cada PR
   cierra su issue (`Closes #N`).
 - **No commitear, pushear ni abrir PRs** sin pedido explícito, aunque el plan
