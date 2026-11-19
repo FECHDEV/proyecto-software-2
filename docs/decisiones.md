@@ -13,7 +13,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 ## Índice
 
-- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api) · [Respaldos](#respaldos) · [Servidor](#servidor) · [Cobertura de las pruebas](#cobertura-de-las-pruebas)
+- **[Transversales](#transversales)**: [Spring Boot 4.1](#spring-boot-41) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api) · [Respaldos](#respaldos) · [Servidor](#servidor) · [Cobertura de las pruebas](#cobertura-de-las-pruebas)
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios) · [Política de contenido](#política-de-contenido)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend) · [ESLint](#eslint)
@@ -23,7 +23,10 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 ## Transversales
 
-### Spring Boot 4.1.1
+### Spring Boot 4.1
+
+*19/11/2026:* el parche exacto está en `backend/pom.xml` y lo sube Dependabot
+(hoy, 4.1.2); acá y en `CLAUDE.md` va solo la línea 4.1.
 
 `start.spring.io` ya no ofrece la línea 3.x. Algunos starters cambiaron de
 nombre (`spring-boot-starter-webmvc` en lugar de `-web`; los de prueba están
@@ -591,6 +594,21 @@ código:
 - **Listado paginado:** 20 por página (100 como máximo), del más reciente al
   más antiguo, con filtro por rol y estado y búsqueda en correo, nombre y
   apellido. No muestra el teléfono.
+- *10/10/2026 (HU-05).* **Desactivar invalida las sesiones para siempre:** la
+  cuenta lleva una versión de sesión que viaja en el token y se compara en cada
+  petición, como la huella de la contraseña; desactivar la incrementa, así los
+  tokens emitidos antes no vuelven a valer al reactivarla. Reemplaza el riesgo
+  aceptado anterior (los tokens viejos revivían hasta vencer). Al desactivar
+  también se anulan los enlaces de recuperación pendientes (HU-03).
+  **Consecuencia aceptada:** al desplegar este cambio, los tokens que ya
+  estaban emitidos no tienen `vs` y dejan de valer: todos inician sesión una
+  vez más.
+- *22/10/2026 (HU-18).* **Tipo de cliente:** Público general, Contratista,
+  Taller o Empresa. Toda cuenta nace «Público general»; solo el Administrador
+  lo cambia, en la gestión de usuarios, y solo en cuentas con rol Cliente
+  (409 en otra). El listado lo muestra y filtra por tipo. **Motivo:** los
+  reportes agrupan las ventas por tipo; si lo eligiera el cliente, cualquiera
+  se pondría «Empresa».
 
 ### Política de contenido
 
@@ -624,21 +642,6 @@ puede leer la sesión.
   navegador, que pasa CRLF y CR a LF al leer el HTML. Un checkout en Windows
   (`core.autocrlf`) trae el `index.html` con CRLF, y el script del tema quedaba
   bloqueado en Docker en la PC; en Linux no pasaba.
-- *10/10/2026 (HU-05).* **Desactivar invalida las sesiones para siempre:** la
-  cuenta lleva una versión de sesión que viaja en el token y se compara en cada
-  petición, como la huella de la contraseña; desactivar la incrementa, así los
-  tokens emitidos antes no vuelven a valer al reactivarla. Reemplaza el riesgo
-  aceptado anterior (los tokens viejos revivían hasta vencer). Al desactivar
-  también se anulan los enlaces de recuperación pendientes (HU-03).
-  **Consecuencia aceptada:** al desplegar este cambio, los tokens que ya
-  estaban emitidos no tienen `vs` y dejan de valer: todos inician sesión una
-  vez más.
-- *22/10/2026 (HU-18).* **Tipo de cliente:** Público general, Contratista,
-  Taller o Empresa. Toda cuenta nace «Público general»; solo el Administrador
-  lo cambia, en la gestión de usuarios, y solo en cuentas con rol Cliente
-  (409 en otra). El listado lo muestra y filtra por tipo. **Motivo:** los
-  reportes agrupan las ventas por tipo; si lo eligiera el cliente, cualquiera
-  se pondría «Empresa».
 
 ---
 
@@ -879,7 +882,7 @@ un solo dueño del dinero.
 |---|---|
 | Cliente | Compra: catálogo, carrito, pedidos propios. Es el rol de todo el que se registra solo |
 | Administrador | Gestiona usuarios y roles, y todo lo de la tienda |
-| Empleado | Pedidos, despacho e inventario |
+| Empleado | Pedidos, despacho, inventario y ventas en el mostrador (*05/11/2026*, HU-23) |
 | Contador | Reportes y dinero, **solo lectura** |
 
 El detalle de cada permiso se ajusta en las historias del backlog.
