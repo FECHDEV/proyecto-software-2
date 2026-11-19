@@ -5,6 +5,7 @@ import { ReportesService } from '../../core/api/reportes.service';
 import { FiltrosDeReportes } from '../../core/modelos/reportes';
 import { pagina, ReportesFalso } from './reportes-falso.spec-helper';
 import { ReportesClientes } from './reportes-clientes';
+import { ReportesCompradores } from './reportes-compradores';
 import { ReportesPerdidos } from './reportes-perdidos';
 import { ReportesProductos } from './reportes-productos';
 import { ReportesSinVenta } from './reportes-sin-venta';
@@ -128,6 +129,58 @@ describe('Listas de los reportes', () => {
     expect(filas()[0][4]).toContain('150,00');
   });
 
+  // HU-18 RF-23 a RF-25: los que compran, con el contacto, el canal, el promedio y cada cuánto
+  const ANA = {
+    idUsuario: 9, nombre: 'Ana', apellido: 'Paz', correo: 'ana@mail.com', telefono: '70000000', tipo: 'CONTRATISTA' as const,
+    activa: true, compras: 3, total: 600, promedio: 200, primera: '2026-10-01T10:00:00', ultima: '2026-10-21T10:00:00',
+    diasEntreCompras: 10, enLinea: 3, enTienda: 0,
+  };
+
+  it('RF-23, RF-24: clientes que compran', async () => {
+    await abrir(ReportesCompradores, (falso) => falso.compradoresRecurso.value.set(pagina([ANA])), {
+      seccion: 'compradores',
+    });
+
+    const [fila] = filas();
+    expect(fila[0]).toBe('Ana Paz Contratista');
+    expect(pantalla().querySelector('a[href="mailto:ana@mail.com"]')).not.toBeNull();
+    expect(pantalla().querySelector('a[href="tel:70000000"]')).not.toBeNull();
+    expect(fila[2]).toBe('3 En línea');
+    expect(fila[3]).toContain('600,00');
+    expect(fila[3]).toContain('promedio Bs');
+    expect(fila[3]).toContain('200,00');
+    expect(fila[4]).toBe('01/10/2026 a 21/10/2026');
+    expect(fila[5]).toBe('Cada 10 días');
+    expect(texto()).toContain('Solo clientes con cuenta');
+  });
+
+  it('RF-24: una sola compra, el mismo día, los dos canales y un decimal', async () => {
+    await abrir(
+      ReportesCompradores,
+      (falso) =>
+        falso.compradoresRecurso.value.set(
+          pagina([
+            { ...ANA, idUsuario: 1, compras: 1, diasEntreCompras: null, primera: ANA.ultima, enLinea: 0, enTienda: 1 },
+            { ...ANA, idUsuario: 2, compras: 2, diasEntreCompras: 0, enLinea: 1, enTienda: 1 },
+            { ...ANA, idUsuario: 3, diasEntreCompras: 2.5 },
+          ]),
+        ),
+      { seccion: 'compradores' },
+    );
+
+    expect(filas().map((fila) => fila[5])).toEqual(['Una sola compra', 'El mismo día', 'Cada 2,5 días']);
+    expect(filas()[0][4]).toBe('21/10/2026');
+    expect(filas().map((fila) => fila[2])).toEqual(['1 En tienda', '2 Los dos', '3 En línea']);
+  });
+
+  it('RF-23: la cuenta desactivada se marca', async () => {
+    await abrir(ReportesCompradores, (falso) => falso.compradoresRecurso.value.set(pagina([{ ...ANA, activa: false }])), {
+      seccion: 'compradores',
+    });
+
+    expect(filas()[0][0]).toContain('Cuenta desactivada');
+  });
+
   // HU-18 RF-17, RF-18: las cifras y los productos de los pedidos perdidos
   it('pedidos perdidos', async () => {
     await abrir(
@@ -180,6 +233,9 @@ describe('Listas de los reportes', () => {
     expect(texto()).toContain('Ningún producto lleva más de 90 días sin venderse.');
     TestBed.resetTestingModule();
 
+    await abrir(ReportesCompradores, (falso) => falso.compradoresRecurso.value.set(pagina([])));
+    expect(texto()).toContain('Ningún cliente con cuenta compró en este período.');
+    TestBed.resetTestingModule();
     await abrir(ReportesClientes, (falso) => falso.clientesRecurso.value.set(pagina([])));
     expect(texto()).toContain('Ningún cliente dejó de comprar hace más de 30 días.');
     TestBed.resetTestingModule();

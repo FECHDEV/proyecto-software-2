@@ -85,7 +85,8 @@ class ExportadorPdfTest {
 		assertThat(todo).contains("Cifras del período", "Ventas por día", "Ventas por día de la semana",
 				"Ventas por hora del pago", "Ventas por categoría", "Ventas por tipo de cliente",
 				"Productos más vendidos", "Productos menos vendidos", "Productos sin venderse hace más de 60 días",
-				"Pedidos perdidos", "Productos de los pedidos perdidos", "Clientes que no compran hace más de 60 días",
+				"Pedidos perdidos", "Productos de los pedidos perdidos", "Clientes que compran",
+				"Clientes que no compran hace más de 60 días",
 				"Contiene datos personales de clientes: uso interno.", "ana@mail.com", "70000000", "Bs 970,00",
 				"sin costo");
 	}

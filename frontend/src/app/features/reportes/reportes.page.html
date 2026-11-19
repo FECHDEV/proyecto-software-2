@@ -115,6 +115,9 @@
   @case ('sin-venta') {
     <app-reportes-sin-venta [filtros]="filtros()" (cambiar)="alCambiarSeccion($event)" />
   }
+  @case ('compradores') {
+    <app-reportes-compradores [filtros]="filtros()" (cambiar)="alCambiarSeccion($event)" />
+  }
   @case ('clientes') {
     <app-reportes-clientes [filtros]="filtros()" (cambiar)="alCambiarSeccion($event)" />
   }

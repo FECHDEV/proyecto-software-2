@@ -7,13 +7,15 @@ export const CANALES: readonly Canal[] = ['EN_LINEA', 'TIENDA'];
 
 // Espejo de los DTO de /api/reportes (HU-18) y la lectura de la dirección de /reportes
 
-export type Seccion = 'resumen' | 'productos' | 'sin-venta' | 'clientes' | 'perdidos';
+export type Seccion = 'resumen' | 'productos' | 'sin-venta' | 'compradores' | 'clientes' | 'perdidos';
 
 export const SECCIONES: readonly { valor: Seccion; nombre: string }[] = [
 	{ valor: 'resumen', nombre: 'Resumen' },
 	{ valor: 'productos', nombre: 'Productos' },
 	{ valor: 'sin-venta', nombre: 'Sin venderse' },
-	{ valor: 'clientes', nombre: 'Clientes' },
+	// HU-18 RF-27: «Clientes que compran» (nueva) y «Clientes inactivos» (la de RF-16, con su dirección de siempre)
+	{ valor: 'compradores', nombre: 'Clientes que compran' },
+	{ valor: 'clientes', nombre: 'Clientes inactivos' },
 	{ valor: 'perdidos', nombre: 'Pedidos perdidos' },
 ];
 
@@ -246,6 +248,26 @@ export interface ClienteInactivo {
 	ultimaCompra: string;
 	pedidos: number;
 	total: number;
+}
+
+// GET /api/reportes/compradores (HU-18 RF-23 a RF-25). diasEntreCompras es null con una sola compra; activa es
+// false si la cuenta hoy está desactivada
+export interface ClienteQueCompra {
+	idUsuario: number;
+	nombre: string;
+	apellido: string;
+	correo: string;
+	telefono: string | null;
+	tipo: TipoCliente;
+	activa: boolean;
+	compras: number;
+	total: number;
+	promedio: number;
+	primera: string;
+	ultima: string;
+	diasEntreCompras: number | null;
+	enLinea: number;
+	enTienda: number;
 }
 
 export interface ProductoPerdido {

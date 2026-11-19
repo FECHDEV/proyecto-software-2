@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 
 import bo.edu.uagrm.tienda.dto.reportes.ClienteInactivo;
+import bo.edu.uagrm.tienda.dto.reportes.ClienteQueCompra;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoPerdido;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoSinVenta;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoVendido;
@@ -113,6 +114,7 @@ final class SeccionesDelReporte {
 		hojas.add(hoja("Sin venderse", sinVenta(reporte.sinVenta(), reporte.dias())));
 		hojas.add(new Hoja("Pedidos perdidos", List.of(perdidos(reporte.perdidos()),
 				productosPerdidos(reporte.productosPerdidos()))));
+		hojas.add(hoja("Clientes que compran", compradores(reporte.clientesQueCompran())));
 		hojas.add(hoja("Clientes inactivos", clientes(reporte.clientesInactivos(), reporte.dias())));
 		return hojas;
 	}
@@ -252,6 +254,37 @@ final class SeccionesDelReporte {
 						Celda.texto(unidad(fila.unidad())), cantidad(fila.cantidad(), fila.unidad()),
 						(Celda) new Dinero(fila.importe()))).toList(),
 				"No hubo pedidos perdidos en este período.");
+	}
+
+	// HU-18 RF-23 a RF-26: los que compraron en el período, con el contacto (RF-8) y la cuenta desactivada marcada
+	private static Seccion compradores(List<ClienteQueCompra> clientes) {
+		return new Seccion("Clientes que compran", List.of(AVISO_DATOS_PERSONALES),
+				List.of("Cliente", "Correo", "Teléfono", "Tipo", "Canal", "Compras", "Total", "Promedio",
+						"Primera compra", "Última compra", "Cada cuántos días"),
+				clientes.stream().map(fila -> List.of(
+						Celda.texto(fila.nombre() + " " + fila.apellido() + (fila.activa() ? "" : " (cuenta desactivada)")),
+						Celda.texto(fila.correo()), Celda.texto(fila.telefono()), Celda.texto(tipo(fila.tipo())),
+						Celda.texto(canalDeCompras(fila.enLinea(), fila.enTienda())), new Numero(fila.compras()),
+						new Dinero(fila.total()), new Dinero(fila.promedio()), new Fecha(fila.primera().toLocalDate()),
+						new Fecha(fila.ultima().toLocalDate()),
+						cadaCuanto(fila.diasEntreCompras()))).toList(),
+				"Ningún cliente con cuenta compró en este período.");
+	}
+
+	// RF-24, con los textos de la pantalla
+	private static Celda cadaCuanto(BigDecimal dias) {
+		if (dias == null) {
+			return Celda.texto("Una sola compra");
+		}
+		return dias.signum() == 0 ? Celda.texto("El mismo día") : new Numero(dias, 1);
+	}
+
+	// RF-23: en qué canal compró en el período
+	private static String canalDeCompras(long enLinea, long enTienda) {
+		if (enLinea > 0 && enTienda > 0) {
+			return "Los dos";
+		}
+		return enTienda > 0 ? "En tienda" : "En línea";
 	}
 
 	// HU-18 RF-16, con el contacto para llamarlos (RF-8)

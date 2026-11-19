@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { Pagina } from '../../core/modelos/pagina';
 import {
   ClienteInactivo,
+  ClienteQueCompra,
   FiltrosDeReportes,
   ProductoPerdido,
   ProductoSinVenta,
@@ -29,6 +30,7 @@ export class ReportesFalso {
   readonly productosRecurso = new RecursoFalso<Pagina<ProductoVendido>>();
   readonly sinVentaRecurso = new RecursoFalso<Pagina<ProductoSinVenta>>();
   readonly clientesRecurso = new RecursoFalso<Pagina<ClienteInactivo>>();
+  readonly compradoresRecurso = new RecursoFalso<Pagina<ClienteQueCompra>>();
   readonly perdidosRecurso = new RecursoFalso<Pagina<ProductoPerdido>>();
   readonly resumenDePerdidosRecurso = new RecursoFalso<ResumenDePerdidos>();
   filtros: Signal<FiltrosDeReportes> | null = null;
@@ -50,6 +52,9 @@ export class ReportesFalso {
   }
   clientesInactivos(filtros: Signal<FiltrosDeReportes>) {
     return this.pedir('clientes', filtros, this.clientesRecurso);
+  }
+  compradores(filtros: Signal<FiltrosDeReportes>) {
+    return this.pedir('compradores', filtros, this.compradoresRecurso);
   }
   resumenDePerdidos(filtros: Signal<FiltrosDeReportes>) {
     return this.pedir('resumen-de-perdidos', filtros, this.resumenDePerdidosRecurso);

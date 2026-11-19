@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import bo.edu.uagrm.tienda.dto.reportes.CategoriaFila;
 import bo.edu.uagrm.tienda.dto.reportes.CompraFila;
+import bo.edu.uagrm.tienda.dto.reportes.CompradorFila;
 import bo.edu.uagrm.tienda.dto.reportes.EstadoFila;
 import bo.edu.uagrm.tienda.dto.reportes.LineasFila;
 import bo.edu.uagrm.tienda.dto.reportes.PerdidoFila;
@@ -46,6 +47,20 @@ public interface ReportesRepository extends Repository<Pedido, Long> {
 				and (:tipo is null or coalesce(u.tipoCliente, bo.edu.uagrm.tienda.entity.TipoCliente.PUBLICO_GENERAL) = :tipo) and (:canal is null or p.canal = :canal)
 			group by l.producto.idProducto""")
 	List<LineasFila> lineasPorProducto(@Param("estados") Collection<EstadoPedido> estados,
+			@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin, @Param("tipo") TipoCliente tipo,
+			@Param("canal") Canal canal);
+
+	// HU-18 RF-23: lo que compró cada cuenta en el período; el consumidor final no tiene cuenta y queda fuera del join
+	@Query("""
+			select new bo.edu.uagrm.tienda.dto.reportes.CompradorFila(u.idUsuario, count(p), sum(p.total),
+				min(p.pagado), max(p.pagado),
+				count(case when p.canal = bo.edu.uagrm.tienda.entity.Canal.EN_LINEA then 1 end),
+				count(case when p.canal = bo.edu.uagrm.tienda.entity.Canal.TIENDA then 1 end))
+			from Pedido p join p.usuario u
+			where p.estado in :estados and p.pagado >= :inicio and p.pagado < :fin
+				and (:tipo is null or u.tipoCliente = :tipo) and (:canal is null or p.canal = :canal)
+			group by u.idUsuario""")
+	List<CompradorFila> compradores(@Param("estados") Collection<EstadoPedido> estados,
 			@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin, @Param("tipo") TipoCliente tipo,
 			@Param("canal") Canal canal);
 

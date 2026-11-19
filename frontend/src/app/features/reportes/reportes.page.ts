@@ -23,6 +23,7 @@ import { NOMBRES_DE_TIPO, TIPOS_DE_CLIENTE } from '../../core/modelos/usuario';
 import { NOMBRES_DE_CANAL } from '../../core/modelos/venta';
 import { descargarArchivo } from '../../shared/descarga/descargar-archivo';
 import { ReportesClientes } from './reportes-clientes';
+import { ReportesCompradores } from './reportes-compradores';
 import { ReportesPerdidos } from './reportes-perdidos';
 import { ReportesProductos } from './reportes-productos';
 import { ReportesResumen } from './reportes-resumen';
@@ -41,6 +42,7 @@ import { ReportesSinVenta } from './reportes-sin-venta';
 		ReportesProductos,
 		ReportesSinVenta,
 		ReportesClientes,
+		ReportesCompradores,
 		ReportesPerdidos,
 	],
 	templateUrl: './reportes.page.html',
