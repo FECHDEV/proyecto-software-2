@@ -525,10 +525,21 @@ class ReportesIntegracionTest {
 		assertThat(todos).bodyJson().extractingPath("$.porCanal[*].canal").asArray()
 				.containsExactly("EN_LINEA", "TIENDA");
 		assertThat(numeros(todos, "$.porCanal[*].ingresos")).containsExactly(100.0, 200.0);
-		assertThat(todos).bodyJson().extractingPath("$.porMedio[*].medio").asArray().containsExactly("EFECTIVO", "QR");
-		// En línea siempre se paga con QR
-		assertThat(numeros(todos, "$.porMedio[*].ingresos")).containsExactly(150.0, 150.0);
-		assertThat(numeros(todos, "$.porMedio[*].pedidos")).containsExactly(1.0, 2.0);
+		// HU-23 RF-35: en línea es su propia fila (la tienda no sabe con qué se pagó en la pasarela); QR, solo el mostrador
+		assertThat(todos).bodyJson().extractingPath("$.porMedio[*].medio").asArray()
+				.containsExactly("EN_LINEA", "QR", "EFECTIVO");
+		assertThat(numeros(todos, "$.porMedio[*].ingresos")).containsExactly(100.0, 50.0, 150.0);
+		assertThat(numeros(todos, "$.porMedio[*].pedidos")).containsExactly(1.0, 1.0, 1.0);
+	}
+
+	// HU-23 RF-35: las tres filas aparecen aunque no haya ventas
+	@Test
+	void losTresMediosAparecenSinVentas() throws Exception {
+		MvcTestResult vacio = ventas(contador, OCTUBRE);
+
+		assertThat(vacio).bodyJson().extractingPath("$.porMedio[*].medio").asArray()
+				.containsExactly("EN_LINEA", "QR", "EFECTIVO");
+		assertThat(numeros(vacio, "$.porMedio[*].pedidos")).containsExactly(0.0, 0.0, 0.0);
 	}
 
 	// HU-23 (decisiones de la historia): el consumidor final cuenta como «Público general»
@@ -590,5 +601,35 @@ class ReportesIntegracionTest {
 				.doesNotContain(pieza.getIdProducto().intValue());
 		assertThat(sinVenderseEnTienda).bodyJson().extractingPath("$.contenido[*].idProducto").asArray()
 				.contains(pieza.getIdProducto().intValue());
+	}
+
+	private MvcTestResult inactivos(String filtros) {
+		return mvc.get().uri("/api/reportes/clientes-inactivos?dias=30" + filtros)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + contador).exchange();
+	}
+
+	// HU-23 RF-36: quien compró hace poco en otro canal no está inactivo, con ningún canal elegido
+	@Test
+	void quienComproEnOtroCanalNoQuedaInactivo() throws Exception {
+		pagado(ana, LocalDateTime.now().minusDays(40), 1);
+		enTienda(ana, bo.edu.uagrm.tienda.entity.MedioPago.EFECTIVO, LocalDateTime.now().minusDays(5), 1);
+
+		for (String filtro : List.of("", "&canal=EN_LINEA", "&canal=TIENDA")) {
+			assertThat(inactivos(filtro)).bodyJson().extractingPath("$.contenido[*].correo").asArray()
+					.as(filtro).doesNotContain("ana.hu18@mail.com");
+		}
+	}
+
+	// HU-23 RF-36: el canal elige a quién mirar; los pedidos y el total del inactivo son de todos los canales
+	@Test
+	void losPedidosYElTotalDelInactivoCuentanTodosLosCanales() throws Exception {
+		pagado(beto, LocalDateTime.now().minusDays(40), 1);
+		enTienda(beto, bo.edu.uagrm.tienda.entity.MedioPago.EFECTIVO, LocalDateTime.now().minusDays(50), 2);
+
+		MvcTestResult enLinea = inactivos("&canal=EN_LINEA");
+
+		assertThat(enLinea).bodyJson().extractingPath("$.contenido[?(@.correo == 'beto.hu18@mail.com')].pedidos")
+				.asArray().containsExactly(2);
+		assertThat(numeros(enLinea, "$.contenido[?(@.correo == 'beto.hu18@mail.com')].total")).containsExactly(150.0);
 	}
 }

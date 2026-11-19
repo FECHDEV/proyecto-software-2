@@ -10,7 +10,9 @@
   </div>
 } @else if (venta(); as venta) {
   <div class="acciones solo-pantalla">
-    <button type="button" class="principal" (click)="imprimir()"><span>Imprimir</span></button>
+    @if (imprimible()) {
+      <button type="button" class="principal" (click)="imprimir()"><span>Imprimir</span></button>
+    }
     @if (vende()) {
       <a class="secundario" routerLink="/ventas/nueva">Nueva venta</a>
     }

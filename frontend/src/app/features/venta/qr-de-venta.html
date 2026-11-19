@@ -15,7 +15,7 @@
       [attr.aria-disabled]="cancelando() ? 'true' : null"
       (click)="cancelar.emit()"
     >
-      Cancelar venta
+      {{ cancelando() ? 'Cancelando…' : 'Cancelar venta' }}
     </button>
   </div>
   @if (cobro.simulador) {

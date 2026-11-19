@@ -167,7 +167,9 @@ public class VentaTiendaService {
 		}
 		CobroGenerado generado;
 		try {
-			generado = iPago.generarCobro(idPedido, registrada.getTotal(), "Venta N.º " + idPedido + " — " + marca);
+			// Sin ruta de retorno: quien paga en el mostrador no es el dueño de la cuenta de la venta (HU-23 RF-7)
+			generado = iPago.generarCobro(idPedido, registrada.getTotal(), "Venta N.º " + idPedido + " — " + marca,
+					null);
 		} catch (SistemaDePagoNoDisponibleException error) {
 			log.warn("No se pudo generar el cobro de la venta {}", idPedido, error);
 			// Mientras se generaba, otro pudo cancelarla o vencerla: ya devolvió el stock
@@ -262,15 +264,28 @@ public class VentaTiendaService {
 		return transaccion.execute(estado -> leer(idPedido));
 	}
 
-	// RF-9: el Empleado o el Administrador la cancela mientras espera el pago, por ejemplo para cobrar en efectivo
-	@Transactional(isolation = Isolation.READ_COMMITTED)
+	// RF-9: el Empleado o el Administrador la cancela mientras espera el pago, por ejemplo para cobrar en efectivo.
+	// RF-31: antes se pregunta al sistema de pago, sin nada bloqueado ni transacción abierta. Si el pago ya llegó, la
+	// conciliación la deja entregada y abajo responde 409, como cualquier venta que ya no espera el pago. Si el
+	// sistema de pago no responde, se cancela igual: un pago que llegue después queda para devolver (RF-32)
 	public VentaResponse cancelar(Long idPedido) {
-		Pedido venta = bloquearVenta(idPedido);
-		if (venta.getEstado() != EstadoPedido.PENDIENTE_PAGO) {
-			throw new PedidoNoPendienteException(); // ya cobrada, cancelada o vencida
-		}
-		cerrar(venta, EstadoPedido.CANCELADO);
-		return respuesta(venta, LocalDateTime.now(clock));
+		Optional<Long> cobro = transaccion.execute(estado -> {
+			Pedido venta = pedidoRepository.findById(idPedido).filter(Pedido::esEnTienda)
+					.orElseThrow(VentaNoEncontradaException::new);
+			if (venta.getEstado() != EstadoPedido.PENDIENTE_PAGO) {
+				throw new PedidoNoPendienteException(); // ya cobrada, cancelada o vencida
+			}
+			return pedidoService.cobroPendiente(idPedido).map(Cobro::getIdCobro);
+		});
+		cobro.ifPresent(conciliacionDePagos::conciliar);
+		return transaccion.execute(estado -> {
+			Pedido venta = bloquearVenta(idPedido);
+			if (venta.getEstado() != EstadoPedido.PENDIENTE_PAGO) {
+				throw new PedidoNoPendienteException(); // RF-31: el pago llegó con la consulta, o otro la cerró
+			}
+			cerrar(venta, EstadoPedido.CANCELADO);
+			return respuesta(venta, LocalDateTime.now(clock));
+		});
 	}
 
 	// Para VencimientoPedidos y la consulta, después de consultar el cobro sin nada bloqueado (RF-10). Si ya se cobró,

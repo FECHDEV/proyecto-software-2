@@ -27,7 +27,7 @@ public class SimuladorDePago implements IPago {
 	}
 
 	@Override
-	public CobroGenerado generarCobro(Long idOperacion, BigDecimal monto, String concepto) {
+	public CobroGenerado generarCobro(Long idOperacion, BigDecimal monto, String concepto, String rutaDeRetorno) {
 		String referencia = "SIM-" + UUID.randomUUID();
 		cobros.put(referencia, ResultadoDelCobro.pendiente());
 		log.info("[Pago simulado] Cobro {} por Bs {} de la operación {}: {}", referencia, monto.toPlainString(), idOperacion,
