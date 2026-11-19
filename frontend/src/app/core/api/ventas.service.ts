@@ -2,7 +2,7 @@ import { HttpClient, httpResource, HttpResourceRef } from '@angular/common/http'
 import { inject, Injectable, Signal } from '@angular/core';
 
 import { ResultadoSimulado } from '../modelos/pedido';
-import { Comprador, ProductoParaVenta, SolicitudDeVenta, Venta } from '../modelos/venta';
+import { Comprador, CompradoresEncontrados, ProductoParaVenta, SolicitudDeVenta, Venta } from '../modelos/venta';
 import { escribir } from './escribir';
 
 const VENTAS = '/api/ventas';
@@ -35,6 +35,14 @@ export class VentasService {
 	// 404 si no es una cuenta de Cliente activa
 	buscarCliente(correo: string): Promise<Comprador> {
 		return escribir(this.http.get<Comprador>(`${VENTAS}/clientes`, { params: { correo: correo.trim() } }));
+	}
+
+	// RF-25: por nombre o apellido, también al tocar «Buscar». Con menos de 3
+	// letras el servidor responde una lista vacía; la pantalla ni pregunta
+	buscarClientesPorNombre(nombre: string): Promise<CompradoresEncontrados> {
+		return escribir(
+			this.http.get<CompradoresEncontrados>(`${VENTAS}/clientes`, { params: { nombre: nombre.trim() } }),
+		);
 	}
 
 	registrar(solicitud: SolicitudDeVenta): Promise<Venta> {

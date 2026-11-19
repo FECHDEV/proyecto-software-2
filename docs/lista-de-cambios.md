@@ -8,6 +8,7 @@ cerrada, plan corto, `/sdd:analizar`, TDD y `/sdd:cerrar`.
 *Lista del 07/11/2026.* Ya hecho de la misma tanda: el comprobante del
 mostrador al centro y «Descargar QR» en el pago del pedido (PR #110).
 *17/11/2026:* el punto 1 está hecho (ampliación de HU-14, issue #117).
+*18/11/2026:* el punto 2 está hecho (ampliación de HU-23, issue #119).
 
 ## 1. Recibo de la compra para el cliente (hecho)
 
@@ -24,7 +25,10 @@ línea. Lo de abajo queda como historial de lo que se pidió.
 - **A ver:** si el ticket se comparte con el del mostrador (`features/comprobante`)
   o se mueve a `shared/`; qué datos muestra al cliente (¿«Atendió»?).
 
-## 2. Buscar al comprador por nombre en el mostrador
+## 2. Buscar al comprador por nombre en el mostrador (hecho)
+
+*18/11/2026:* hecho como ampliación de HU-23 (RF-25 a RF-30, issue #119). Lo de
+abajo queda como historial de lo que se pidió.
 
 - **Qué:** en «Nueva venta», buscar la cuenta del cliente por nombre o
   apellido, además del correo exacto de hoy.

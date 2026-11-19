@@ -90,6 +90,19 @@ describe('VentasService', () => {
     await expect(ninguno).rejects.toMatchObject({ status: 404, codigo: 'USUARIO_NO_ENCONTRADO' });
   });
 
+  // HU-23 RF-25: por nombre, recortado; el correo ya viene enmascarado
+  it('RF-25: busca al comprador por nombre, recortado', async () => {
+    const encontrados = servicio.buscarClientesPorNombre('  ana paz ');
+    const pedido = http.expectOne((cada) => cada.url === '/api/ventas/clientes');
+    expect(pedido.request.params.get('nombre')).toBe('ana paz');
+    expect(pedido.request.params.has('correo')).toBe(false);
+    pedido.flush({ cuentas: [{ idUsuario: 4, nombre: 'Ana Paz', correo: 'an***@mail.com' }], hayMas: false });
+    expect(await encontrados).toEqual({
+      cuentas: [{ idUsuario: 4, nombre: 'Ana Paz', correo: 'an***@mail.com' }],
+      hayMas: false,
+    });
+  });
+
   // HU-23 RF-5, RF-6: registra con lo que mandó la pantalla
   it('registra la venta', async () => {
     const respuesta = servicio.registrar(SOLICITUD);

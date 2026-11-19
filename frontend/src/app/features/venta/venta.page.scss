@@ -166,19 +166,13 @@ input[aria-invalid='true'] {
 	flex-direction: column;
 	gap: var(--app-espacio-1);
 	margin: 0;
+	// Un nombre o un correo largo sin espacios no ensancha la página (revisión de interfaz, 18/11/2026)
+	overflow-wrap: anywhere;
 
 	span {
 		color: var(--app-texto-suave);
 		font-size: 14px;
-		overflow-wrap: anywhere;
 	}
-}
-
-.buscar-comprador {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) max-content;
-	gap: var(--app-espacio-3);
-	align-items: end;
 }
 
 .error-campo {
@@ -276,9 +270,5 @@ input[aria-invalid='true'] {
 			'cantidad cantidad'
 			'subtotal subtotal'
 			'aviso aviso';
-	}
-
-	.buscar-comprador {
-		grid-template-columns: minmax(0, 1fr);
 	}
 }

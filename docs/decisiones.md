@@ -1569,3 +1569,39 @@ mostrador que no se registra deja el stock y los reportes desfasados, y la
 tienda puede vender en línea algo que ya se llevaron. El efectivo es como se
 paga en el mostrador de una ferretería; anular solo con el Administrador, el
 mismo día y con motivo, evita que quien cobró borre su propia venta.
+
+- *18/11/2026 (ampliación de HU-23, `docs/lista-de-cambios.md` punto 2;
+  decidido con Fabio el 07/11/2026).* **El comprador también se busca por
+  nombre o apellido,** además del correo exacto: desde **3 letras**, hasta
+  **10 resultados**, y en cada uno el nombre y el **correo enmascarado**
+  (`fa***@gmail.com`: los dos primeros caracteres de la parte local, nunca
+  la parte entera, y el dominio completo) para distinguir a dos clientes con
+  el mismo nombre. Con el correo exacto, todo sigue como en HU-23 RF-4.
+  **Por qué ahora se permite:** HU-23 RF-4 pedía el correo exacto para que
+  el Empleado no pudiera recorrer la lista de clientes; pero en el mostrador
+  el cliente muchas veces no sabe o no quiere dictar su correo, y sin él la
+  venta queda como «Consumidor final» y no llega a sus «Mis pedidos» ni a
+  los reportes de clientes. **Qué lo sigue limitando,** todo validado en el
+  backend:
+  - **solo nombre y apellido:** el correo nunca se busca por una parte
+    (un texto con «@» va a la búsqueda exacta de siempre), así que no se
+    pueden juntar correos buscando «gmail»;
+  - **el correo completo no sale de la búsqueda por nombre:** el servidor lo
+    manda ya enmascarado;
+  - **pocas cuentas por consulta:** al menos 3 letras y como mucho 10
+    resultados, sin páginas siguientes;
+  - **solo Clientes activos** (como RF-4: ni el personal ni las cuentas
+    desactivadas), y **solo para vender:** el Empleado y el Administrador;
+    el Contador sigue sin acceso (403), como en la búsqueda por correo.
+
+  Lo que el Empleado obtiene es lo mismo que ya ve en la ficha de cualquier
+  pedido de ese cliente (HU-17: nombre y correo) y menos que la gestión de
+  usuarios del Administrador. *18/11/2026, Fabio:* sin tildes ni mayúsculas
+  (columna `usuario.busqueda`, como `Producto.busqueda`); el texto entero
+  dentro de «nombre apellido»; el comprador elegido por nombre se muestra con
+  el correo enmascarado y la venta registrada con el completo, como
+  cualquier pedido; con más de 10, «escriba el apellido»; orden por nombre,
+  apellido y número de cuenta.
+  **Motivo:** registrar la venta a nombre del cliente es lo que la hace
+  aparecer en sus pedidos y en los reportes; los límites dejan encontrar a
+  quien está enfrente sin convertir la búsqueda en un listado de clientes.
