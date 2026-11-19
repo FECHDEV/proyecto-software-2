@@ -1,6 +1,7 @@
 package bo.edu.uagrm.tienda.repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,25 +55,36 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
 	// Lo que el catálogo puede listar (HU-09 RF-2): activos de categorías visibles. Se repite en la consulta y en su
 	// conteo
-	String CATALOGO = """
-			from Producto p
-			where p.activo = true and p.categoria.visible = true
-			  and (:texto is null or p.busqueda like :texto escape '!')
-			  and (:idCategoria is null or p.categoria.idCategoria = :idCategoria)
-			  and (:marca is null or lower(p.marca) = :marca)
-			  and (:precioMin is null or p.precio >= :precioMin)
-			  and (:precioMax is null or p.precio <= :precioMax)
-			  and (:soloDisponibles = false or p.stock > 0)
-			""";
+	// El precio con descuento de HU-24 RF-8 y RF-9 en la consulta (RF-13): el mayor vigente del producto o de su
+	// categoría, redondeado a centavos y nunca menos de 0,01. Repite PrecioDeVenta.de; CatalogoIntegracionTest
+	// compara los dos (laConsultaRedondeaIgualQuePrecioDeVenta)
+	String PRECIO_DE_VENTA = """
+			(case when round(p.precio * (100 - coalesce((select max(d.porcentaje) from Descuento d
+					where (d.producto = p or d.categoria = p.categoria) and d.inicio <= :hoy and d.fin >= :hoy), 0)) / 100, 2)
+				< 0.01 then 0.01
+			else round(p.precio * (100 - coalesce((select max(d.porcentaje) from Descuento d
+					where (d.producto = p or d.categoria = p.categoria) and d.inicio <= :hoy and d.fin >= :hoy), 0)) / 100, 2)
+			end)""";
+
+	String CATALOGO = " from Producto p"
+			+ " where p.activo = true and p.categoria.visible = true"
+			+ " and (:texto is null or p.busqueda like :texto escape '!')"
+			+ " and (:idCategoria is null or p.categoria.idCategoria = :idCategoria)"
+			+ " and (:marca is null or lower(p.marca) = :marca)"
+			+ " and (:precioMin is null or " + PRECIO_DE_VENTA + " >= :precioMin)"
+			+ " and (:precioMax is null or " + PRECIO_DE_VENTA + " <= :precioMax)"
+			+ " and (:soloDisponibles = false or p.stock > 0) ";
 
 	// texto llega como en buscar, pero ya sin tildes (Producto.textoDeBusqueda), y la marca en minúsculas. Los
-	// agotados van al final; después, el orden que pide la página (OrdenCatalogo)
-	@Query(value = "select p " + CATALOGO + " order by case when p.stock > 0 then 0 else 1 end",
+	// agotados van al final; después, por el precio con descuento si porPrecio es 1 (de menor a mayor) o −1 (de mayor
+	// a menor), y al final el orden que pide la página (OrdenCatalogo). hoy decide qué descuentos valen (HU-24 RF-13)
+	@Query(value = "select p " + CATALOGO + " order by case when p.stock > 0 then 0 else 1 end, case when :porPrecio = 1 then "
+			+ PRECIO_DE_VENTA + " end asc, case when :porPrecio = -1 then " + PRECIO_DE_VENTA + " end desc",
 			countQuery = "select count(p) " + CATALOGO)
 	Page<Producto> catalogo(@Param("texto") String texto, @Param("idCategoria") Long idCategoria,
 			@Param("marca") String marca, @Param("precioMin") BigDecimal precioMin,
 			@Param("precioMax") BigDecimal precioMax, @Param("soloDisponibles") boolean soloDisponibles,
-			Pageable paginacion);
+			@Param("hoy") LocalDate hoy, @Param("porPrecio") int porPrecio, Pageable paginacion);
 
 	// Los carruseles de la portada (HU-09 RF-3, RF-7): solo disponibles; por categoría y solo destacados si se pide
 	@Query("""

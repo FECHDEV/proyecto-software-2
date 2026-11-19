@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -123,7 +124,7 @@ public class VentaTiendaService {
 			return List.of();
 		}
 		List<Producto> encontrados = productoRepository.catalogo(patron, null, null, null, null, false,
-				PageRequest.of(0, RESULTADOS, Sort.by("nombre", "idProducto"))).getContent();
+				LocalDate.now(clock), 0, PageRequest.of(0, RESULTADOS, Sort.by("nombre", "idProducto"))).getContent();
 		// HU-24 RF-12: con el precio que se cobra hoy, el mismo con el que se registra la venta
 		Map<Long, PrecioDeVenta> precios = preciosDeVenta.para(encontrados);
 		return encontrados.stream()

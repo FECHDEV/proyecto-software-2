@@ -144,6 +144,61 @@ class CatalogoIntegracionTest {
 				usuarioRepository.findByCorreo("admin@tienda.test").orElseThrow(), LocalDateTime.now(clock)));
 	}
 
+	// HU-24 RF-13, escenario «Filtrar por precio»: el rastrillo de Bs 100 con −15 % entra en «hasta 90»
+	@Test
+	void filtroHastaNoventaIncluyeElDeCienConQuince() throws Exception {
+		Integer rastrillo = producto("Rastrillo", null, jardin, "100.00", 3, false);
+		producto("Pala", null, jardin, "95.00", 3, false);
+		descuentoDeProducto(rastrillo, 15, hoy(), hoy().plusDays(2));
+
+		assertThat(nombres(get(PRODUCTOS + "?precioMax=90"), "$.contenido[*].nombre")).containsExactly("Rastrillo");
+		assertThat(nombres(get(PRODUCTOS + "?precioMin=90"), "$.contenido[*].nombre")).containsExactly("Pala");
+	}
+
+	// HU-24 RF-13: el orden por precio usa el precio con descuento, en los dos sentidos; el de la categoría también
+	@Test
+	void ordenPorPrecioUsaElPrecioConDescuento() throws Exception {
+		producto("Pala", null, jardin, "95.00", 3, false);
+		producto("Rastrillo", null, jardin, "100.00", 3, false);
+		producto("Martillo", null, herramientas, "120.00", 3, false);
+		descuentoDeCategoria(herramientas, 50, hoy(), hoy().plusDays(2));
+		descuentoDeProducto(id(get(PRODUCTOS + "?q=rastrillo"), "$.contenido[0].idProducto"), 10, hoy(),
+				hoy().plusDays(2));
+
+		assertThat(nombres(get(PRODUCTOS + "?orden=PRECIO_ASC"), "$.contenido[*].nombre"))
+				.containsExactly("Martillo", "Rastrillo", "Pala");
+		assertThat(nombres(get(PRODUCTOS + "?orden=PRECIO_DESC"), "$.contenido[*].nombre"))
+				.containsExactly("Pala", "Rastrillo", "Martillo");
+	}
+
+	// HU-24 RF-8, RF-13: la consulta redondea como PrecioDeVenta (4,50 al −15 % es 3,83) y respeta el piso de 0,01
+	@Test
+	void laConsultaRedondeaIgualQuePrecioDeVenta() throws Exception {
+		Integer cable = producto("Cable", null, herramientas, "4.50", 3, false);
+		Integer clavo = producto("Clavo", null, herramientas, "0.01", 3, false);
+		descuentoDeProducto(cable, 15, hoy(), hoy().plusDays(2));
+		descuentoDeProducto(clavo, 90, hoy(), hoy().plusDays(2));
+
+		assertThat(nombres(get(PRODUCTOS + "?precioMin=3.83&precioMax=3.83"), "$.contenido[*].nombre"))
+				.containsExactly("Cable");
+		assertThat(nombres(get(PRODUCTOS + "?precioMin=3.84"), "$.contenido[*].nombre")).doesNotContain("Cable");
+		assertThat(nombres(get(PRODUCTOS + "?precioMax=0.01"), "$.contenido[*].nombre")).containsExactly("Clavo");
+	}
+
+	// HU-24 RF-13 (regresión de HU-09): con el orden por precio, los agotados siguen al final y el conteo no cambia
+	@Test
+	void agotadosAlFinalYConteoConElOrdenPorPrecio() throws Exception {
+		producto("Pala", null, jardin, "10.00", 0, false);
+		Integer rastrillo = producto("Rastrillo", null, jardin, "100.00", 3, false);
+		producto("Azada", null, jardin, "50.00", 3, false);
+		descuentoDeProducto(rastrillo, 60, hoy(), hoy().plusDays(2));
+
+		MvcTestResult resultado = get(PRODUCTOS + "?orden=PRECIO_ASC");
+
+		assertThat(nombres(resultado, "$.contenido[*].nombre")).containsExactly("Rastrillo", "Azada", "Pala");
+		assertThat(resultado).bodyJson().extractingPath("$.totalElementos").isEqualTo(3);
+	}
+
 	// HU-24 RF-12: precio es lo que se cobra; con descuento, también el normal y el porcentaje
 	@Test
 	void tarjetaYDetalleConDescuentoDanCobradoNormalYPorcentaje() throws Exception {

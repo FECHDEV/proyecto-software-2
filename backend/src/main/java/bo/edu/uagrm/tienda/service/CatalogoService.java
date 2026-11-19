@@ -1,5 +1,7 @@
 package bo.edu.uagrm.tienda.service;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -42,6 +44,7 @@ public class CatalogoService {
 	private final ProductoRepository productoRepository;
 	private final CategoriaRepository categoriaRepository;
 	private final PreciosDeVenta preciosDeVenta;
+	private final Clock clock;
 
 	public record Filtros(String texto, Long idCategoria, String marca, BigDecimal precioMin, BigDecimal precioMax,
 			boolean soloDisponibles, OrdenCatalogo orden, int pagina) {
@@ -57,8 +60,9 @@ public class CatalogoService {
 		PageRequest paginacion = PageRequest.of(Busquedas.paginaValida(filtros.pagina(), POR_PAGINA), POR_PAGINA,
 				orden.orden());
 		String patron = Busquedas.patron(filtros.texto(), Producto::textoDeBusqueda);
+		// HU-24 RF-13: el filtro y el orden por precio, con el precio con descuento de hoy
 		Page<Producto> pagina = productoRepository.catalogo(patron, filtros.idCategoria(), marca, filtros.precioMin(),
-				filtros.precioMax(), filtros.soloDisponibles(), paginacion);
+				filtros.precioMax(), filtros.soloDisponibles(), LocalDate.now(clock), orden.porPrecio(), paginacion);
 		// HU-24 RF-12: los precios de toda la página en una sola lectura de los descuentos
 		Map<Long, PrecioDeVenta> precios = preciosDeVenta.para(pagina.getContent());
 		return PaginaResponse.from(pagina,
