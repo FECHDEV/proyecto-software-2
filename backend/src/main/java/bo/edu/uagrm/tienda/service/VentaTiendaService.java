@@ -24,6 +24,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import bo.edu.uagrm.tienda.dto.CobroResponse;
 import bo.edu.uagrm.tienda.dto.CompradorResponse;
+import bo.edu.uagrm.tienda.dto.CompradoresResponse;
 import bo.edu.uagrm.tienda.dto.EstadoLineaCarrito;
 import bo.edu.uagrm.tienda.dto.LineaVentaRequest;
 import bo.edu.uagrm.tienda.dto.ProductoVentaResponse;
@@ -74,6 +75,8 @@ public class VentaTiendaService {
 	// En línea son 30 minutos: en el mostrador el cliente está parado enfrente (decisiones.md → Venta en tienda)
 	public static final Duration VIGENCIA = Duration.ofMinutes(10);
 	static final int RESULTADOS = 10;
+	// RF-29: menos letras que estas, sin contar los espacios, no buscan
+	static final int MINIMO_LETRAS = 3;
 	private static final BigDecimal MAXIMA_CANTIDAD = CarritoService.MAXIMO_CANTIDAD;
 
 	private final PedidoRepository pedidoRepository;
@@ -135,6 +138,22 @@ public class VentaTiendaService {
 		}
 		return usuarioRepository.findByCorreo(Usuario.normalizarCorreo(correo)).filter(VentaTiendaService::esComprador)
 				.map(CompradorResponse::from).orElseThrow(UsuarioNoEncontradoException::new);
+	}
+
+	// RF-25, RF-26, RF-29: hasta 10 Clientes activos cuyo «nombre apellido» contiene el texto, sin tildes ni mayúsculas,
+	// con el correo enmascarado; se pide uno más para saber si hay más. Con menos de 3 letras, nada
+	@Transactional(readOnly = true)
+	public CompradoresResponse buscarClientesPorNombre(String nombre) {
+		String texto = nombre == null ? "" : Producto.textoDeBusqueda(nombre);
+		if (texto.replace(" ", "").length() < MINIMO_LETRAS) {
+			return CompradoresResponse.NINGUNO;
+		}
+		List<Usuario> cuentas = usuarioRepository.compradoresPorNombre(Busquedas.patron(texto, valor -> valor),
+				// Duda 5 de la ampliación (Fabio, 18/11/2026): por nombre, apellido y número de cuenta
+				PageRequest.of(0, RESULTADOS + 1, Sort.by("nombre", "apellido", "idUsuario")));
+		return new CompradoresResponse(
+				cuentas.stream().limit(RESULTADOS).map(CompradorResponse::conCorreoOculto).toList(),
+				cuentas.size() > RESULTADOS);
 	}
 
 	// RF-5 a RF-7. En efectivo, todo en una transacción. Con QR, como PagoService.pagar: la venta se registra en una,

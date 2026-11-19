@@ -81,6 +81,13 @@ public class Usuario {
 	@Column(name = "tipo_cliente", nullable = false, length = 20)
 	private TipoCliente tipoCliente = TipoCliente.PUBLICO_GENERAL;
 
+	// «nombre apellido» sin tildes ni mayúsculas, para buscar al comprador en el mostrador (HU-23 RF-25), como
+	// Producto.busqueda. Las cuentas de antes de la columna la reciben al arrancar (BusquedaAlArrancar)
+	@Column(length = LARGO_BUSQUEDA)
+	private String busqueda;
+
+	private static final int LARGO_BUSQUEDA = 161;
+
 	public static Usuario registrarCliente(String nombre, String apellido, String correo, String contrasenaHash,
 			String telefono, LocalDateTime fechaRegistro) {
 		Usuario usuario = new Usuario();
@@ -93,6 +100,7 @@ public class Usuario {
 		usuario.rol = Rol.CLIENTE;
 		usuario.estado = EstadoCuenta.ACTIVA;
 		usuario.correoVerificado = false;
+		usuario.actualizarBusqueda();
 		return usuario;
 	}
 
@@ -107,6 +115,7 @@ public class Usuario {
 		usuario.rol = Rol.ADMINISTRADOR;
 		usuario.estado = EstadoCuenta.ACTIVA;
 		usuario.correoVerificado = true;
+		usuario.actualizarBusqueda();
 		return usuario;
 	}
 
@@ -126,6 +135,20 @@ public class Usuario {
 		this.nombre = Objects.requireNonNull(nombre);
 		this.apellido = Objects.requireNonNull(apellido);
 		this.telefono = telefonoONulo(telefono);
+		actualizarBusqueda();
+	}
+
+	// Quitar las tildes puede alargar el texto (el coreano se separa en letras, «İ» suma un punto): se corta al largo
+	// de la columna, así un nombre válido nunca rompe el registro ni el arranque (/code-review)
+	public void actualizarBusqueda() {
+		String texto = Producto.textoDeBusqueda(nombre + " " + apellido);
+		if (texto.length() > LARGO_BUSQUEDA) {
+			// Sin partir un carácter en dos (un emoji, por ejemplo, ocupa dos posiciones)
+			int corte = Character.isHighSurrogate(texto.charAt(LARGO_BUSQUEDA - 1)) ? LARGO_BUSQUEDA - 1
+					: LARGO_BUSQUEDA;
+			texto = texto.substring(0, corte);
+		}
+		busqueda = texto;
 	}
 
 	public void marcarCorreoVerificado() {

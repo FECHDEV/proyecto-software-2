@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import bo.edu.uagrm.tienda.dto.AnulacionRequest;
 import bo.edu.uagrm.tienda.dto.CompradorResponse;
+import bo.edu.uagrm.tienda.dto.CompradoresResponse;
 import bo.edu.uagrm.tienda.dto.ProductoVentaResponse;
 import bo.edu.uagrm.tienda.dto.VentaRequest;
 import bo.edu.uagrm.tienda.dto.VentaResponse;
@@ -42,6 +43,12 @@ public class VentaTiendaController {
 	@GetMapping("/clientes")
 	public CompradorResponse cliente(@RequestParam(required = false) String correo) {
 		return ventaTiendaService.buscarCliente(correo);
+	}
+
+	// RF-25: con «nombre», la lista por nombre o apellido; sin él, el correo exacto de arriba (RF-4)
+	@GetMapping(value = "/clientes", params = "nombre")
+	public CompradoresResponse clientes(@RequestParam String nombre) {
+		return ventaTiendaService.buscarClientesPorNombre(nombre);
 	}
 
 	@PostMapping

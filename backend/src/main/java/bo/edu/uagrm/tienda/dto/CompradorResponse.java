@@ -9,4 +9,19 @@ public record CompradorResponse(Long idUsuario, String nombre, String correo) {
 		return new CompradorResponse(usuario.getIdUsuario(), usuario.getNombre() + " " + usuario.getApellido(),
 				usuario.getCorreo());
 	}
+
+	// HU-23 RF-26: la búsqueda por nombre nunca devuelve el correo completo
+	public static CompradorResponse conCorreoOculto(Usuario usuario) {
+		return new CompradorResponse(usuario.getIdUsuario(), usuario.getNombre() + " " + usuario.getApellido(),
+				ocultar(usuario.getCorreo()));
+	}
+
+	// Hasta dos caracteres de la parte local, nunca la parte entera, y el dominio completo
+	static String ocultar(String correo) {
+		int arroba = correo.lastIndexOf('@');
+		if (arroba < 1) {
+			return "***";
+		}
+		return correo.substring(0, Math.min(2, arroba - 1)) + "***" + correo.substring(arroba);
+	}
 }
