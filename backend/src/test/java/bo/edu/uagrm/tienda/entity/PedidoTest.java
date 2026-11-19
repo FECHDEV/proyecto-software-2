@@ -87,8 +87,8 @@ class PedidoTest {
 	@Test
 	void elCambioEsLoRecibidoMenosElTotal() {
 		Pedido venta = ventaEnTienda(MedioPago.EFECTIVO, new BigDecimal("100.00"));
-		venta.agregarLinea(producto("85.00"), new BigDecimal("1"));
-		venta.agregarLinea(producto("4.50"), new BigDecimal("2.50"));
+		venta.agregarLinea(producto("85.00"), new BigDecimal("1"), PrecioDeVenta.sinDescuento(producto("85.00").getPrecio()));
+		venta.agregarLinea(producto("4.50"), new BigDecimal("2.50"), PrecioDeVenta.sinDescuento(producto("4.50").getPrecio()));
 
 		assertThat(venta.getTotal()).isEqualByComparingTo("96.25");
 		assertThat(venta.cambio()).isEqualByComparingTo("3.75");
@@ -124,5 +124,86 @@ class PedidoTest {
 	private static Producto producto(String precio) {
 		return Producto.crear("Producto " + precio, null, null, new BigDecimal(precio), UnidadVenta.METRO,
 				Categoria.crear("Herramientas", null), java.util.List.of(), AHORA);
+	}
+
+	// --- HU-24: la línea guarda lo cobrado con descuento ---
+
+	private static final java.time.LocalDate FIN = java.time.LocalDate.of(2026, 10, 31);
+
+	private static Producto producto(String precio, UnidadVenta unidad) {
+		return Producto.crear("Cable", null, null, new BigDecimal(precio), unidad, Categoria.crear("Electricidad", null),
+				java.util.List.of(), AHORA);
+	}
+
+	// HU-24 RF-15
+	@Test
+	void lineaConDescuentoGuardaCobradoNormalPorcentajeYDescontado() {
+		Producto martillo = producto("100.00", UnidadVenta.UNIDAD);
+		Pedido pedido = pendiente();
+
+		pedido.agregarLinea(martillo, new BigDecimal("2"), PrecioDeVenta.de(martillo.getPrecio(), 15, FIN));
+
+		LineaPedido linea = pedido.getLineas().get(0);
+		assertThat(linea.getPrecio()).isEqualByComparingTo("85.00");
+		assertThat(linea.getSubtotal()).isEqualByComparingTo("170.00");
+		assertThat(linea.getPrecioNormal()).isEqualByComparingTo("100.00");
+		assertThat(linea.getDescuento()).isEqualTo(15);
+		assertThat(linea.getDescontado()).isEqualByComparingTo("30.00");
+	}
+
+	// HU-24 RF-8: 4,50 al −15 % = 3,83; × 0,69 = 2,6427 → 2,64. El normal, 4,50 × 0,69 = 3,105 → 3,11: se ahorró 0,47
+	@Test
+	void subtotalConDescuentoYCantidadDecimal() {
+		Producto cable = producto("4.50", UnidadVenta.METRO);
+		Pedido pedido = pendiente();
+
+		pedido.agregarLinea(cable, new BigDecimal("0.69"), PrecioDeVenta.de(cable.getPrecio(), 15, FIN));
+
+		LineaPedido linea = pedido.getLineas().get(0);
+		assertThat(linea.getSubtotal()).isEqualTo(new BigDecimal("2.64"));
+		assertThat(linea.getDescontado()).isEqualTo(new BigDecimal("0.47"));
+	}
+
+	// /code-review: 0,50 al −2 % = 0,49; × 0,10 = 0,049 → 0,05, igual que el normal: sin ahorro, la línea no cuenta como
+	// con descuento
+	@Test
+	void lineaSinAhorroPorElRedondeoNoCuentaComoConDescuento() {
+		Producto cable = producto("0.50", UnidadVenta.METRO);
+		Pedido pedido = pendiente();
+
+		pedido.agregarLinea(cable, new BigDecimal("0.10"), PrecioDeVenta.de(cable.getPrecio(), 2, FIN));
+
+		LineaPedido linea = pedido.getLineas().get(0);
+		assertThat(linea.getSubtotal()).isEqualByComparingTo("0.05");
+		assertThat(linea.getDescuento()).isNull();
+		assertThat(linea.getDescontado()).isNull();
+	}
+
+	// HU-24 RF-15: sin descuento, como antes
+	@Test
+	void lineaSinDescuentoDejaNulos() {
+		Producto martillo = producto("85.00", UnidadVenta.UNIDAD);
+		Pedido pedido = pendiente();
+
+		pedido.agregarLinea(martillo, new BigDecimal("1"), PrecioDeVenta.sinDescuento(martillo.getPrecio()));
+
+		LineaPedido linea = pedido.getLineas().get(0);
+		assertThat(linea.getPrecio()).isEqualByComparingTo("85.00");
+		assertThat(linea.getPrecioNormal()).isNull();
+		assertThat(linea.getDescuento()).isNull();
+		assertThat(linea.getDescontado()).isNull();
+	}
+
+	// HU-24 RF-15: el total es la suma de lo cobrado
+	@Test
+	void totalSumaLosSubtotalesConDescuento() {
+		Producto martillo = producto("100.00", UnidadVenta.UNIDAD);
+		Producto cable = producto("4.50", UnidadVenta.METRO);
+		Pedido pedido = pendiente();
+
+		pedido.agregarLinea(martillo, new BigDecimal("1"), PrecioDeVenta.de(martillo.getPrecio(), 15, FIN));
+		pedido.agregarLinea(cable, new BigDecimal("2.5"), PrecioDeVenta.sinDescuento(cable.getPrecio()));
+
+		assertThat(pedido.getTotal()).isEqualByComparingTo("96.25");
 	}
 }

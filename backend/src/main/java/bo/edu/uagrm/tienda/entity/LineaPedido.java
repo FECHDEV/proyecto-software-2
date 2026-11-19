@@ -72,15 +72,39 @@ public class LineaPedido {
 	@Column(name = "id_linea_carrito")
 	private Long idLineaCarrito;
 
-	LineaPedido(Pedido pedido, Producto producto, BigDecimal cantidad) {
+	// HU-24 RF-15: con descuento, el precio sin él, el porcentaje y lo que se ahorró (normal × cantidad redondeado,
+	// menos el subtotal). Nulos sin descuento y en las líneas de antes: precio y subtotal siempre son lo cobrado, y el
+	// reporte solo suma descontado, sin redondear en la base
+	@Column(name = "precio_normal", precision = 7, scale = 2)
+	private BigDecimal precioNormal;
+
+	private Integer descuento;
+
+	@Column(precision = 11, scale = 2)
+	private BigDecimal descontado;
+
+	LineaPedido(Pedido pedido, Producto producto, BigDecimal cantidad, PrecioDeVenta precioDeVenta) {
 		this.pedido = Objects.requireNonNull(pedido);
 		this.producto = Objects.requireNonNull(producto);
 		this.nombre = producto.getNombre();
 		this.unidad = producto.getUnidad();
-		this.precio = producto.getPrecio();
 		this.costo = producto.getCosto();
 		this.cantidad = cantidad.setScale(2, RoundingMode.UNNECESSARY);
+		// El descuento va sobre el precio unitario: el precio que se ve, el del ticket y el total de la pantalla del
+		// mostrador coinciden al centavo
+		this.precio = precioDeVenta.cobrado();
 		this.subtotal = precio.multiply(this.cantidad).setScale(2, RoundingMode.HALF_UP);
+		if (precioDeVenta.conDescuento()) {
+			BigDecimal ahorro = precioDeVenta.normal().multiply(this.cantidad).setScale(2, RoundingMode.HALF_UP)
+					.subtract(subtotal);
+			// Con una cantidad chica el redondeo puede dejar Bs 0,00 de ahorro: entonces la línea no cuenta como
+			// vendida con descuento ni el ticket dice «−N %» (/code-review)
+			if (ahorro.signum() > 0) {
+				this.precioNormal = precioDeVenta.normal();
+				this.descuento = precioDeVenta.descuento();
+				this.descontado = ahorro;
+			}
+		}
 	}
 
 	public void volvioAlCarrito(BigDecimal cantidadDevuelta, Long idLineaCarrito) {

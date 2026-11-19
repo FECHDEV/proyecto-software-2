@@ -26,6 +26,7 @@ import bo.edu.uagrm.tienda.exception.CategoriaExistenteException;
 import bo.edu.uagrm.tienda.exception.CategoriaNoEncontradaException;
 import bo.edu.uagrm.tienda.exception.ImagenInvalidaException;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
+import bo.edu.uagrm.tienda.repository.DescuentoRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 
 // HU-06: gestión de categorías (y HU-07: las que tienen productos)
@@ -43,11 +44,14 @@ class CategoriaServiceTest {
 	@Mock
 	private ProductoRepository productoRepository;
 
+	@Mock
+	private DescuentoRepository descuentoRepository;
+
 	private CategoriaService servicio;
 
 	@BeforeEach
 	void crearServicio() {
-		servicio = new CategoriaService(categoriaRepository, productoRepository, almacen);
+		servicio = new CategoriaService(categoriaRepository, productoRepository, almacen, descuentoRepository);
 	}
 
 	private void guardaComoViene() {

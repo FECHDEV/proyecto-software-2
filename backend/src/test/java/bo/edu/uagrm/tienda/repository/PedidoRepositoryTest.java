@@ -23,6 +23,7 @@ import bo.edu.uagrm.tienda.entity.EstadoPedido;
 import bo.edu.uagrm.tienda.entity.LineaPedido;
 import bo.edu.uagrm.tienda.entity.MovimientoStock;
 import bo.edu.uagrm.tienda.entity.Pedido;
+import bo.edu.uagrm.tienda.entity.PrecioDeVenta;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.TipoMovimiento;
 import bo.edu.uagrm.tienda.entity.UnidadVenta;
@@ -67,7 +68,7 @@ class PedidoRepositoryTest {
 
 	private Pedido pedido(Usuario cliente, LocalDateTime confirmado) {
 		Pedido pedido = Pedido.confirmar(cliente, "Ana Paz", "70000000", null, confirmado, confirmado.plusMinutes(30));
-		pedido.agregarLinea(martillo, new BigDecimal("2"));
+		pedido.agregarLinea(martillo, new BigDecimal("2"), PrecioDeVenta.sinDescuento(martillo.getPrecio()));
 		return em.persist(pedido);
 	}
 
@@ -75,8 +76,8 @@ class PedidoRepositoryTest {
 	@Test
 	void elPedidoGuardaLasLineasCopiadas() {
 		Pedido pedido = Pedido.confirmar(ana, "  Carla Paz ", " 71234567 ", "  Paso a las 18  ", AHORA, VENCE);
-		pedido.agregarLinea(martillo, new BigDecimal("2"));
-		pedido.agregarLinea(cable, new BigDecimal("3.5"));
+		pedido.agregarLinea(martillo, new BigDecimal("2"), PrecioDeVenta.sinDescuento(martillo.getPrecio()));
+		pedido.agregarLinea(cable, new BigDecimal("3.5"), PrecioDeVenta.sinDescuento(cable.getPrecio()));
 		Long id = em.persist(pedido).getIdPedido();
 		em.flush();
 		martillo.editar("Martillo nuevo", null, null, new BigDecimal("99.00"), UnidadVenta.UNIDAD,
@@ -170,8 +171,8 @@ class PedidoRepositoryTest {
 	void misPedidosCuentaLasLineasSinCargarlas() {
 		Pedido viejo = pedido(ana, AHORA.minusHours(2));
 		Pedido nuevo = Pedido.confirmar(ana, "Ana Paz", "70000000", null, AHORA, VENCE);
-		nuevo.agregarLinea(martillo, new BigDecimal("1"));
-		nuevo.agregarLinea(cable, new BigDecimal("2.5"));
+		nuevo.agregarLinea(martillo, new BigDecimal("1"), PrecioDeVenta.sinDescuento(martillo.getPrecio()));
+		nuevo.agregarLinea(cable, new BigDecimal("2.5"), PrecioDeVenta.sinDescuento(cable.getPrecio()));
 		em.persist(nuevo);
 		pedido(beto, AHORA);
 		em.flush();

@@ -36,6 +36,7 @@ import com.jayway.jsonpath.JsonPath;
 import bo.edu.uagrm.tienda.dto.reportes.ProductoVendido;
 import bo.edu.uagrm.tienda.entity.Categoria;
 import bo.edu.uagrm.tienda.entity.Pedido;
+import bo.edu.uagrm.tienda.entity.PrecioDeVenta;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.TipoCliente;
 import bo.edu.uagrm.tienda.entity.UnidadVenta;
@@ -133,7 +134,7 @@ class ReportesExportarIntegracionTest {
 		Pedido pedido = Pedido.confirmar(cliente, "Ana Paz", "70000000", null, pago.minusMinutes(5),
 				pago.plusMinutes(25));
 		for (int i = 0; i < lineas.length; i += 2) {
-			pedido.agregarLinea((Producto) lineas[i], new BigDecimal(lineas[i + 1].toString()));
+			pedido.agregarLinea((Producto) lineas[i], new BigDecimal(lineas[i + 1].toString()), PrecioDeVenta.sinDescuento(((Producto) lineas[i]).getPrecio()));
 		}
 		pedido.pagar(pago);
 		return pedidoRepository.save(pedido);

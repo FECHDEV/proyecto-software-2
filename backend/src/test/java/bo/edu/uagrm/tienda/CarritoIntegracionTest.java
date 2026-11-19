@@ -3,6 +3,9 @@ package bo.edu.uagrm.tienda;
 import static bo.edu.uagrm.tienda.IpsDePrueba.ipNueva;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,8 +32,10 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
 import com.jayway.jsonpath.JsonPath;
 
+import bo.edu.uagrm.tienda.entity.Descuento;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
+import bo.edu.uagrm.tienda.repository.DescuentoRepository;
 import bo.edu.uagrm.tienda.repository.LineaCarritoRepository;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
@@ -72,6 +77,12 @@ class CarritoIntegracionTest {
 	@Autowired
 	private UsuarioRepository usuarioRepository;
 
+	@Autowired
+	private DescuentoRepository descuentoRepository;
+
+	@Autowired
+	private Clock clock;
+
 	private String admin;
 	private String ana;
 	private String beto;
@@ -96,6 +107,7 @@ class CarritoIntegracionTest {
 	void limpiar() {
 		lineaRepository.deleteAll();
 		movimientoRepository.deleteAll();
+		descuentoRepository.deleteAll();
 		productoRepository.deleteAll();
 		categoriaRepository.deleteAll();
 		CORREOS.forEach(correo -> usuarioRepository.findByCorreo(correo).ifPresent(usuarioRepository::delete));
@@ -159,6 +171,26 @@ class CarritoIntegracionTest {
 
 	private static Integer id(MvcTestResult resultado, String ruta) throws Exception {
 		return JsonPath.read(resultado.getResponse().getContentAsString(), ruta);
+	}
+
+	// HU-24 RF-11, RF-12: la línea con el precio con descuento, el normal y el porcentaje; el total, con lo que se cobra.
+	// 85,50 al −20 % = 68,40 × 2 = 136,80; el cable sin descuento, 12 × 1,5 = 18
+	@Test
+	void lineaYTotalConElPrecioConDescuento() throws Exception {
+		LocalDate hoy = LocalDate.now(clock);
+		descuentoRepository.save(Descuento.deProducto(productoRepository.findById(martillo.longValue()).orElseThrow(),
+				20, hoy, hoy.plusDays(2), usuarioRepository.findByCorreo(ADMIN).orElseThrow(), LocalDateTime.now(clock)));
+		agregar(ana, martillo, "2");
+		agregar(ana, cable, "1.5");
+
+		MvcTestResult carrito = get(CARRITO, ana);
+
+		assertThat(carrito).bodyJson().extractingPath("$.lineas[0].precio").isEqualTo(68.4);
+		assertThat(carrito).bodyJson().extractingPath("$.lineas[0].precioNormal").isEqualTo(85.5);
+		assertThat(carrito).bodyJson().extractingPath("$.lineas[0].descuento").isEqualTo(20);
+		assertThat(carrito).bodyJson().extractingPath("$.lineas[0].subtotal").isEqualTo(136.8);
+		assertThat(carrito).bodyJson().extractingPath("$.lineas[1].descuento").isNull();
+		assertThat(carrito).bodyJson().extractingPath("$.total").isEqualTo(154.8);
 	}
 
 	private MvcTestResult agregar(String token, Integer idProducto, String cantidad) {

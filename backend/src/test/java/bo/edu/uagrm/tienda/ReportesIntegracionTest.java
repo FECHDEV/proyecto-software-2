@@ -26,6 +26,7 @@ import com.jayway.jsonpath.JsonPath;
 
 import bo.edu.uagrm.tienda.entity.Categoria;
 import bo.edu.uagrm.tienda.entity.Pedido;
+import bo.edu.uagrm.tienda.entity.PrecioDeVenta;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.TipoCliente;
 import bo.edu.uagrm.tienda.entity.UnidadVenta;
@@ -145,7 +146,7 @@ class ReportesIntegracionTest {
 	private Pedido confirmado(Usuario cliente, LocalDateTime cuando, Object... lineas) {
 		Pedido pedido = Pedido.confirmar(cliente, "Ana Paz", "70000000", null, cuando, cuando.plusMinutes(30));
 		for (int i = 0; i < lineas.length; i += 2) {
-			pedido.agregarLinea((Producto) lineas[i], new BigDecimal(lineas[i + 1].toString()));
+			pedido.agregarLinea((Producto) lineas[i], new BigDecimal(lineas[i + 1].toString()), PrecioDeVenta.sinDescuento(((Producto) lineas[i]).getPrecio()));
 		}
 		return pedido;
 	}
@@ -482,7 +483,7 @@ class ReportesIntegracionTest {
 		Pedido venta = Pedido.enTienda(comprador, personal, medio,
 				medio == bo.edu.uagrm.tienda.entity.MedioPago.EFECTIVO ? new BigDecimal("10000") : null,
 				pago.minusMinutes(1), java.time.Duration.ofMinutes(10));
-		venta.agregarLinea(pieza, new BigDecimal(piezas));
+		venta.agregarLinea(pieza, new BigDecimal(piezas), PrecioDeVenta.sinDescuento(pieza.getPrecio()));
 		venta.cobrarEnTienda(pago);
 		return pedidoRepository.save(venta);
 	}
@@ -552,7 +553,7 @@ class ReportesIntegracionTest {
 		pedidoRepository.save(perdido);
 		Pedido cancelada = Pedido.enTienda(null, personal, bo.edu.uagrm.tienda.entity.MedioPago.QR, null,
 				dia(10, 6, 10, 0), java.time.Duration.ofMinutes(10));
-		cancelada.agregarLinea(pieza, new BigDecimal(3));
+		cancelada.agregarLinea(pieza, new BigDecimal(3), PrecioDeVenta.sinDescuento(pieza.getPrecio()));
 		cancelada.cancelar(dia(10, 6, 10, 2));
 		pedidoRepository.save(cancelada);
 

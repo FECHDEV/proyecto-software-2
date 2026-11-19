@@ -42,6 +42,7 @@ import bo.edu.uagrm.tienda.entity.LineaCarrito;
 import bo.edu.uagrm.tienda.entity.LineaPedido;
 import bo.edu.uagrm.tienda.entity.MovimientoStock;
 import bo.edu.uagrm.tienda.entity.Pedido;
+import bo.edu.uagrm.tienda.entity.PrecioDeVenta;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.Usuario;
 import bo.edu.uagrm.tienda.exception.CarritoVacioException;
@@ -88,6 +89,7 @@ public class PedidoService {
 	private final MovimientoStockRepository movimientoRepository;
 	private final CobroRepository cobroRepository;
 	private final RetiroProperties retiroProperties;
+	private final PreciosDeVenta preciosDeVenta;
 	private final Clock clock;
 
 	// Con el simulador, la página muestra sus botones (HU-13 RF-12)
@@ -137,8 +139,12 @@ public class PedidoService {
 		}
 		Pedido pedido = Pedido.confirmar(cliente, solicitud.nombreRetira(), solicitud.telefonoRetira(),
 				solicitud.nota(), ahora, ahora.plus(VIGENCIA));
-		lineas.forEach(linea -> pedido.agregarLinea(linea.getProducto(), linea.getCantidad()));
-		// Con los precios del servidor; el del cliente solo se compara (RF-15)
+		// HU-24 RF-15: con el descuento de hoy, calculado en el servidor
+		Map<Long, PrecioDeVenta> precios = preciosDeVenta.para(lineas.stream().map(LineaCarrito::getProducto).toList());
+		lineas.forEach(linea -> pedido.agregarLinea(linea.getProducto(), linea.getCantidad(),
+				precios.get(linea.getProducto().getIdProducto())));
+		// Con los precios del servidor; el del cliente solo se compara (RF-15; HU-24 RF-16: también si un descuento
+		// empezó o terminó mientras miraba)
 		if (pedido.getTotal().compareTo(solicitud.totalEsperado()) != 0) {
 			throw new TotalCambiadoException(pedido.getTotal());
 		}
