@@ -35,7 +35,7 @@
           <div class="datos">
             <a class="nombre" [routerLink]="['/producto', linea.idProducto]">{{ linea.nombre }}</a>
             <p class="precio">
-              {{ precio(linea.precio) }}
+              <app-precio [precio]="linea.precio" [precioNormal]="linea.precioNormal" [descuento]="linea.descuento" />
               @if (unidad(linea); as unidad) {
                 <span class="unidad">/ {{ unidad }}</span>
               }

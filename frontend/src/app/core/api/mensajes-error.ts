@@ -1,3 +1,4 @@
+import { fechaCorta } from '../../shared/formato/fechas';
 import { cantidad } from '../../shared/formato/precios';
 import { ErrorApi, errorDelCampo } from '../modelos/error-api';
 
@@ -60,6 +61,10 @@ const MENSAJES: Record<string, string> = {
 	VENTA_NO_ENCONTRADA: 'No encontramos esa venta.',
 	VENTA_NO_ANULABLE: 'Esta venta ya no se puede anular: solo una en efectivo y del día.',
 	COBRO_NO_ENCONTRADO: 'Este pedido no tiene un cobro pendiente.',
+	// HU-24
+	DESCUENTO_SOLAPADO: 'Se cruza con otro descuento en las mismas fechas.',
+	DESCUENTO_NO_EDITABLE: 'Ese descuento ya empezó o terminó: no se puede cambiar. La lista ya está al día.',
+	DESCUENTO_NO_ENCONTRADO: 'Ese descuento ya no existe. La lista ya está al día.',
 	SIN_CONEXION: 'No pudimos conectar con el servidor. Intente de nuevo.',
 	ERROR_SERVIDOR: 'El servidor tuvo un problema. Vuelva a intentarlo en un momento.',
 };
@@ -74,6 +79,14 @@ export function mensajeDeError(error: ErrorApi | null): string {
 	}
 	if (error.codigo === 'CONTEO_MENOR_QUE_COMPROMETIDO' && error.comprometido !== undefined) {
 		return `Contaron menos de lo que ya está vendido o reservado (${cantidad(error.comprometido)}). Revise el conteo.`;
+	}
+	if (
+		error.codigo === 'DESCUENTO_SOLAPADO' &&
+		error.porcentaje !== undefined &&
+		error.inicio !== undefined &&
+		error.fin !== undefined
+	) {
+		return `Se cruza con el descuento del ${error.porcentaje} % del ${fechaCorta(error.inicio)} al ${fechaCorta(error.fin)}.`;
 	}
 	return error.codigo === undefined ? GENERICO : mensajeDelCodigo(error.codigo);
 }
@@ -115,6 +128,10 @@ const NOMBRES_DE_CAMPO: Record<string, string> = {
 	nombreRetira: 'El nombre de quien retira',
 	telefonoRetira: 'El teléfono de quien retira',
 	totalEsperado: 'El total',
+	porcentaje: 'El porcentaje',
+	inicio: 'La fecha de inicio',
+	fin: 'La fecha de fin',
+	idProducto: 'El producto',
 };
 
 export function mensajeDeCampo(campo: string, mensaje: string): string {

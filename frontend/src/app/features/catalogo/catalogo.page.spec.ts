@@ -17,6 +17,8 @@ const PALA: ProductoEnTienda = {
   nombre: 'Pala',
   marca: 'Truper',
   precio: 50,
+  precioNormal: null,
+  descuento: null,
   unidad: 'UNIDAD',
   imagenPrincipal: null,
   disponible: true,

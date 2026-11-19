@@ -16,7 +16,7 @@ const VENTA: Venta = {
   pagado: '2026-11-05T10:00:00',
   comprador: null,
   vendidoPor: 'Eva Paz',
-  lineas: [{ idProducto: 1, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85, cantidad: 1, subtotal: 85 }],
+  lineas: [{ idProducto: 1, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85, precioNormal: null, descuento: null, descontado: null, cantidad: 1, subtotal: 85 }],
   total: 85,
   medio: 'EFECTIVO',
   recibido: 100,
@@ -123,6 +123,14 @@ describe('VentasService', () => {
     );
 
     await expect(respuesta).rejects.toMatchObject({ status: 409, codigo: 'STOCK_INSUFICIENTE' });
+  });
+
+  // HU-23 RF-14; HU-24 RF-16: el precio de hoy trae también el normal y el descuento
+  it('trae el precio de hoy con su descuento', async () => {
+    const deHoy = servicio.precioDeHoy(7);
+    http.expectOne('/api/productos/7').flush({ idProducto: 7, precio: 85, precioNormal: 100, descuento: 15, nombre: 'x' });
+
+    expect(await deHoy).toEqual({ precio: 85, precioNormal: 100, descuento: 15 });
   });
 
   // HU-23 RF-8, RF-9, RF-18, RF-19 y el simulador

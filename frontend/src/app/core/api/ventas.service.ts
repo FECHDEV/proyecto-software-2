@@ -2,7 +2,7 @@ import { HttpClient, httpResource, HttpResourceRef } from '@angular/common/http'
 import { inject, Injectable, Signal } from '@angular/core';
 
 import { ResultadoSimulado } from '../modelos/pedido';
-import { Comprador, CompradoresEncontrados, ProductoParaVenta, SolicitudDeVenta, Venta } from '../modelos/venta';
+import { Comprador, CompradoresEncontrados, PrecioDeHoy, ProductoParaVenta, SolicitudDeVenta, Venta } from '../modelos/venta';
 import { escribir } from './escribir';
 
 const VENTAS = '/api/ventas';
@@ -63,10 +63,13 @@ export class VentasService {
 		return escribir(this.http.post<Venta>(`${VENTAS}/${idPedido}/anulacion`, { motivo: motivo.trim() }));
 	}
 
-	// RF-14: el precio de hoy de un producto, para volver a mostrar la venta si cambió mientras se armaba
-	async precioDeHoy(idProducto: number): Promise<number> {
-		const producto = await escribir(this.http.get<{ precio: number }>(`/api/productos/${idProducto}`));
-		return producto.precio;
+	// RF-14: el precio de hoy de un producto, para volver a mostrar la venta si cambió mientras se armaba; con su
+	// descuento, que pudo empezar o terminar mientras tanto (HU-24 RF-16)
+	async precioDeHoy(idProducto: number): Promise<PrecioDeHoy> {
+		const { precio, precioNormal, descuento } = await escribir(
+			this.http.get<PrecioDeHoy>(`/api/productos/${idProducto}`),
+		);
+		return { precio, precioNormal, descuento };
 	}
 
 	// Solo con el simulador, como en el pago en línea (HU-13 RF-12)

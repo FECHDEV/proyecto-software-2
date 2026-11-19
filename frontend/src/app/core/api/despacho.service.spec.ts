@@ -10,7 +10,7 @@ import { DespachoService } from './despacho.service';
 const FICHA: FichaDePedido = {
   idPedido: 12,
   estado: 'ENTREGADO',
-  lineas: [{ idProducto: 7, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85.5, cantidad: 2, subtotal: 171 }],
+  lineas: [{ idProducto: 7, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85.5, precioNormal: null, descuento: null, descontado: null, cantidad: 2, subtotal: 171 }],
   total: 171,
   nombreRetira: 'José Pérez',
   telefonoRetira: '70000000',

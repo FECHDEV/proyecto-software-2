@@ -28,6 +28,7 @@ import {
 } from '../../core/modelos/venta';
 import { cantidadConPaso, leerCantidad, problemaDeCantidad } from '../../shared/formato/cantidades';
 import { cantidad, precio } from '../../shared/formato/precios';
+import { Precio } from '../../shared/precio/precio';
 import { PasoDeCantidad } from '../../shared/paso-de-cantidad/paso-de-cantidad';
 import { BusquedaDeComprador } from './busqueda-de-comprador';
 import { BusquedaDeProductos } from './busqueda-de-productos';
@@ -50,7 +51,7 @@ interface LineaEnVenta {
 // pantalla hasta cobrar: con QR, cancelar las deja para cobrar de otra forma
 @Component({
 	selector: 'app-venta',
-	imports: [BusquedaDeComprador, BusquedaDeProductos, LucideTrash2, PasoDeCantidad, QrDeVenta],
+	imports: [BusquedaDeComprador, BusquedaDeProductos, LucideTrash2, PasoDeCantidad, Precio, QrDeVenta],
 	templateUrl: './venta.page.html',
 	styleUrl: './venta.page.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -369,7 +370,7 @@ export class VentaPage {
 			this.lineas().map(async (linea) => {
 				try {
 					const deHoy = await this.ventas.precioDeHoy(linea.producto.idProducto);
-					return { ...linea, producto: { ...linea.producto, precio: deHoy } };
+					return { ...linea, producto: { ...linea.producto, ...deHoy } };
 				} catch {
 					return linea;
 				}

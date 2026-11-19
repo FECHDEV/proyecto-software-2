@@ -23,6 +23,10 @@ export interface ErrorApi {
 	total?: number;
 	// el ajuste con menos de lo comprometido (HU-08 RF-18)
 	comprometido?: number;
+	// el descuento con el que se cruza (HU-24 RF-2)
+	porcentaje?: number;
+	inicio?: string;
+	fin?: string;
 }
 
 export function esErrorApi(valor: unknown): valor is ErrorApi {

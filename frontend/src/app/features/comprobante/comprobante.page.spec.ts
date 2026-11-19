@@ -23,8 +23,8 @@ const EN_EFECTIVO: Venta = {
   comprador: { idUsuario: 4, nombre: 'Ana Paz', correo: 'ana@mail.com' },
   vendidoPor: 'Eva Rojas',
   lineas: [
-    { idProducto: 1, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85, cantidad: 1, subtotal: 85 },
-    { idProducto: 2, nombre: 'Cable', unidad: 'METRO', precio: 4.5, cantidad: 2.5, subtotal: 11.25 },
+    { idProducto: 1, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85, precioNormal: null, descuento: null, descontado: null, cantidad: 1, subtotal: 85 },
+    { idProducto: 2, nombre: 'Cable', unidad: 'METRO', precio: 4.5, precioNormal: null, descuento: null, descontado: null, cantidad: 2.5, subtotal: 11.25 },
   ],
   total: 96.25,
   medio: 'EFECTIVO',

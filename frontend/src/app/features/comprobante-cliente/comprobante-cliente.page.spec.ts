@@ -15,7 +15,7 @@ const EN_LINEA: Comprobante = {
   fecha: '2026-11-17T10:30:00',
   cliente: 'Ana Paz',
   vendidoPor: null,
-  lineas: [{ idProducto: 1, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85.5, cantidad: 2, subtotal: 171 }],
+  lineas: [{ idProducto: 1, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85.5, precioNormal: null, descuento: null, descontado: null, cantidad: 2, subtotal: 171 }],
   total: 171,
   medio: null,
   recibido: null,

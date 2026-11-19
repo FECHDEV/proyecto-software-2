@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 
 import { VentasService } from '../../core/api/ventas.service';
 import { ErrorApi } from '../../core/modelos/error-api';
-import { Comprador, CompradoresEncontrados, ProductoParaVenta, SolicitudDeVenta, Venta } from '../../core/modelos/venta';
+import { Comprador, CompradoresEncontrados, PrecioDeHoy, ProductoParaVenta, SolicitudDeVenta, Venta } from '../../core/modelos/venta';
 import { VentaPage } from './venta.page';
 
 const MARTILLO: ProductoParaVenta = {
@@ -14,6 +14,8 @@ const MARTILLO: ProductoParaVenta = {
   nombre: 'Martillo',
   imagen: null,
   precio: 85,
+  precioNormal: null,
+  descuento: null,
   unidad: 'UNIDAD',
   disponible: 10,
 };
@@ -22,9 +24,13 @@ const CABLE: ProductoParaVenta = {
   nombre: 'Cable',
   imagen: null,
   precio: 4.5,
+  precioNormal: null,
+  descuento: null,
   unidad: 'METRO',
   disponible: 3,
 };
+// HU-24: 4,50 al −15 % = 3,825, que se cobra 3,83
+const CABLE_CON_DESCUENTO: ProductoParaVenta = { ...CABLE, precio: 3.83, precioNormal: 4.5, descuento: 15 };
 
 function venta(cambios: Partial<Venta> = {}): Venta {
   return {
@@ -79,7 +85,9 @@ class VentasFalso {
     (_nombre: string): Promise<CompradoresEncontrados> =>
       Promise.resolve({ cuentas: [{ idUsuario: 7, nombre: 'Eva Rojas', correo: 'ev***@mail.com' }], hayMas: false }),
   );
-  readonly precioDeHoy = vi.fn((_id: number): Promise<number> => Promise.resolve(90));
+  readonly precioDeHoy = vi.fn(
+    (_id: number): Promise<PrecioDeHoy> => Promise.resolve({ precio: 90, precioNormal: null, descuento: null }),
+  );
   productos() {
     return this.resultados;
   }
@@ -279,6 +287,53 @@ describe('VentaPage', () => {
     await tocar('Cobrar en efectivo');
 
     expect(ventas.registrar).toHaveBeenCalledWith(expect.objectContaining({ totalEsperado: 88.11 }));
+  });
+
+  // HU-24 RF-11: la línea y el resultado de la búsqueda con descuento
+  it('RF-11: la línea con descuento', async () => {
+    await abrir();
+    ventas.resultados.value.set([MARTILLO, CABLE_CON_DESCUENTO]);
+    await harness.fixture.whenStable();
+    const resultado = Array.from(pantalla().querySelectorAll<HTMLElement>('.resultado')).find((cada) =>
+      cada.textContent?.includes('Cable'),
+    )!;
+    expect(resultado.querySelector('s')?.textContent).toContain('4,50');
+
+    await tocarProducto('Cable');
+
+    expect(lineas()[0].querySelector('s')?.textContent).toContain('4,50');
+    expect(lineas()[0].querySelector('.cobrado')?.textContent).toContain('3,83');
+    expect(lineas()[0].querySelector('.marca')?.textContent?.trim()).toBe('−15 %');
+  });
+
+  // HU-24 RF-15: la pantalla calcula con el precio con descuento, igual que el servidor: 3,83 × 0,69 = 2,6427 → 2,64
+  it('RF-15: el total con el precio con descuento coincide con el del servidor', async () => {
+    await abrir();
+    ventas.resultados.value.set([CABLE_CON_DESCUENTO]);
+    await harness.fixture.whenStable();
+    await tocarProducto('Cable');
+    await escribirCantidad(0, '0,69');
+    await escribirRecibido('10');
+
+    await tocar('Cobrar en efectivo');
+
+    expect(ventas.registrar).toHaveBeenCalledWith(expect.objectContaining({ totalEsperado: 2.64 }));
+  });
+
+  // HU-24 RF-16: un descuento que empezó mientras se armaba la venta da TOTAL_CAMBIADO; se trae el precio con descuento
+  it('RF-16: ante TOTAL_CAMBIADO trae otra vez el precio con descuento', async () => {
+    await abrir();
+    await tocarProducto('Cable');
+    await escribirRecibido('10');
+    ventas.precioDeHoy.mockResolvedValueOnce({ precio: 3.83, precioNormal: 4.5, descuento: 15 });
+    ventas.registrar.mockRejectedValueOnce({ status: 409, detail: 'x', codigo: 'TOTAL_CAMBIADO', total: 3.83 });
+
+    await tocar('Cobrar en efectivo');
+    await harness.fixture.whenStable();
+
+    expect(lineas()[0].querySelector('.cobrado')?.textContent).toContain('3,83');
+    expect(lineas()[0].querySelector('s')?.textContent).toContain('4,50');
+    expect(pantalla().querySelector('.aviso')?.textContent).toContain('Cambió un precio');
   });
 
   // HU-23 RF-6: en efectivo registra con el total que se vio y va al comprobante

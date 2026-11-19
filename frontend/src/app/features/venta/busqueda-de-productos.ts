@@ -3,7 +3,8 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, output, 
 import { VentasService } from '../../core/api/ventas.service';
 import { unidadPara } from '../../core/modelos/producto';
 import { ProductoParaVenta } from '../../core/modelos/venta';
-import { cantidad, precio } from '../../shared/formato/precios';
+import { cantidad } from '../../shared/formato/precios';
+import { Precio } from '../../shared/precio/precio';
 
 // Cuánto se espera después de la última tecla antes de buscar
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -14,6 +15,7 @@ const ESPERA_DE_BUSQUEDA_MS = 300;
 // pantalla pasaban el presupuesto de 6 kB
 @Component({
 	selector: 'app-busqueda-de-productos',
+	imports: [Precio],
 	templateUrl: './busqueda-de-productos.html',
 	styleUrl: './busqueda-de-productos.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,7 +29,6 @@ export class BusquedaDeProductos {
 	readonly bloqueada = input(false);
 	readonly elegir = output<ProductoParaVenta>();
 
-	protected readonly precio = precio;
 	protected readonly unidadPara = unidadPara;
 	protected readonly textoBuscado = signal('');
 	private readonly buscado = signal('');
