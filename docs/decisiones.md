@@ -1369,6 +1369,25 @@ mismo equipo.
   vencer**. **Cada línea del pedido guarda cuánto volvió al carrito**
   (`cantidad_devuelta`): el pago tardío resta solo eso.
 
+- *18/11/2026 (auditoría, issue #121, decisión de Fabio).* **La tarea de cada
+  minuto mira los cobros de las últimas 48 horas,** no 24: la deuda de un
+  cobro generado después de las 23:30 vence a las 23:59 del día siguiente
+  (`AdaptadorLibelula.vencimiento`), y con 24 horas un pago de esa última
+  media hora solo se aplicaba si llegaba el aviso. 48 horas cubre ese caso
+  con margen; el costo es consultar un día más los cobros abandonados.
+- *18/11/2026 (auditoría, issue #121).* **Un aviso a la vez por cobro:** si
+  llegan varios avisos del mismo cobro mientras uno consulta, no se abren
+  más consultas en paralelo; el que consulta hace **una vuelta más** al
+  terminar, para no perder un pago que llegó durante su consulta. El aviso
+  sigue respondiendo 200 en el acto. **No se limita por IP:** los avisos
+  legítimos llegan siempre desde los servidores del proveedor, y un límite
+  por IP frenaría justo a esos; lo que se protege es el proveedor y los
+  hilos del servidor, y eso depende del cobro, no de quién avisa.
+- *18/11/2026 (auditoría, issue #121).* **La dirección de vuelta de la
+  pasarela** (`url_retorno`) es la página del pedido solo en línea; una venta
+  del mostrador manda la portada de la tienda: quien paga frente al
+  mostrador no tiene un pedido en «Mis pedidos» al que volver.
+
 **Motivo:** el pago por QR se hace en la app del banco, así que la tienda
 solo puede preguntar; consultar antes de vencer y aceptar el pago tardío
 evita cobrar sin entregar, y la deuda que vence por día deja pagar un QR
@@ -1402,6 +1421,20 @@ después de los 30 minutos del pedido.
   teléfono para llamarlos; la tienda no les manda correos.
 - **Fuera:** crédito, descuentos y cupones y campañas por correo. Exportar
   es de HU-19 (ver «Exportar reportes»).
+- *18/11/2026 (auditoría, issue #121, decisión de Fabio).* **«Clientes
+  inactivos» mira todos los canales:** inactivo es quien no compró nada en
+  los días elegidos por **ningún** canal. Con un canal elegido (HU-23
+  RF-22), la lista muestra los clientes que compraron alguna vez en ese
+  canal, pero la última compra, los pedidos y el total cuentan todos los
+  canales: quien compró ayer en el mostrador no aparece inactivo en «En
+  línea» (HU-23 RF-36). **Motivo:** el filtro por canal volvía inactivo a
+  quien seguía comprando por el otro canal, y el Contador lo llamaba sin
+  motivo.
+- *18/11/2026 (auditoría, issue #121, decisión de Fabio).* **«Por medio de
+  pago» tiene una fila «En línea»** aparte de QR y Efectivo (HU-23 RF-35):
+  de una compra en línea la tienda no sabe con qué se pagó en la página del
+  proveedor (como el comprobante, que dice «En línea»), y sumarla a QR
+  inflaba el QR del mostrador. QR queda solo para el QR del mostrador.
 
 **Motivo:** el Contador necesita controlar el dinero y además saber qué
 rebajar y a quién llamar; contar la venta al pagar coincide con el dinero que
@@ -1563,6 +1596,33 @@ cuenta en los reportes junto con las en línea.
   fuera, ver «Reportes»); solo productos activos; el stock nunca queda
   negativo, y si el sistema dice que no alcanza pero está en el estante, se
   corrige primero con un ajuste del inventario.
+- *18/11/2026 (auditoría, issue #121, decisión de Fabio; **cambia lo decidido
+  el 06/11/2026** en la prueba manual de HU-23).* **Cancelar una venta con QR
+  consulta antes al sistema de pago:** si el pago ya llegó, la venta queda
+  «Entregado» y no se cancela (HU-23 RF-31). **Y el pago que llega después
+  de cancelarla queda «Pago a devolver»,** sin volver a reservar (RF-32): la
+  venta vencida sigue con el pago tardío de RF-11 (Fabio: en el mostrador
+  no se entrega sin ver el pago; si el QR vence, se cobra en efectivo y
+  el pago tardío llega igual, la venta se deshace a mano, porque es muy
+  difícil que pase). Si el sistema de pago no
+  responde, se cancela igual, y un pago que llegue después queda para
+  devolver. **Motivo:** el 06/11 se dejó que la cancelada reviviera como
+  «Pagado»; en la auditoría se vio que, si el cliente paga con el QR justo
+  cuando el Empleado cancela para cobrarle en efectivo, paga dos veces, el
+  stock baja dos veces y en «Pedidos» queda un «Pagado» para entregar a
+  alguien que ya se fue con la mercadería. Consultar antes evita casi todos
+  esos casos; «Pago a devolver» deja visible el que se escapa, para
+  devolverlo fuera del sistema como cualquier otro.
+- *18/11/2026 (auditoría, issue #121).* **«Nueva venta» avisa antes de
+  salir** con líneas armadas o con un cobro con QR en curso (RF-33), con el
+  diálogo de los cambios sin guardar; salir con el QR a la vista no cancela
+  la venta: espera el pago hasta vencer. **«Imprimir» solo en una venta
+  hecha** («Entregado», «Pagado» o «Anulado», RF-34): el ticket de una venta
+  pendiente, cancelada, vencida o con pago a devolver no es un comprobante.
+- *18/11/2026 (auditoría, decisión de Fabio).* **Lo recibido en efectivo
+  tiene el tope de Bs 999 999,99** (RF-13): una venta mayor no se cobra en
+  efectivo. Se acepta: ninguna venta del mostrador de una ferretería llega a
+  ese monto.
 
 **Motivo:** la tienda tiene un local y un solo inventario: una venta del
 mostrador que no se registra deja el stock y los reportes desfasados, y la
