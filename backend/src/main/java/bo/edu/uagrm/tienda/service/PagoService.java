@@ -49,6 +49,8 @@ public class PagoService {
 	private final TransactionTemplate transaccion;
 	// Los cobros que la página o el aviso están consultando ahora (revisión total, 26/10/2026)
 	private final Set<Long> enConsulta = ConcurrentHashMap.newKeySet();
+	// Los avisos del sistema de pago, uno a la vez por cobro (RF-10, RF-11)
+	private final UnaConsultaPorCobro avisos = new UnaConsultaPorCobro();
 
 	public PagoService(PedidoService pedidoService, PedidoRepository pedidoRepository, CobroRepository cobroRepository,
 			ConciliacionDePagos conciliacionDePagos, IPago iPago, Clock clock,
@@ -73,7 +75,8 @@ public class PagoService {
 		}
 		CobroGenerado generado;
 		try {
-			generado = iPago.generarCobro(idPedido, preparacion.monto(), preparacion.concepto());
+			generado = iPago.generarCobro(idPedido, preparacion.monto(), preparacion.concepto(),
+					"/mis-pedidos/" + idPedido);
 		} catch (SistemaDePagoNoDisponibleException error) {
 			log.warn("No se pudo generar el cobro del pedido {}", idPedido, error);
 			throw new CobroNoDisponibleException(); // RF-3: no se guardó nada
@@ -96,14 +99,16 @@ public class PagoService {
 		if (referencia == null || referencia.isBlank() || referencia.length() > LARGO_DE_LA_REFERENCIA) {
 			return;
 		}
-		// Siempre, aunque la página esté consultando: esa consulta pudo leer el cobro antes del pago (/code-review)
-		cobroRepository.idPorReferencia(referencia).ifPresent(conciliacionDePagos::conciliar);
+		// Siempre, aunque la página esté consultando: esa consulta pudo leer el cobro antes del pago (/code-review). Si
+		// otro aviso del mismo cobro está consultando, le pide una vuelta más en vez de llamar a la vez (auditoría)
+		cobroRepository.idPorReferencia(referencia)
+				.ifPresent(idCobro -> avisos.ejecutar(idCobro, () -> conciliacionDePagos.conciliar(idCobro)));
 	}
 
 	// Una sola consulta en curso por cobro: cada una llama al sistema de pago y ocupa un hilo hasta 15 s, y muchas a la
 	// vez del mismo cobro podían agotar los del servidor. La que llega mientras otra espera no vuelve a llamar: devuelve
 	// el pedido como está. Una consulta que ya terminó no frena a la siguiente («Ya pagué»), y el aviso, la tarea de
-	// cada minuto y el vencimiento consultan siempre (revisión total, 26/10/2026)
+	// cada minuto y el vencimiento consultan siempre (revisión total, 26/10/2026); el aviso, de a uno por cobro
 	private void conciliarSiNadieLoHace(Long idCobro) {
 		if (!enConsulta.add(idCobro)) {
 			return;

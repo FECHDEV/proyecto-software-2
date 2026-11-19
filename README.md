@@ -10,7 +10,7 @@ historia por historia, con Scrum y el flujo SDD de `docs/flujo-sdd.md`.
 | Capa | Tecnología |
 |---|---|
 | Frontend | Angular 22 (Signal Forms, Vitest) |
-| Backend | Java 21 / Spring Boot 4.1.1 |
+| Backend | Java 21 / Spring Boot 4.1 |
 | Comunicación | API REST |
 | Base de datos | MySQL 8.4 (H2 en las pruebas) |
 | Correo | Gmail por SMTP, con simulador por defecto |

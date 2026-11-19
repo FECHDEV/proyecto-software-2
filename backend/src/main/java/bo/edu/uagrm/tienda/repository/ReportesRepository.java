@@ -106,12 +106,16 @@ public interface ReportesRepository extends Repository<Pedido, Long> {
 	List<UltimaVentaFila> ultimasVentas(@Param("estados") Collection<EstadoPedido> estados,
 			@Param("canal") Canal canal);
 
-	// RF-16: las cuentas activas del rol dado que compraron alguna vez, pero no desde el límite
+	// RF-16: las cuentas activas del rol dado que compraron alguna vez, pero no desde el límite. HU-23 RF-36: el canal
+	// solo elige a quién mirar (los que compraron alguna vez en él); la última compra, los pedidos y el total son de
+	// todos los canales, así nadie queda inactivo por haber comprado en el otro
 	@Query("""
 			select new bo.edu.uagrm.tienda.dto.reportes.CompraFila(u.idUsuario, max(p.pagado), count(p), sum(p.total))
 			from Pedido p join p.usuario u
 			where p.estado in :estados and u.rol = :rol and u.estado = :cuenta
-				and (:tipo is null or u.tipoCliente = :tipo) and (:canal is null or p.canal = :canal)
+				and (:tipo is null or u.tipoCliente = :tipo)
+				and (:canal is null or exists (select 1 from Pedido q where q.usuario = u and q.canal = :canal
+					and q.estado in :estados))
 			group by u.idUsuario
 			having max(p.pagado) <= :limite""")
 	List<CompraFila> comprasHasta(@Param("estados") Collection<EstadoPedido> estados, @Param("rol") Rol rol,

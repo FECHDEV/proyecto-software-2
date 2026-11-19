@@ -55,7 +55,7 @@ class LibelulaConfigTest {
 				"http://127.0.0.1:" + servidor.getAddress().getPort(), "clave-de-prueba", "pagos@tienda.test",
 				"http://localhost"), Clock.systemDefaultZone());
 
-		assertThatThrownBy(() -> pago.generarCobro(7L, new BigDecimal("0.10"), "Pedido N.º 7 — Prueba"))
+		assertThatThrownBy(() -> pago.generarCobro(7L, new BigDecimal("0.10"), "Pedido N.º 7 — Prueba", null))
 				.isInstanceOf(SistemaDePagoNoDisponibleException.class).hasMessageContaining("eco");
 
 		assertThat(cabeceras.get().getFirst("Content-Length")).isNotNull();

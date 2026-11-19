@@ -16,8 +16,13 @@
 }
 
 .correo {
-	overflow-wrap: anywhere;
 	color: var(--app-texto-suave);
+}
+
+// Solo el correo se corta en cualquier letra; el rótulo «Correo» (::before de la celda en el celular), no
+.correo-texto {
+	min-width: 0;
+	overflow-wrap: anywhere;
 }
 
 // El estado no depende solo del color: círculo para activa, cuadrado para

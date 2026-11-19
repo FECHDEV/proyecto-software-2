@@ -83,17 +83,31 @@ class AdaptadorLibelulaTest {
 				.andRespond(withSuccess(registrada("\"qr_simple_base64\": \"" + base64("QR-40") + "\""),
 						MediaType.APPLICATION_JSON));
 
-		CobroGenerado cobro = adaptador.generarCobro(40L, new BigDecimal("150.50"), "Pedido N.º 40 — Tienda Montero");
+		CobroGenerado cobro = adaptador.generarCobro(40L, new BigDecimal("150.50"), "Pedido N.º 40 — Tienda Montero",
+				"/mis-pedidos/40");
 
 		servidor.verify();
 		assertThat(cobro.referencia()).matches("TM-P40-[0-9a-f]{8}");
+	}
+
+	// HU-13 RF-13: el QR del mostrador no tiene a dónde volver en «Mis pedidos»: vuelve a la portada
+	@Test
+	void sinRutaDeRetornoVuelveALaPortada() {
+		servidor.expect(once(), requestTo(REGISTRAR)).andExpect(method(HttpMethod.POST))
+				.andExpect(jsonPath("$.url_retorno").value("https://tienda.test/"))
+				.andRespond(withSuccess(registrada("\"qr_simple_base64\": \"" + base64("QR-40") + "\""),
+						MediaType.APPLICATION_JSON));
+
+		adaptador.generarCobro(40L, BigDecimal.TEN, "Venta N.º 40", null);
+
+		servidor.verify();
 	}
 
 	@Test
 	void devuelveElTextoDelQrYLaPasarela() {
 		responderRegistro(registrada("\"qr_simple_base64\": \"" + base64(LectorDeQrTest.TEXTO) + "\""));
 
-		CobroGenerado cobro = adaptador.generarCobro(40L, new BigDecimal("150.50"), "Pedido N.º 40");
+		CobroGenerado cobro = adaptador.generarCobro(40L, new BigDecimal("150.50"), "Pedido N.º 40", null);
 
 		assertThat(cobro.codigoQr()).isEqualTo(LectorDeQrTest.TEXTO);
 		assertThat(cobro.urlPasarela()).isEqualTo("https://pagos.libelula.test/?id=a1b2-c3d4");
@@ -103,7 +117,7 @@ class AdaptadorLibelulaTest {
 	void aceptaElQrConPrefijoData() {
 		responderRegistro(registrada("\"qr_simple_base64\": \"data:image/png;base64," + base64("QR-40") + "\""));
 
-		assertThat(adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40").codigoQr()).isEqualTo("QR-40");
+		assertThat(adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null).codigoQr()).isEqualTo("QR-40");
 	}
 
 	@Test
@@ -112,7 +126,7 @@ class AdaptadorLibelulaTest {
 		servidor.expect(once(), requestTo("https://qr.libelula.test/a1b2.png")).andExpect(method(HttpMethod.GET))
 				.andRespond(withSuccess(LectorDeQrTest.png("QR-URL"), MediaType.IMAGE_PNG));
 
-		assertThat(adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40").codigoQr()).isEqualTo("QR-URL");
+		assertThat(adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null).codigoQr()).isEqualTo("QR-URL");
 	}
 
 	// Libélula vence la deuda por día: un pedido que vence pasada la medianoche se paga hasta el día siguiente
@@ -123,7 +137,7 @@ class AdaptadorLibelulaTest {
 				.andRespond(withSuccess(registrada("\"qr_simple_base64\": \"" + base64("QR") + "\""),
 						MediaType.APPLICATION_JSON));
 
-		adaptador(casiMedianoche).generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40");
+		adaptador(casiMedianoche).generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null);
 
 		servidor.verify();
 	}
@@ -135,8 +149,8 @@ class AdaptadorLibelulaTest {
 				.andRespond(withSuccess(registrada("\"qr_simple_base64\": \"" + base64("QR") + "\""),
 						MediaType.APPLICATION_JSON));
 
-		String primera = adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40").referencia();
-		String segunda = adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40").referencia();
+		String primera = adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null).referencia();
+		String segunda = adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null).referencia();
 
 		assertThat(primera).isNotEqualTo(segunda);
 	}
@@ -145,7 +159,7 @@ class AdaptadorLibelulaTest {
 	void errorDeLibelula() {
 		responderRegistro("{\"error\": true, \"mensaje\": \"Appkey inválida\"}");
 
-		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40"))
+		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null))
 				.isInstanceOf(SistemaDePagoNoDisponibleException.class).hasMessageContaining("Appkey inválida");
 	}
 
@@ -153,7 +167,7 @@ class AdaptadorLibelulaTest {
 	void errorComoNumero() {
 		responderRegistro("{\"error\": 1, \"mensaje\": \"Datos incompletos\"}");
 
-		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40"))
+		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null))
 				.isInstanceOf(SistemaDePagoNoDisponibleException.class);
 	}
 
@@ -161,7 +175,7 @@ class AdaptadorLibelulaTest {
 	void respuestaHttpDeError() {
 		servidor.expect(once(), requestTo(REGISTRAR)).andRespond(withServerError());
 
-		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40"))
+		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null))
 				.isInstanceOf(SistemaDePagoNoDisponibleException.class);
 	}
 
@@ -169,7 +183,7 @@ class AdaptadorLibelulaTest {
 	void respuestaQueNoEsJson() {
 		responderRegistro("<html>Mantenimiento</html>");
 
-		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40"))
+		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null))
 				.isInstanceOf(SistemaDePagoNoDisponibleException.class);
 	}
 
@@ -177,7 +191,7 @@ class AdaptadorLibelulaTest {
 	void sinQr() {
 		responderRegistro(registrada("\"otro\": 1"));
 
-		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40"))
+		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null))
 				.isInstanceOf(SistemaDePagoNoDisponibleException.class);
 	}
 
@@ -185,7 +199,7 @@ class AdaptadorLibelulaTest {
 	void qrIlegible() {
 		responderRegistro(registrada("\"qr_simple_base64\": \"no-es-base64!!\""));
 
-		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40"))
+		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null))
 				.isInstanceOf(SistemaDePagoNoDisponibleException.class);
 	}
 
@@ -194,7 +208,7 @@ class AdaptadorLibelulaTest {
 	void urlDelQrQueNoEsWeb() {
 		responderRegistro(registrada("\"qr_simple_url\": \"file:///etc/passwd\""));
 
-		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40"))
+		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null))
 				.isInstanceOf(SistemaDePagoNoDisponibleException.class);
 	}
 
@@ -202,7 +216,7 @@ class AdaptadorLibelulaTest {
 	void elMensajeDeErrorNoLlevaLaAppkey() {
 		responderRegistro("{\"error\": true, \"mensaje\": \"Appkey " + APPKEY + " inválida\"}");
 
-		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40"))
+		assertThatThrownBy(() -> adaptador.generarCobro(40L, BigDecimal.TEN, "Pedido N.º 40", null))
 				.isInstanceOf(SistemaDePagoNoDisponibleException.class)
 				.hasMessageNotContaining(APPKEY);
 	}

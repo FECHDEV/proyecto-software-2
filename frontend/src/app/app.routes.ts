@@ -193,6 +193,8 @@ export const routes: Routes = [
     title: `Nueva venta · ${MARCA.nombre}`,
     canActivate: [rolGuard],
     data: { roles: ROLES_DE.ventas },
+    // HU-23 RF-33: con líneas armadas o un QR a la vista, pregunta antes de salir
+    canDeactivate: [cambiosSinGuardarGuard],
     loadComponent: () => import('./features/venta/venta.page').then((m) => m.VentaPage),
   },
   {

@@ -99,3 +99,4 @@ período) y «Pedidos perdidos».
     línea como QR (`VentaFila.medioDePago`, HU-23 RF-22), pero la tienda no
     sabe con qué se pagó en el sistema de pago, y el comprobante ahora dice
     «En línea»: ¿una fila «En línea» en lugar de sumarlas a QR?
+    *18/11/2026, Fabio:* sí, una fila aparte (HU-23 RF-35, #121).

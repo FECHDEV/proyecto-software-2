@@ -13,7 +13,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 ## Índice
 
-- **[Transversales](#transversales)**: [Spring Boot 4.1.1](#spring-boot-411) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api) · [Respaldos](#respaldos) · [Servidor](#servidor) · [Cobertura de las pruebas](#cobertura-de-las-pruebas)
+- **[Transversales](#transversales)**: [Spring Boot 4.1](#spring-boot-41) · [Variables de entorno con prefijo propio](#variables-de-entorno-con-prefijo-propio) · [Despliegue con Docker y un solo origen](#despliegue-con-docker-y-un-solo-origen) · [Base de datos: sin migraciones](#base-de-datos-sin-migraciones) · [Pago: interfaz propia con dos implementaciones](#pago-interfaz-propia-con-dos-implementaciones) · [Imágenes subidas](#imágenes-subidas) · [Buscadores y enlaces compartidos](#buscadores-y-enlaces-compartidos) · [Fuentes servidas por la tienda](#fuentes-servidas-por-la-tienda) · [Dependencias al día con Dependabot](#dependencias-al-día-con-dependabot) · [Salud de la API](#salud-de-la-api) · [Respaldos](#respaldos) · [Servidor](#servidor) · [Cobertura de las pruebas](#cobertura-de-las-pruebas)
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios) · [Política de contenido](#política-de-contenido)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend) · [ESLint](#eslint)
@@ -23,7 +23,10 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 
 ## Transversales
 
-### Spring Boot 4.1.1
+### Spring Boot 4.1
+
+*19/11/2026:* el parche exacto está en `backend/pom.xml` y lo sube Dependabot
+(hoy, 4.1.2); acá y en `CLAUDE.md` va solo la línea 4.1.
 
 `start.spring.io` ya no ofrece la línea 3.x. Algunos starters cambiaron de
 nombre (`spring-boot-starter-webmvc` en lugar de `-web`; los de prueba están
@@ -591,6 +594,21 @@ código:
 - **Listado paginado:** 20 por página (100 como máximo), del más reciente al
   más antiguo, con filtro por rol y estado y búsqueda en correo, nombre y
   apellido. No muestra el teléfono.
+- *10/10/2026 (HU-05).* **Desactivar invalida las sesiones para siempre:** la
+  cuenta lleva una versión de sesión que viaja en el token y se compara en cada
+  petición, como la huella de la contraseña; desactivar la incrementa, así los
+  tokens emitidos antes no vuelven a valer al reactivarla. Reemplaza el riesgo
+  aceptado anterior (los tokens viejos revivían hasta vencer). Al desactivar
+  también se anulan los enlaces de recuperación pendientes (HU-03).
+  **Consecuencia aceptada:** al desplegar este cambio, los tokens que ya
+  estaban emitidos no tienen `vs` y dejan de valer: todos inician sesión una
+  vez más.
+- *22/10/2026 (HU-18).* **Tipo de cliente:** Público general, Contratista,
+  Taller o Empresa. Toda cuenta nace «Público general»; solo el Administrador
+  lo cambia, en la gestión de usuarios, y solo en cuentas con rol Cliente
+  (409 en otra). El listado lo muestra y filtra por tipo. **Motivo:** los
+  reportes agrupan las ventas por tipo; si lo eligiera el cliente, cualquiera
+  se pondría «Empresa».
 
 ### Política de contenido
 
@@ -624,21 +642,6 @@ puede leer la sesión.
   navegador, que pasa CRLF y CR a LF al leer el HTML. Un checkout en Windows
   (`core.autocrlf`) trae el `index.html` con CRLF, y el script del tema quedaba
   bloqueado en Docker en la PC; en Linux no pasaba.
-- *10/10/2026 (HU-05).* **Desactivar invalida las sesiones para siempre:** la
-  cuenta lleva una versión de sesión que viaja en el token y se compara en cada
-  petición, como la huella de la contraseña; desactivar la incrementa, así los
-  tokens emitidos antes no vuelven a valer al reactivarla. Reemplaza el riesgo
-  aceptado anterior (los tokens viejos revivían hasta vencer). Al desactivar
-  también se anulan los enlaces de recuperación pendientes (HU-03).
-  **Consecuencia aceptada:** al desplegar este cambio, los tokens que ya
-  estaban emitidos no tienen `vs` y dejan de valer: todos inician sesión una
-  vez más.
-- *22/10/2026 (HU-18).* **Tipo de cliente:** Público general, Contratista,
-  Taller o Empresa. Toda cuenta nace «Público general»; solo el Administrador
-  lo cambia, en la gestión de usuarios, y solo en cuentas con rol Cliente
-  (409 en otra). El listado lo muestra y filtra por tipo. **Motivo:** los
-  reportes agrupan las ventas por tipo; si lo eligiera el cliente, cualquiera
-  se pondría «Empresa».
 
 ---
 
@@ -879,7 +882,7 @@ un solo dueño del dinero.
 |---|---|
 | Cliente | Compra: catálogo, carrito, pedidos propios. Es el rol de todo el que se registra solo |
 | Administrador | Gestiona usuarios y roles, y todo lo de la tienda |
-| Empleado | Pedidos, despacho e inventario |
+| Empleado | Pedidos, despacho, inventario y ventas en el mostrador (*05/11/2026*, HU-23) |
 | Contador | Reportes y dinero, **solo lectura** |
 
 El detalle de cada permiso se ajusta en las historias del backlog.
@@ -1369,6 +1372,25 @@ mismo equipo.
   vencer**. **Cada línea del pedido guarda cuánto volvió al carrito**
   (`cantidad_devuelta`): el pago tardío resta solo eso.
 
+- *18/11/2026 (auditoría, issue #121, decisión de Fabio).* **La tarea de cada
+  minuto mira los cobros de las últimas 48 horas,** no 24: la deuda de un
+  cobro generado después de las 23:30 vence a las 23:59 del día siguiente
+  (`AdaptadorLibelula.vencimiento`), y con 24 horas un pago de esa última
+  media hora solo se aplicaba si llegaba el aviso. 48 horas cubre ese caso
+  con margen; el costo es consultar un día más los cobros abandonados.
+- *18/11/2026 (auditoría, issue #121).* **Un aviso a la vez por cobro:** si
+  llegan varios avisos del mismo cobro mientras uno consulta, no se abren
+  más consultas en paralelo; el que consulta hace **una vuelta más** al
+  terminar, para no perder un pago que llegó durante su consulta. El aviso
+  sigue respondiendo 200 en el acto. **No se limita por IP:** los avisos
+  legítimos llegan siempre desde los servidores del proveedor, y un límite
+  por IP frenaría justo a esos; lo que se protege es el proveedor y los
+  hilos del servidor, y eso depende del cobro, no de quién avisa.
+- *18/11/2026 (auditoría, issue #121).* **La dirección de vuelta de la
+  pasarela** (`url_retorno`) es la página del pedido solo en línea; una venta
+  del mostrador manda la portada de la tienda: quien paga frente al
+  mostrador no tiene un pedido en «Mis pedidos» al que volver.
+
 **Motivo:** el pago por QR se hace en la app del banco, así que la tienda
 solo puede preguntar; consultar antes de vencer y aceptar el pago tardío
 evita cobrar sin entregar, y la deuda que vence por día deja pagar un QR
@@ -1405,6 +1427,20 @@ después de los 30 minutos del pedido.
   descuentos entran: el resumen suma lo descontado, lo vendido con descuento
   y los pedidos con descuento (ver «Descuentos»); los cupones y el crédito
   siguen fuera.
+- *18/11/2026 (auditoría, issue #121, decisión de Fabio).* **«Clientes
+  inactivos» mira todos los canales:** inactivo es quien no compró nada en
+  los días elegidos por **ningún** canal. Con un canal elegido (HU-23
+  RF-22), la lista muestra los clientes que compraron alguna vez en ese
+  canal, pero la última compra, los pedidos y el total cuentan todos los
+  canales: quien compró ayer en el mostrador no aparece inactivo en «En
+  línea» (HU-23 RF-36). **Motivo:** el filtro por canal volvía inactivo a
+  quien seguía comprando por el otro canal, y el Contador lo llamaba sin
+  motivo.
+- *18/11/2026 (auditoría, issue #121, decisión de Fabio).* **«Por medio de
+  pago» tiene una fila «En línea»** aparte de QR y Efectivo (HU-23 RF-35):
+  de una compra en línea la tienda no sabe con qué se pagó en la página del
+  proveedor (como el comprobante, que dice «En línea»), y sumarla a QR
+  inflaba el QR del mostrador. QR queda solo para el QR del mostrador.
 
 **Motivo:** el Contador necesita controlar el dinero y además saber qué
 rebajar y a quién llamar; contar la venta al pagar coincide con el dinero que
@@ -1569,6 +1605,33 @@ cuenta en los reportes junto con las en línea.
   rebajas» deja de valer: el mostrador cobra el precio con descuento, igual
   que la tienda en línea (ver «Descuentos»); el Empleado sigue sin poder
   cambiar un precio a mano.
+- *18/11/2026 (auditoría, issue #121, decisión de Fabio; **cambia lo decidido
+  el 06/11/2026** en la prueba manual de HU-23).* **Cancelar una venta con QR
+  consulta antes al sistema de pago:** si el pago ya llegó, la venta queda
+  «Entregado» y no se cancela (HU-23 RF-31). **Y el pago que llega después
+  de cancelarla queda «Pago a devolver»,** sin volver a reservar (RF-32): la
+  venta vencida sigue con el pago tardío de RF-11 (Fabio: en el mostrador
+  no se entrega sin ver el pago; si el QR vence, se cobra en efectivo y
+  el pago tardío llega igual, la venta se deshace a mano, porque es muy
+  difícil que pase). Si el sistema de pago no
+  responde, se cancela igual, y un pago que llegue después queda para
+  devolver. **Motivo:** el 06/11 se dejó que la cancelada reviviera como
+  «Pagado»; en la auditoría se vio que, si el cliente paga con el QR justo
+  cuando el Empleado cancela para cobrarle en efectivo, paga dos veces, el
+  stock baja dos veces y en «Pedidos» queda un «Pagado» para entregar a
+  alguien que ya se fue con la mercadería. Consultar antes evita casi todos
+  esos casos; «Pago a devolver» deja visible el que se escapa, para
+  devolverlo fuera del sistema como cualquier otro.
+- *18/11/2026 (auditoría, issue #121).* **«Nueva venta» avisa antes de
+  salir** con líneas armadas o con un cobro con QR en curso (RF-33), con el
+  diálogo de los cambios sin guardar; salir con el QR a la vista no cancela
+  la venta: espera el pago hasta vencer. **«Imprimir» solo en una venta
+  hecha** («Entregado», «Pagado» o «Anulado», RF-34): el ticket de una venta
+  pendiente, cancelada, vencida o con pago a devolver no es un comprobante.
+- *18/11/2026 (auditoría, decisión de Fabio).* **Lo recibido en efectivo
+  tiene el tope de Bs 999 999,99** (RF-13): una venta mayor no se cobra en
+  efectivo. Se acepta: ninguna venta del mostrador de una ferretería llega a
+  ese monto.
 
 **Motivo:** la tienda tiene un local y un solo inventario: una venta del
 mostrador que no se registra deja el stock y los reportes desfasados, y la

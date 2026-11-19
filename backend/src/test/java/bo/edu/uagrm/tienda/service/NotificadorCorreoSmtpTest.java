@@ -58,7 +58,17 @@ class NotificadorCorreoSmtpTest {
 		assertThat(mensaje.getAllRecipients()).containsExactly(new InternetAddress("ana@mail.com"));
 		assertThat(((InternetAddress) mensaje.getFrom()[0]).getAddress()).isEqualTo("no-responder@mail.com");
 		assertThat(((InternetAddress) mensaje.getFrom()[0]).getPersonal()).isEqualTo("Tienda");
-		assertThat(mensaje.getSubject()).isEqualTo("Recupera tu contraseña de Tienda");
+		assertThat(mensaje.getSubject()).isEqualTo("Recupere su contraseña de Tienda");
+	}
+
+	// HU-03 RF-13: de usted, como el resto de la tienda
+	@Test
+	void laRecuperacionTrataDeUsted() throws Exception {
+		notificador.enviarRecuperacion("ana@mail.com", "Ana", "token-de-prueba");
+
+		assertThat(partes(enviado())).hasSize(2).allSatisfy(parte -> assertThat(parte)
+				.doesNotContain("tu ", "abre", "copia", "pediste", "ignora ")
+				.contains("su cuenta", "Si no pidió recuperar su contraseña", "ignore este correo"));
 	}
 
 	// HU-03 RF-1, RF-13

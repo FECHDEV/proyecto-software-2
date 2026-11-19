@@ -1,6 +1,6 @@
 import { UnidadVenta } from './producto';
 import { TipoCliente, TIPOS_DE_CLIENTE } from './usuario';
-import { Canal, MedioPago } from './venta';
+import { Canal } from './venta';
 
 // Los canales del selector, en el orden del backend (HU-23 RF-22)
 export const CANALES: readonly Canal[] = ['EN_LINEA', 'TIENDA'];
@@ -196,10 +196,20 @@ export interface VentasDelPeriodo {
 	porHora: { hora: number; ingresos: number; pedidos: number }[];
 	porCategoria: { categoria: string; ingresos: number; pedidos: number; margen: number | null }[];
 	porTipo: { tipo: TipoCliente; ingresos: number; pedidos: number; promedio: number | null }[];
-	// HU-23 RF-22: los dos canales y los dos medios, también sin ventas
+	// HU-23 RF-22, RF-35: los dos canales y los tres medios del resumen, también sin ventas
 	porCanal: { canal: Canal; ingresos: number; pedidos: number }[];
-	porMedio: { medio: MedioPago; ingresos: number; pedidos: number }[];
+	porMedio: { medio: MedioDelResumen; ingresos: number; pedidos: number }[];
 }
+
+// HU-23 RF-35: en línea va aparte (la tienda no sabe con qué se pagó en la página del proveedor); QR y efectivo son
+// del mostrador
+export type MedioDelResumen = 'EN_LINEA' | 'QR' | 'EFECTIVO';
+
+export const NOMBRES_DE_MEDIO_DEL_RESUMEN: Record<MedioDelResumen, string> = {
+	EN_LINEA: 'En línea',
+	QR: 'QR',
+	EFECTIVO: 'Efectivo',
+};
 
 // GET /api/reportes/perdidos/resumen. confirmados no cuenta los que siguen esperando el pago ni los pagos a
 // devolver (RF-17)

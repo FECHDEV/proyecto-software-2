@@ -19,8 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ConciliacionAutomaticaDePagos {
 
-	// La deuda del sistema de pago vence por día: un cobro se mira hasta 24 horas después de generarlo
-	static final Duration VENTANA = Duration.ofHours(24);
+	// La deuda del sistema de pago vence a las 23:59 del día en que vence el pedido: hasta unas 24 h 15 min después de
+	// generarla (un cobro de las 23:45 vence a las 23:59 del otro día). Con 24 horas se perdía ese último rato; 48
+	// dejan margen (HU-13 RF-8)
+	static final Duration VENTANA = Duration.ofHours(48);
 
 	private final CobroRepository cobroRepository;
 	private final ConciliacionDePagos conciliacionDePagos;

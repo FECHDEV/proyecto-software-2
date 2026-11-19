@@ -58,6 +58,10 @@ export class ComprobantePage {
 		const anulada = this.anulada();
 		return anulada !== null && anulada.idPedido === this.recurso.value()?.idPedido ? anulada : this.recurso.value();
 	});
+	// RF-34: se imprime una venta hecha; una que espera el pago, cancelada, vencida o para devolver, no
+	protected readonly imprimible = computed(() =>
+		['ENTREGADO', 'PAGADO', 'ANULADO'].includes(this.venta()?.estado ?? ''),
+	);
 	// RF-15: lo que muestra el ticket. «Entregado» no lleva chip: es la venta hecha
 	protected readonly ticket = computed((): DatosDelTicket | null => {
 		const venta = this.venta();

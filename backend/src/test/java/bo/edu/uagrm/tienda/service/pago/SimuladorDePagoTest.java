@@ -21,7 +21,7 @@ class SimuladorDePagoTest {
 
 	@Test
 	void generaUnCobroPendienteConReferenciaYQrFicticios() {
-		CobroGenerado cobro = simulador.generarCobro(40L, new BigDecimal("150.00"), "Entradas General");
+		CobroGenerado cobro = simulador.generarCobro(40L, new BigDecimal("150.00"), "Entradas General", null);
 
 		assertThat(cobro.referencia()).startsWith("SIM-");
 		assertThat(cobro.codigoQr()).contains(cobro.referencia()).contains("150.00");
@@ -31,13 +31,13 @@ class SimuladorDePagoTest {
 
 	@Test
 	void cadaCobroTieneSuReferencia() {
-		assertThat(simulador.generarCobro(40L, BigDecimal.TEN, "a").referencia())
-				.isNotEqualTo(simulador.generarCobro(40L, BigDecimal.TEN, "a").referencia());
+		assertThat(simulador.generarCobro(40L, BigDecimal.TEN, "a", null).referencia())
+				.isNotEqualTo(simulador.generarCobro(40L, BigDecimal.TEN, "a", null).referencia());
 	}
 
 	@Test
 	void forzarPagadoGuardaLaFechaDelPago() {
-		String referencia = simulador.generarCobro(40L, BigDecimal.TEN, "a").referencia();
+		String referencia = simulador.generarCobro(40L, BigDecimal.TEN, "a", null).referencia();
 
 		simulador.forzar(referencia, EstadoDelCobro.PAGADO);
 
@@ -47,7 +47,7 @@ class SimuladorDePagoTest {
 
 	@Test
 	void forzarUnError() {
-		String referencia = simulador.generarCobro(40L, BigDecimal.TEN, "a").referencia();
+		String referencia = simulador.generarCobro(40L, BigDecimal.TEN, "a", null).referencia();
 
 		simulador.forzar(referencia, EstadoDelCobro.ERROR);
 
@@ -71,7 +71,7 @@ class SimuladorDePagoTest {
 
 	@Test
 	void noSeFuerzaAPendiente() {
-		String referencia = simulador.generarCobro(40L, BigDecimal.TEN, "a").referencia();
+		String referencia = simulador.generarCobro(40L, BigDecimal.TEN, "a", null).referencia();
 
 		assertThatThrownBy(() -> simulador.forzar(referencia, EstadoDelCobro.PENDIENTE))
 				.isInstanceOf(IllegalArgumentException.class);

@@ -213,8 +213,8 @@ describe('ReportesResumen', () => {
     expect(pantalla().querySelectorAll('app-tabla-de-ventas')).toHaveLength(1);
   });
 
-  // HU-23 RF-22: el resumen reparte los ingresos por canal y por medio de pago
-  it('elResumenRepartePorCanalYMedio', async () => {
+  // HU-23 RF-22, RF-35: el resumen reparte los ingresos por canal y por medio de pago (En línea, QR y Efectivo)
+  it('RF-35: «Por medio de pago» muestra En línea, QR y Efectivo', async () => {
     await abrir((falso) =>
       falso.ventasRecurso.value.set(
         ventas({
@@ -223,8 +223,9 @@ describe('ReportesResumen', () => {
             { canal: 'TIENDA', ingresos: 200, pedidos: 1 },
           ],
           porMedio: [
+            { medio: 'EN_LINEA', ingresos: 400, pedidos: 2 },
+            { medio: 'QR', ingresos: 50, pedidos: 0 },
             { medio: 'EFECTIVO', ingresos: 150, pedidos: 1 },
-            { medio: 'QR', ingresos: 450, pedidos: 2 },
           ],
         }),
       ),
@@ -234,7 +235,7 @@ describe('ReportesResumen', () => {
       ['En línea', '2'],
       ['En tienda', '1'],
     ]);
-    expect(filas('Por medio de pago').map((fila) => fila[0])).toEqual(['Efectivo', 'QR']);
-    expect(filas('Por medio de pago')[0][2]).toContain('150,00');
+    expect(filas('Por medio de pago').map((fila) => fila[0])).toEqual(['En línea', 'QR', 'Efectivo']);
+    expect(filas('Por medio de pago')[2][2]).toContain('150,00');
   });
 });
