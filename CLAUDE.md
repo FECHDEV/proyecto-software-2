@@ -58,6 +58,11 @@ de asumir.
 - **Rubro: ferretería** (herramientas, hogar y jardín). Un producto puede tener
   un **modelo 3D opcional**, hecho fuera de la aplicación y cargado cuando
   exista; sin modelo, se ve solo con sus fotos.
+- **Descuentos** (*18/11/2026*, HU-24): el Administrador programa un
+  porcentaje (1 a 90) sobre un producto o una categoría, con fechas de inicio
+  y de fin; se aplica solo en línea y en el mostrador, lo calcula siempre el
+  servidor y lo confirmado guarda el precio cobrado. Sin cupones ni
+  descuentos por cantidad.
 
 ### Pago
 - Detrás de `IPago`. El proveedor real es **Libélula** (adaptador desde

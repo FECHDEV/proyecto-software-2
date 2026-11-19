@@ -168,8 +168,9 @@ public class Pedido {
 	}
 
 	// Copia el producto como está ahora (RF-2)
-	public void agregarLinea(Producto producto, BigDecimal cantidad) {
-		LineaPedido linea = new LineaPedido(this, producto, cantidad);
+	// HU-24 RF-15: sin una versión sin precio, así cada llamada decide el precio y ninguna se salta el descuento
+	public void agregarLinea(Producto producto, BigDecimal cantidad, PrecioDeVenta precio) {
+		LineaPedido linea = new LineaPedido(this, producto, cantidad, precio);
 		lineas.add(linea);
 		total = total.add(linea.getSubtotal());
 	}

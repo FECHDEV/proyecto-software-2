@@ -3,6 +3,9 @@ package bo.edu.uagrm.tienda;
 import static bo.edu.uagrm.tienda.IpsDePrueba.ipNueva;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -24,9 +27,12 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
 import com.jayway.jsonpath.JsonPath;
 
+import bo.edu.uagrm.tienda.entity.Descuento;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
+import bo.edu.uagrm.tienda.repository.DescuentoRepository;
 import bo.edu.uagrm.tienda.repository.MovimientoStockRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
+import bo.edu.uagrm.tienda.repository.UsuarioRepository;
 import bo.edu.uagrm.tienda.service.AdministradorInicial;
 import bo.edu.uagrm.tienda.service.FormatoModeloTest;
 
@@ -53,6 +59,15 @@ class CatalogoIntegracionTest {
 	@Autowired
 	private CategoriaRepository categoriaRepository;
 
+	@Autowired
+	private DescuentoRepository descuentoRepository;
+
+	@Autowired
+	private UsuarioRepository usuarioRepository;
+
+	@Autowired
+	private Clock clock;
+
 	private String admin;
 	private Integer herramientas;
 	private Integer jardin;
@@ -73,6 +88,7 @@ class CatalogoIntegracionTest {
 	@AfterEach
 	void limpiar() {
 		movimientoRepository.deleteAll();
+		descuentoRepository.deleteAll();
 		productoRepository.deleteAll();
 		categoriaRepository.deleteAll();
 	}
@@ -107,6 +123,119 @@ class CatalogoIntegracionTest {
 
 	private static List<String> nombres(MvcTestResult resultado, String ruta) throws Exception {
 		return JsonPath.read(resultado.getResponse().getContentAsString(), ruta);
+	}
+
+	// --- HU-24: el precio con descuento en el catálogo y el detalle ---
+
+	private LocalDate hoy() {
+		return LocalDate.now(clock);
+	}
+
+	// Directo en la base: la gestión de descuentos se prueba en DescuentosIntegracionTest
+	private void descuentoDeProducto(Integer idProducto, int porcentaje, LocalDate inicio, LocalDate fin) {
+		descuentoRepository.save(Descuento.deProducto(productoRepository.findById(idProducto.longValue()).orElseThrow(),
+				porcentaje, inicio, fin, usuarioRepository.findByCorreo("admin@tienda.test").orElseThrow(),
+				LocalDateTime.now(clock)));
+	}
+
+	private void descuentoDeCategoria(Integer idCategoria, int porcentaje, LocalDate inicio, LocalDate fin) {
+		descuentoRepository.save(Descuento.deCategoria(
+				categoriaRepository.findById(idCategoria.longValue()).orElseThrow(), porcentaje, inicio, fin,
+				usuarioRepository.findByCorreo("admin@tienda.test").orElseThrow(), LocalDateTime.now(clock)));
+	}
+
+	// HU-24 RF-12: precio es lo que se cobra; con descuento, también el normal y el porcentaje
+	@Test
+	void tarjetaYDetalleConDescuentoDanCobradoNormalYPorcentaje() throws Exception {
+		Integer pala = producto("Pala", null, jardin, "100.00", 3, true);
+		descuentoDeProducto(pala, 15, hoy(), hoy().plusDays(2));
+
+		MvcTestResult catalogo = get(PRODUCTOS);
+		assertThat(catalogo).bodyJson().extractingPath("$.contenido[0].precio").isEqualTo(85.0);
+		assertThat(catalogo).bodyJson().extractingPath("$.contenido[0].precioNormal").isEqualTo(100.0);
+		assertThat(catalogo).bodyJson().extractingPath("$.contenido[0].descuento").isEqualTo(15);
+
+		MvcTestResult detalle = get(PRODUCTOS + "/{id}", pala);
+		assertThat(detalle).bodyJson().extractingPath("$.precio").isEqualTo(85.0);
+		assertThat(detalle).bodyJson().extractingPath("$.precioNormal").isEqualTo(100.0);
+		assertThat(detalle).bodyJson().extractingPath("$.descuento").isEqualTo(15);
+
+		MvcTestResult portada = get(PRODUCTOS + "/portada");
+		assertThat(portada).bodyJson().extractingPath("$.destacados[0].precio").isEqualTo(85.0);
+	}
+
+	// HU-24 RF-12, RF-9: el de la categoría también, y gana el mayor
+	@Test
+	void elDeLaCategoriaYElDelProductoGanaElMayor() throws Exception {
+		Integer pala = producto("Pala", null, jardin, "100.00", 3, false);
+		Integer rastrillo = producto("Rastrillo", null, jardin, "40.00", 3, false);
+		descuentoDeCategoria(jardin, 10, hoy(), hoy().plusDays(2));
+		descuentoDeProducto(pala, 25, hoy(), hoy().plusDays(2));
+
+		assertThat(get(PRODUCTOS + "/{id}", pala)).bodyJson().extractingPath("$.descuento").isEqualTo(25);
+		assertThat(get(PRODUCTOS + "/{id}", rastrillo)).bodyJson().extractingPath("$.precio").isEqualTo(36.0);
+	}
+
+	// HU-24 RF-12: sin descuento, el precio de siempre y los campos nuevos nulos
+	@Test
+	void sinDescuentoPrecioNormalYDescuentoNulos() throws Exception {
+		Integer pala = producto("Pala", null, jardin, "100.00", 3, false);
+
+		MvcTestResult detalle = get(PRODUCTOS + "/{id}", pala);
+
+		assertThat(detalle).bodyJson().extractingPath("$.precio").isEqualTo(100.0);
+		assertThat(detalle).bodyJson().extractingPath("$.precioNormal").isNull();
+		assertThat(detalle).bodyJson().extractingPath("$.descuento").isNull();
+		assertThat(detalle).bodyJson().extractingPath("$.finDescuento").isNull();
+	}
+
+	// HU-24 RF-12: el catálogo no muestra el costo ni quién creó el descuento
+	@Test
+	void noExponeElCostoNiQuienCreoElDescuento() throws Exception {
+		Integer pala = producto("Pala", null, jardin, "100.00", 3, false);
+		descuentoDeProducto(pala, 15, hoy(), hoy().plusDays(2));
+
+		String detalle = get(PRODUCTOS + "/{id}", pala).getResponse().getContentAsString();
+		String catalogo = get(PRODUCTOS).getResponse().getContentAsString();
+
+		assertThat(detalle).doesNotContain("costo", "creadoPor", "admin@tienda.test");
+		assertThat(catalogo).doesNotContain("costo", "creadoPor", "admin@tienda.test");
+	}
+
+	// HU-24 RF-10: el día después del fin vuelve el precio normal; uno que todavía no empezó tampoco se aplica
+	@Test
+	void alDiaSiguienteDelFinVuelveElPrecioNormal() throws Exception {
+		Integer pala = producto("Pala", null, jardin, "100.00", 3, false);
+		descuentoDeProducto(pala, 15, hoy().minusDays(5), hoy().minusDays(1));
+		descuentoDeProducto(pala, 30, hoy().plusDays(1), hoy().plusDays(3));
+
+		MvcTestResult detalle = get(PRODUCTOS + "/{id}", pala);
+
+		assertThat(detalle).bodyJson().extractingPath("$.precio").isEqualTo(100.0);
+		assertThat(detalle).bodyJson().extractingPath("$.descuento").isNull();
+	}
+
+	// HU-24 RF-14: el detalle trae el último día del descuento, para la validez del precio en los buscadores
+	@Test
+	void elDetalleTraeElFinDelDescuento() throws Exception {
+		Integer pala = producto("Pala", null, jardin, "100.00", 3, false);
+		descuentoDeProducto(pala, 15, hoy(), hoy().plusDays(4));
+
+		assertThat(get(PRODUCTOS + "/{id}", pala)).bodyJson().extractingPath("$.finDescuento")
+				.isEqualTo(hoy().plusDays(4).toString());
+	}
+
+	// Caso límite: el descuento de una categoría oculta queda guardado; sus productos no se listan
+	@Test
+	void categoriaOcultaConDescuentoNoSeLista() throws Exception {
+		producto("Pala", null, jardin, "100.00", 3, false);
+		descuentoDeCategoria(jardin, 15, hoy(), hoy().plusDays(2));
+		assertThat(mvc.put().uri("/api/gestion/categorias/{id}/visible", jardin)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + admin).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"visible\":false}").exchange()).hasStatus(HttpStatus.OK);
+
+		assertThat(nombres(get(PRODUCTOS), "$.contenido[*].nombre")).isEmpty();
+		assertThat(descuentoRepository.count()).isEqualTo(1);
 	}
 
 	// HU-09 RF-1
@@ -193,8 +322,8 @@ class CatalogoIntegracionTest {
 		MvcTestResult resultado = get(PRODUCTOS + "?orden=NOMBRE");
 
 		Map<String, Object> tarjeta = JsonPath.read(resultado.getResponse().getContentAsString(), "$.contenido[0]");
-		assertThat(tarjeta).containsOnlyKeys("idProducto", "nombre", "marca", "precio", "unidad", "imagenPrincipal",
-				"disponible", "conModelo");
+		assertThat(tarjeta).containsOnlyKeys("idProducto", "nombre", "marca", "precio", "precioNormal", "descuento",
+				"unidad", "imagenPrincipal", "disponible", "conModelo");
 		assertThat(tarjeta).containsEntry("nombre", "Pala").containsEntry("disponible", true);
 		assertThat(nombres(resultado, "$.contenido[*].disponible")).isEqualTo(List.of(true, false));
 		assertThat(resultado.getResponse().getContentAsString()).doesNotContain("stock", "activo", "destacado",
@@ -296,7 +425,8 @@ class CatalogoIntegracionTest {
 
 		Map<String, Object> detalle = JsonPath.read(json, "$");
 		assertThat(detalle).containsOnlyKeys("idProducto", "codigo", "nombre", "marca", "idCategoria", "categoria",
-				"precio", "unidad", "descripcion", "ficha", "imagenes", "disponible", "modelo", "relacionados");
+				"precio", "precioNormal", "descuento", "finDescuento", "unidad", "descripcion", "ficha", "imagenes",
+				"disponible", "modelo", "relacionados");
 		// Del modelo, solo el archivo: su peso es de la gestión (HU-16 RF-1)
 		assertThat(json).doesNotContain("stock", "activo", "destacado", "fechaAlta", "peso");
 	}

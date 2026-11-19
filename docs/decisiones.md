@@ -17,7 +17,7 @@ solo las secciones que tocan la tarea. Al agregar una decisión, sumarla al
 - **[Seguridad](#seguridad)**: [`Usuario` es una sola clase con `rol` enumerado](#usuario-es-una-sola-clase-con-rol-enumerado) · [Autenticación por JWT stateless](#autenticación-por-jwt-stateless) · [Contraseñas con BCrypt](#contraseñas-con-bcrypt) · [Administrador inicial al arrancar](#administrador-inicial-al-arrancar) · [Registro](#registro) · [Inicio de sesión](#inicio-de-sesión) · [Recuperación de contraseña](#recuperación-de-contraseña) · [Verificación del correo](#verificación-del-correo) · [Datos personales](#datos-personales) · [Gestión de usuarios](#gestión-de-usuarios) · [Política de contenido](#política-de-contenido)
 - **[Notificaciones](#notificaciones)**: [Envío de correo detrás de `NotificadorCorreo`](#envío-de-correo-detrás-de-notificadorcorreo) · [Gmail por SMTP, sin servidor de correo propio](#gmail-por-smtp-sin-servidor-de-correo-propio) · [Correos del pedido](#correos-del-pedido)
 - **[Sistema de diseño (frontend)](#sistema-de-diseño-frontend)**: [La aplicación es un producto, no un trabajo académico](#la-aplicación-es-un-producto-no-un-trabajo-académico) · [Lo visual vive en `DESIGN.md`](#lo-visual-vive-en-designmd) · [Decisiones técnicas del frontend](#decisiones-técnicas-del-frontend) · [ESLint](#eslint)
-- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Exportar reportes](#exportar-reportes) · [Catálogo de demostración](#catálogo-de-demostración) · [Fotos achicadas](#fotos-achicadas) · [Venta en tienda](#venta-en-tienda)
+- **[Decisiones del proyecto](#decisiones-del-proyecto)**: [Tienda propia, no marketplace](#tienda-propia-no-marketplace) · [Roles de la tienda](#roles-de-la-tienda) · [Pago con Libélula, sin facturación SIAT](#pago-con-libélula-sin-facturación-siat) · [Rediseño del frontend dentro del flujo](#rediseño-del-frontend-dentro-del-flujo) · [Rubro: ferretería, con vista 3D](#rubro-ferretería-con-vista-3d) · [Visor 3D y modelos](#visor-3d-y-modelos) · [Categorías del catálogo](#categorías-del-catálogo) · [Productos](#productos) · [Inventario](#inventario) · [Catálogo público](#catálogo-público) · [Detalle del producto](#detalle-del-producto) · [Carrito](#carrito) · [Pedidos](#pedidos) · [Pagos](#pagos) · [Reportes](#reportes) · [Exportar reportes](#exportar-reportes) · [Catálogo de demostración](#catálogo-de-demostración) · [Fotos achicadas](#fotos-achicadas) · [Venta en tienda](#venta-en-tienda) · [Descuentos](#descuentos)
 
 ---
 
@@ -1404,7 +1404,10 @@ después de los 30 minutos del pedido.
   vez y no compran hace más de 30, 60 o 90 días, con nombre, correo y
   teléfono para llamarlos; la tienda no les manda correos.
 - **Fuera:** crédito, descuentos y cupones y campañas por correo. Exportar
-  es de HU-19 (ver «Exportar reportes»).
+  es de HU-19 (ver «Exportar reportes»). *18/11/2026 (HU-24):* los
+  descuentos entran: el resumen suma lo descontado, lo vendido con descuento
+  y los pedidos con descuento (ver «Descuentos»); los cupones y el crédito
+  siguen fuera.
 
 **Motivo:** el Contador necesita controlar el dinero y además saber qué
 rebajar y a quién llamar; contar la venta al pagar coincide con el dinero que
@@ -1565,7 +1568,10 @@ cuenta en los reportes junto con las en línea.
 - **Lo que no cambia:** precio de hoy, sin rebajas (los descuentos siguen
   fuera, ver «Reportes»); solo productos activos; el stock nunca queda
   negativo, y si el sistema dice que no alcanza pero está en el estante, se
-  corrige primero con un ajuste del inventario.
+  corrige primero con un ajuste del inventario. *18/11/2026 (HU-24):* «sin
+  rebajas» deja de valer: el mostrador cobra el precio con descuento, igual
+  que la tienda en línea (ver «Descuentos»); el Empleado sigue sin poder
+  cambiar un precio a mano.
 
 **Motivo:** la tienda tiene un local y un solo inventario: una venta del
 mostrador que no se registra deja el stock y los reportes desfasados, y la
@@ -1608,3 +1614,61 @@ mismo día y con motivo, evita que quien cobró borre su propia venta.
   **Motivo:** registrar la venta a nombre del cliente es lo que la hace
   aparecer en sus pedidos y en los reportes; los límites dejan encontrar a
   quien está enfrente sin convertir la búsqueda en un listado de clientes.
+
+### Descuentos
+
+*18/11/2026 (HU-24, decisiones de Fabio sobre el diseño previo; lo básico,
+del 07/11/2026 en `docs/lista-de-cambios.md`).* El Administrador programa
+descuentos por porcentaje sobre **un producto o una categoría**, con fecha de
+inicio y de fin. Se aplican solos mientras están vigentes, en la tienda en
+línea y en el mostrador, y al vencer vuelve el precio normal **sin tocar el
+precio del producto**.
+
+- **Porcentaje entero de 1 a 90.** Se permite dejar un producto por debajo
+  de su costo, con un aviso al Administrador al guardar (el margen negativo
+  ya existe en «Reportes»).
+- **Fechas:** días enteros en hora de Bolivia (el reloj de la aplicación),
+  con el inicio y el fin incluidos; el inicio desde hoy y hasta 366 días de
+  duración.
+- **Producto y categoría a la vez: gana el mayor porcentaje.** La categoría
+  es la actual del producto, como en los reportes.
+- **Dos descuentos del mismo producto, o de la misma categoría, no se cruzan
+  en fechas:** se rechaza al guardar. Sin bloquear filas: si dos
+  Administradores a la vez colaran dos, el cálculo aplica el mayor y el
+  dinero no se rompe.
+- **Estados:** programado (empieza después de hoy), vigente y vencido. El
+  programado se edita (porcentaje y fechas, no el producto ni la categoría) o
+  se borra; el vigente solo se termina (su fin pasa a ayer, o se borra si
+  empezó hoy); el vencido no se toca.
+- **El cálculo:** precio × (100 − porcentaje) / 100, redondeado a centavos
+  con HALF_UP y nunca menor que Bs 0,01, sobre el **precio unitario**; el
+  subtotal es ese precio × cantidad, redondeado como siempre. Vive en un solo
+  lugar del backend (`PrecioDeVenta` y `PreciosDeVenta`).
+- **En la API pública y del mostrador, `precio` es el que se cobra;** con
+  descuento, además `precioNormal` y `descuento` (el porcentaje). La gestión
+  del producto sigue con su precio normal.
+- **La línea del pedido guarda el precio cobrado, el precio normal, el
+  porcentaje y lo descontado,** sin referencia al descuento: lo confirmado no
+  cambia si el descuento vence, se edita o se termina, y el pago tardío y la
+  anulación usan lo guardado. Un pedido que vuelve al carrito toma el precio
+  del día, y la confirmación muestra el total nuevo («Pedidos»).
+- **Dónde se ve:** precio normal tachado, precio con descuento y «−N %» en la
+  tarjeta, el detalle, el carrito y el mostrador. En el ticket (mostrador y
+  Cliente), «−N %» en la línea y «Usted ahorró». La página del pedido, Mis
+  pedidos, Despacho y la confirmación muestran solo el precio cobrado.
+- **El catálogo filtra y ordena por el precio con descuento.**
+- **JSON-LD:** `price` con el precio con descuento y `priceValidUntil` con la
+  fecha de fin.
+- **Reportes:** lo descontado, lo vendido con descuento y los pedidos con
+  descuento, en el resumen y en el Excel y el PDF, con la regla de venta de
+  siempre; el margen ya sale con el descuento (usa el subtotal cobrado) y
+  «Sin venderse» sigue valuando el stock con el precio normal. Solo el
+  Administrador ve la pantalla de descuentos; el Contador, las cifras.
+- **Fuera:** descuento por cantidad y cupones (para después); precios
+  dinámicos (descartado); monto fijo, por cliente o por toda la tienda.
+
+**Motivo:** rebajar editando el precio obliga a acordarse de volverlo atrás y
+borra el rastro de la rebaja en los reportes. Guardar el precio cobrado en la
+línea, como el costo, deja lo vendido igual pase lo que pase con el
+descuento, y aplicar el porcentaje al precio unitario hace que el precio que
+se ve, el del ticket y el total del mostrador coincidan al centavo.

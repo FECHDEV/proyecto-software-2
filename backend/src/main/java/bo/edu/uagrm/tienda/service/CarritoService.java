@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import bo.edu.uagrm.tienda.dto.LineaCarritoRequest;
 import bo.edu.uagrm.tienda.dto.LineaCarritoResponse;
 import bo.edu.uagrm.tienda.dto.validacion.CantidadDeCarrito;
 import bo.edu.uagrm.tienda.entity.LineaCarrito;
+import bo.edu.uagrm.tienda.entity.PrecioDeVenta;
 import bo.edu.uagrm.tienda.entity.Producto;
 import bo.edu.uagrm.tienda.entity.UnidadVenta;
 import bo.edu.uagrm.tienda.entity.Usuario;
@@ -49,6 +51,7 @@ public class CarritoService {
 	private final ProductoRepository productoRepository;
 	private final UsuarioRepository usuarioRepository;
 	private final PedidoService pedidoService;
+	private final PreciosDeVenta preciosDeVenta;
 	private final Clock clock;
 
 	// Primero vence el pedido del cliente si ya pasó la hora: sus líneas vuelven antes de mostrar el carrito (HU-12
@@ -135,9 +138,11 @@ public class CarritoService {
 	}
 
 	private CarritoResponse armar(Long idUsuario) {
-		List<LineaCarritoResponse> lineas = lineaRepository
-				.findByUsuario_IdUsuarioOrderByFechaAgregadaAscIdLineaAsc(idUsuario).stream()
-				.map(CarritoService::linea).toList();
+		List<LineaCarrito> delCarrito = lineaRepository.findByUsuario_IdUsuarioOrderByFechaAgregadaAscIdLineaAsc(idUsuario);
+		// HU-24 RF-12: los precios de hoy de todas las líneas, en una sola lectura de los descuentos
+		Map<Long, PrecioDeVenta> precios = preciosDeVenta.para(delCarrito.stream().map(LineaCarrito::getProducto).toList());
+		List<LineaCarritoResponse> lineas = delCarrito.stream()
+				.map(linea -> linea(linea, precios.get(linea.getProducto().getIdProducto()))).toList();
 		BigDecimal total = lineas.stream().map(LineaCarritoResponse::subtotal).filter(subtotal -> subtotal != null)
 				.reduce(BigDecimal.ZERO.setScale(2), BigDecimal::add);
 		boolean correoVerificado = usuarioRepository.findById(idUsuario).map(Usuario::isCorreoVerificado).orElse(false);
@@ -146,15 +151,17 @@ public class CarritoService {
 	}
 
 	// Lee la categoría y las imágenes del producto: dentro de la transacción
-	private static LineaCarritoResponse linea(LineaCarrito linea) {
+	// El subtotal como el de la línea del pedido (LineaPedido): precio con descuento × cantidad, con HALF_UP
+	private static LineaCarritoResponse linea(LineaCarrito linea, PrecioDeVenta precio) {
 		Producto producto = linea.getProducto();
 		EstadoLineaCarrito estado = estado(producto, linea.getCantidad());
 		BigDecimal subtotal = estado == EstadoLineaCarrito.DISPONIBLE
-				? producto.getPrecio().multiply(linea.getCantidad()).setScale(2, RoundingMode.HALF_UP)
+				? precio.cobrado().multiply(linea.getCantidad()).setScale(2, RoundingMode.HALF_UP)
 				: null;
 		return new LineaCarritoResponse(producto.getIdProducto(), producto.getNombre(),
-				producto.getImagenes().isEmpty() ? null : producto.getImagenes().getFirst(), producto.getPrecio(),
-				producto.getUnidad(), linea.getCantidad(), subtotal, estado);
+				producto.getImagenes().isEmpty() ? null : producto.getImagenes().getFirst(), precio.cobrado(),
+				precio.normalTachado(), precio.descuento(), producto.getUnidad(),
+				linea.getCantidad(), subtotal, estado);
 	}
 
 	// Lo que dejó de venderse pesa más que lo agotado: un producto inactivo y sin stock dice «No disponible» (RF-9). La

@@ -17,6 +17,7 @@ import bo.edu.uagrm.tienda.exception.CategoriaNoEncontradaException;
 import bo.edu.uagrm.tienda.exception.ImagenDemasiadoGrandeException;
 import bo.edu.uagrm.tienda.exception.ImagenInvalidaException;
 import bo.edu.uagrm.tienda.repository.CategoriaRepository;
+import bo.edu.uagrm.tienda.repository.DescuentoRepository;
 import bo.edu.uagrm.tienda.repository.ProductoRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +29,7 @@ public class CategoriaService {
 	private final CategoriaRepository categoriaRepository;
 	private final ProductoRepository productoRepository;
 	private final AlmacenImagenes almacen;
+	private final DescuentoRepository descuentoRepository;
 
 	@Transactional(readOnly = true)
 	public List<Categoria> visibles() {
@@ -89,6 +91,9 @@ public class CategoriaService {
 		if (productoRepository.existsByCategoria_IdCategoria(idCategoria)) {
 			throw new CategoriaConProductosException();
 		}
+		// HU-24: sus descuentos se van con ella. Sin productos, no hay nada vendido con ellos, y lo vendido guarda su
+		// precio en la línea del pedido (/code-review: la clave foránea daba un 500)
+		descuentoRepository.deleteByCategoria_IdCategoria(idCategoria);
 		categoriaRepository.delete(categoria);
 		ArchivosAlTerminar.borrar(almacen, categoria.getImagen(), null);
 	}
