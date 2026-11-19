@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import bo.edu.uagrm.tienda.dto.reportes.CategoriaFila;
 import bo.edu.uagrm.tienda.dto.reportes.CompraFila;
 import bo.edu.uagrm.tienda.dto.reportes.CompradorFila;
+import bo.edu.uagrm.tienda.dto.reportes.DescuentosFila;
 import bo.edu.uagrm.tienda.dto.reportes.EstadoFila;
 import bo.edu.uagrm.tienda.dto.reportes.LineasFila;
 import bo.edu.uagrm.tienda.dto.reportes.PerdidoFila;
@@ -63,6 +64,16 @@ public interface ReportesRepository extends Repository<Pedido, Long> {
 	List<CompradorFila> compradores(@Param("estados") Collection<EstadoPedido> estados,
 			@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin, @Param("tipo") TipoCliente tipo,
 			@Param("canal") Canal canal);
+
+	// HU-24 RF-19: las líneas con descuento de lo vendido en el período, con los mismos filtros que lo demás
+	@Query("""
+			select new bo.edu.uagrm.tienda.dto.reportes.DescuentosFila(count(distinct p.idPedido),
+				coalesce(sum(l.subtotal), 0), coalesce(sum(l.descontado), 0))
+			from LineaPedido l join l.pedido p left join p.usuario u
+			where l.descuento is not null and p.estado in :estados and p.pagado >= :inicio and p.pagado < :fin
+				and (:tipo is null or coalesce(u.tipoCliente, bo.edu.uagrm.tienda.entity.TipoCliente.PUBLICO_GENERAL) = :tipo) and (:canal is null or p.canal = :canal)""")
+	DescuentosFila descuentos(@Param("estados") Collection<EstadoPedido> estados, @Param("inicio") LocalDateTime inicio,
+			@Param("fin") LocalDateTime fin, @Param("tipo") TipoCliente tipo, @Param("canal") Canal canal);
 
 	// La categoría actual del producto (RF-14), de mayor a menor importe
 	@Query("""

@@ -83,6 +83,9 @@ const TOTALES_EN_CERO = {
   vendidoSinCosto: 0,
   devolverCantidad: 0,
   devolverImporte: 0,
+  descontado: 0,
+  vendidoConDescuento: 0,
+  pedidosConDescuento: 0,
 };
 
 // Como responde GET /api/reportes/ventas (ReportesIntegracionTest): el escenario de la historia
@@ -104,8 +107,21 @@ export function ventas(cambios: Partial<VentasDelPeriodo> = {}): VentasDelPeriod
       vendidoSinCosto: 40,
       devolverCantidad: 1,
       devolverImporte: 50,
+      descontado: 30,
+      vendidoConDescuento: 170,
+      pedidosConDescuento: 1,
     },
-    anterior: { ...TOTALES_EN_CERO, ingresos: 480, pedidos: 3, promedio: 160, margen: 60, margenPorcentaje: 30 },
+    anterior: {
+      ...TOTALES_EN_CERO,
+      ingresos: 480,
+      pedidos: 3,
+      promedio: 160,
+      margen: 60,
+      margenPorcentaje: 30,
+      descontado: 20,
+      vendidoConDescuento: 80,
+      pedidosConDescuento: 2,
+    },
     porFecha: [
       { fecha: '2026-10-01', ingresos: 0, pedidos: 0 },
       { fecha: '2026-10-02', ingresos: 600, pedidos: 3 },

@@ -603,6 +603,87 @@ class ReportesIntegracionTest {
 				.contains(pieza.getIdProducto().intValue());
 	}
 
+	// --- HU-24 RF-19: los descuentos en el resumen ---
+
+	// Un pedido en línea pagado, de cantidad × el rastrillo de Bs 100,00 con el porcentaje dado
+	private Pedido conDescuento(Usuario cliente, LocalDateTime pago, Producto producto, int cantidad, int porcentaje) {
+		Pedido pedido = Pedido.confirmar(cliente, "Ana Paz", "70000000", null, pago.minusMinutes(5), pago.plusMinutes(25));
+		pedido.agregarLinea(producto, new BigDecimal(cantidad),
+				PrecioDeVenta.de(producto.getPrecio(), porcentaje, pago.toLocalDate().plusDays(10)));
+		pedido.pagar(pago);
+		return pedidoRepository.save(pedido);
+	}
+
+	// HU-24 RF-19, escenario «El Contador mira el mes»: dos rastrillos con −15 % y otra venta de Bs 50,00
+	@Test
+	void resumenSumaLoDescontadoYLoVendidoConDescuento() throws Exception {
+		Producto rastrillo = producto("Rastrillo", "100", null, jardin);
+		conDescuento(ana, dia(10, 5, 10, 0), rastrillo, 2, 15);
+		pagado(beto, dia(10, 6, 10, 0), 1);
+
+		MvcTestResult resumen = ventas(contador, OCTUBRE);
+
+		assertThat(resumen).bodyJson().extractingPath("$.actual.ingresos").isEqualTo(220.0);
+		assertThat(resumen).bodyJson().extractingPath("$.actual.descontado").isEqualTo(30.0);
+		assertThat(resumen).bodyJson().extractingPath("$.actual.vendidoConDescuento").isEqualTo(170.0);
+		assertThat(resumen).bodyJson().extractingPath("$.actual.pedidosConDescuento").isEqualTo(1);
+	}
+
+	// HU-24 RF-19: comparado con el período anterior
+	@Test
+	void losDescuentosSeComparanConElPeriodoAnterior() throws Exception {
+		Producto rastrillo = producto("Rastrillo", "100", null, jardin);
+		conDescuento(ana, dia(9, 20, 10, 0), rastrillo, 1, 10);
+
+		MvcTestResult resumen = ventas(contador, OCTUBRE);
+
+		assertThat(resumen).bodyJson().extractingPath("$.actual.descontado").isEqualTo(0.0);
+		assertThat(resumen).bodyJson().extractingPath("$.actual.pedidosConDescuento").isEqualTo(0);
+		assertThat(resumen).bodyJson().extractingPath("$.anterior.descontado").isEqualTo(10.0);
+		assertThat(resumen).bodyJson().extractingPath("$.anterior.vendidoConDescuento").isEqualTo(90.0);
+		assertThat(resumen).bodyJson().extractingPath("$.anterior.pedidosConDescuento").isEqualTo(1);
+	}
+
+	// HU-24 RF-19: con los filtros de tipo de cliente y canal, como lo demás del resumen
+	@Test
+	void losDescuentosRespetanLosFiltrosDeTipoYCanal() throws Exception {
+		Producto rastrillo = producto("Rastrillo", "100", null, jardin);
+		conDescuento(ana, dia(10, 5, 10, 0), rastrillo, 2, 15);
+		conDescuento(beto, dia(10, 6, 10, 0), rastrillo, 1, 20);
+
+		assertThat(ventas(contador, OCTUBRE + "&tipo=CONTRATISTA")).bodyJson().extractingPath("$.actual.descontado")
+				.isEqualTo(20.0);
+		assertThat(ventas(contador, OCTUBRE + "&canal=TIENDA")).bodyJson().extractingPath("$.actual.descontado")
+				.isEqualTo(0.0);
+		assertThat(ventas(contador, OCTUBRE + "&canal=EN_LINEA")).bodyJson().extractingPath("$.actual.descontado")
+				.isEqualTo(50.0);
+	}
+
+	// HU-24 RF-19 (casos límite): con la regla de venta de siempre, ni la anulada ni el pago a devolver suman, y
+	// las líneas sin descuento tampoco
+	@Test
+	void anuladaPagoADevolverYLineasSinDescuentoNoSuman() throws Exception {
+		Producto rastrillo = producto("Rastrillo", "100", null, jardin);
+		Pedido anulada = Pedido.enTienda(null, personal, bo.edu.uagrm.tienda.entity.MedioPago.EFECTIVO,
+				new BigDecimal("10000"), dia(10, 7, 9, 59), java.time.Duration.ofMinutes(10));
+		anulada.agregarLinea(rastrillo, BigDecimal.ONE, PrecioDeVenta.de(rastrillo.getPrecio(), 15, dia(10, 30, 0, 0).toLocalDate()));
+		anulada.cobrarEnTienda(dia(10, 7, 10, 0));
+		anulada.anular(personal, "Error", dia(10, 7, 10, 5));
+		pedidoRepository.save(anulada);
+		Pedido aDevolver = Pedido.confirmar(ana, "Ana Paz", "70000000", null, dia(10, 8, 9, 0), dia(10, 8, 9, 30));
+		aDevolver.agregarLinea(rastrillo, BigDecimal.ONE, PrecioDeVenta.de(rastrillo.getPrecio(), 15, dia(10, 30, 0, 0).toLocalDate()));
+		aDevolver.vencer(dia(10, 8, 9, 30));
+		aDevolver.marcarPagoADevolver(dia(10, 8, 10, 0));
+		pedidoRepository.save(aDevolver);
+		pagado(beto, dia(10, 9, 10, 0), 2);
+
+		MvcTestResult resumen = ventas(contador, OCTUBRE);
+
+		assertThat(resumen).bodyJson().extractingPath("$.actual.descontado").isEqualTo(0.0);
+		assertThat(resumen).bodyJson().extractingPath("$.actual.vendidoConDescuento").isEqualTo(0.0);
+		assertThat(resumen).bodyJson().extractingPath("$.actual.pedidosConDescuento").isEqualTo(0);
+	}
+
 	private MvcTestResult inactivos(String filtros) {
 		return mvc.get().uri("/api/reportes/clientes-inactivos?dias=30" + filtros)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + contador).exchange();

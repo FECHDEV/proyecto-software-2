@@ -181,6 +181,10 @@ export interface Totales {
 	vendidoSinCosto: number;
 	devolverCantidad: number;
 	devolverImporte: number;
+	// HU-24 RF-19: con la regla de venta de siempre
+	descontado: number;
+	vendidoConDescuento: number;
+	pedidosConDescuento: number;
 }
 
 export interface VentasDelPeriodo {

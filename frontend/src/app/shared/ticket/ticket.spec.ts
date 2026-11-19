@@ -13,6 +13,7 @@ const DATOS: DatosDelTicket = {
   ],
   lineas: [{ nombre: 'Martillo', detalle: '2 unidades × Bs 85,50', importe: 'Bs 171,00' }],
   total: 'Bs 171,00',
+  ahorro: null,
   pagos: [
     { etiqueta: 'Pago', valor: 'Efectivo' },
     { etiqueta: 'Recibido', valor: 'Bs 200,00' },
@@ -73,6 +74,15 @@ describe('Ticket', () => {
     expect(anulada.nativeElement.querySelector('.estado')?.textContent?.trim()).toBe('Anulado');
     expect(anulada.nativeElement.querySelector('.estado')?.classList).toContain('tono-neutro');
     expect(anulada.nativeElement.querySelector('.anulacion')?.textContent).toContain('Error de cobro');
+  });
+
+  // HU-24 RF-18
+  it('RF-18: con ahorro muestra «Usted ahorró»; sin ahorro no', async () => {
+    const sinAhorro = await dibujar(DATOS);
+    expect(fila(sinAhorro, 'Usted ahorró')).toBeUndefined();
+
+    const conAhorro = await dibujar({ ...DATOS, ahorro: 'Bs 30,00' });
+    expect(fila(conAhorro, 'Usted ahorró')).toBe('Bs 30,00');
   });
 
   it('siempre dice «No válido como factura»', async () => {

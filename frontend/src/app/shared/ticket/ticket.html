@@ -42,6 +42,12 @@
         <th scope="row">Total</th>
         <td class="numero">{{ ticket.total }}</td>
       </tr>
+      @if (ticket.ahorro) {
+        <tr class="ahorro">
+          <th scope="row">Usted ahorró</th>
+          <td class="numero">{{ ticket.ahorro }}</td>
+        </tr>
+      }
       @for (pago of ticket.pagos; track pago.etiqueta) {
         <tr>
           <th scope="row">{{ pago.etiqueta }}</th>

@@ -7,7 +7,7 @@ import { mensajeDeError } from '../../core/api/mensajes-error';
 import { PedidosService } from '../../core/api/pedidos.service';
 import { MARCA } from '../../core/marca';
 import { comoErrorApi } from '../../core/modelos/error-api';
-import { fechaYHora, lineasDelTicket, pagosDelTicket } from '../../core/modelos/ticket';
+import { ahorroDelTicket, fechaYHora, lineasDelTicket, pagosDelTicket } from '../../core/modelos/ticket';
 import { precio } from '../../shared/formato/precios';
 import { DatosDelTicket, Ticket } from '../../shared/ticket/ticket';
 
@@ -61,6 +61,7 @@ export class ComprobanteClientePage {
 			datos,
 			lineas: lineasDelTicket(comprobante.lineas),
 			total: precio(comprobante.total),
+			ahorro: ahorroDelTicket(comprobante.lineas),
 			pagos: pagosDelTicket(comprobante.medio, comprobante.recibido, comprobante.cambio),
 			anulacion: null,
 		};

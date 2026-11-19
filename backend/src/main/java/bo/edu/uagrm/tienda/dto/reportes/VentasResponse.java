@@ -19,9 +19,11 @@ public record VentasResponse(PeriodoResponse periodo, Totales actual, Totales an
 	}
 
 	// RF-6 a RF-8
+	// HU-24 RF-19: descontado, vendidoConDescuento y pedidosConDescuento, con la misma regla de venta
 	public record Totales(BigDecimal ingresos, long pedidos, BigDecimal promedio, BigDecimal margen,
 			BigDecimal margenPorcentaje, BigDecimal vendidoSinCosto, long devolverCantidad,
-			BigDecimal devolverImporte) {
+			BigDecimal devolverImporte, BigDecimal descontado, BigDecimal vendidoConDescuento,
+			long pedidosConDescuento) {
 	}
 
 	// fecha: AAAA-MM-DD, o AAAA-MM si va por mes (RF-9)
