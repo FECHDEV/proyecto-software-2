@@ -23,8 +23,8 @@ const EN_EFECTIVO: Venta = {
   comprador: { idUsuario: 4, nombre: 'Ana Paz', correo: 'ana@mail.com' },
   vendidoPor: 'Eva Rojas',
   lineas: [
-    { idProducto: 1, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85, cantidad: 1, subtotal: 85 },
-    { idProducto: 2, nombre: 'Cable', unidad: 'METRO', precio: 4.5, cantidad: 2.5, subtotal: 11.25 },
+    { idProducto: 1, nombre: 'Martillo', unidad: 'UNIDAD', precio: 85, precioNormal: null, descuento: null, descontado: null, cantidad: 1, subtotal: 85 },
+    { idProducto: 2, nombre: 'Cable', unidad: 'METRO', precio: 4.5, precioNormal: null, descuento: null, descontado: null, cantidad: 2.5, subtotal: 11.25 },
   ],
   total: 96.25,
   medio: 'EFECTIVO',
@@ -206,5 +206,20 @@ describe('ComprobantePage', () => {
     await harness.fixture.whenStable();
     expect(pantalla().textContent).toContain('No encontramos esa venta');
     expect(pantalla().querySelector('a[href="/pedidos"]')).not.toBeNull();
+  });
+
+  // HU-23 RF-34: «Imprimir» solo en una venta hecha
+  it('RF-34: «Imprimir» en Entregado, Pagado y Anulado', async () => {
+    for (const estado of ['ENTREGADO', 'PAGADO', 'ANULADO'] as const) {
+      await abrir('/ventas/31', 'ADMINISTRADOR', { ...EN_EFECTIVO, estado });
+      expect(boton('Imprimir'), estado).toBeDefined();
+    }
+  });
+
+  it('RF-34: sin «Imprimir» en Pendiente, Cancelado, Vencido y Pago a devolver', async () => {
+    for (const estado of ['PENDIENTE_PAGO', 'CANCELADO', 'VENCIDO', 'PAGO_A_DEVOLVER'] as const) {
+      await abrir('/ventas/31', 'ADMINISTRADOR', { ...EN_EFECTIVO, estado });
+      expect(boton('Imprimir'), estado).toBeUndefined();
+    }
   });
 });

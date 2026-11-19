@@ -24,6 +24,10 @@ export interface ProductoEnTienda {
 	nombre: string;
 	marca: string | null;
 	precio: number;
+	// Con descuento (HU-24 RF-11, RF-12): precio es el que se cobra, y estos dos el normal y el porcentaje; null sin
+	// descuento
+	precioNormal: number | null;
+	descuento: number | null;
 	unidad: UnidadVenta;
 	imagenPrincipal: string | null;
 	disponible: boolean;
@@ -77,6 +81,12 @@ export interface ProductoEnDetalle {
 	idCategoria: number;
 	categoria: string;
 	precio: number;
+	// Con descuento (HU-24 RF-11, RF-12): precio es el que se cobra, y estos dos el normal y el porcentaje; null sin
+	// descuento
+	precioNormal: number | null;
+	descuento: number | null;
+	// El último día del descuento (AAAA-MM-DD), para buscadores (HU-24 RF-14); null sin descuento
+	finDescuento: string | null;
 	unidad: UnidadVenta;
 	descripcion: string | null;
 	ficha: Caracteristica[];
@@ -118,6 +128,8 @@ export function aTarjeta(producto: ProductoEnTienda): DatosDeTarjeta {
 		nombre: producto.nombre,
 		marca: producto.marca,
 		precio: producto.precio,
+		precioNormal: producto.precioNormal,
+		descuento: producto.descuento,
 		unidad: producto.unidad === 'UNIDAD' ? null : producto.unidad.toLowerCase(),
 		imagen:
 			producto.imagenPrincipal === null ? null : urlDeImagen(producto.idProducto, producto.imagenPrincipal, 400),

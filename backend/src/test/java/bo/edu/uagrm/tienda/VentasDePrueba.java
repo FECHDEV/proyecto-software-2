@@ -68,7 +68,7 @@ record VentasDePrueba(PedidoRepository pedidos, ProductoRepository productos, Us
 			return venta;
 		});
 		if (medio == MedioPago.QR) {
-			CobroGenerado generado = iPago.generarCobro(pedido.getIdPedido(), pedido.getTotal(), "Venta de prueba");
+			CobroGenerado generado = iPago.generarCobro(pedido.getIdPedido(), pedido.getTotal(), "Venta de prueba", null);
 			transaccion.executeWithoutResult(estado -> cobros.save(Cobro.generar(
 					pedidos.findById(pedido.getIdPedido()).orElseThrow(), generado.referencia(), generado.codigoQr(),
 					generado.urlPasarela(), LocalDateTime.now(clock))));

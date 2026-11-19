@@ -37,7 +37,7 @@ import {
 } from '../../core/modelos/catalogo';
 import { SesionService } from '../../core/sesion/sesion.service';
 import { Carrusel } from '../../shared/carrusel/carrusel';
-import { precio } from '../../shared/formato/precios';
+import { Precio } from '../../shared/precio/precio';
 import { FotoDeGaleria, Galeria } from '../../shared/galeria/galeria';
 import { idDeLaUrl } from '../../shared/navegacion/id-de-la-url';
 import { TarjetaProducto } from '../../shared/tarjeta-producto/tarjeta-producto';
@@ -58,6 +58,7 @@ import { AgregarAlCarrito } from './agregar-al-carrito';
 		LucideCircleCheck,
 		LucideCircleSlash,
 		LucidePencil,
+		Precio,
 	],
 	templateUrl: './detalle.page.html',
 	styleUrl: './detalle.page.scss',
@@ -102,11 +103,6 @@ export class DetallePage {
 	protected readonly modelo = computed(() => {
 		const producto = this.producto();
 		return producto?.modelo ? urlDeModelo(producto.idProducto, producto.modelo) : null;
-	});
-
-	protected readonly precio = computed(() => {
-		const producto = this.producto();
-		return producto === undefined ? '' : precio(producto.precio);
 	});
 
 	// «Unidad» no se escribe junto al precio, como en la tarjeta
@@ -183,7 +179,9 @@ export function datosDelProducto(producto: ProductoEnDetalle, origen: string): o
 		offers: {
 			'@type': 'Offer',
 			url: `${origen}/producto/${producto.idProducto}`,
+			// Con descuento, el que se cobra y hasta cuándo vale (HU-24 RF-14)
 			price: producto.precio.toFixed(2),
+			...(producto.finDescuento === null ? {} : { priceValidUntil: producto.finDescuento }),
 			priceCurrency: 'BOB',
 			availability: producto.disponible ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
 			itemCondition: 'https://schema.org/NewCondition',

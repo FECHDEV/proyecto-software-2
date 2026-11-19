@@ -166,6 +166,20 @@ describe('UsuariosPage', () => {
     expect(texto()).toContain('Administrador Inicial');
   });
 
+  // HU-05 (auditoría): en el celular la celda es flex; el correo va en un solo elemento junto al rótulo, así sus dos
+  // partes no son dos elementos flex sueltos y el corte del correo no alcanza al rótulo
+  it('el correo va en un solo elemento junto al rótulo', async () => {
+    await abrir();
+
+    const celda = pantalla().querySelector('td.correo')!;
+    const sueltos = Array.from(celda.childNodes).filter(
+      (nodo) => nodo.nodeType === Node.TEXT_NODE && nodo.textContent!.trim() !== '',
+    );
+    expect(sueltos).toHaveLength(0);
+    expect(celda.querySelectorAll('span.correo-texto')).toHaveLength(1);
+    expect(celda.querySelector('span.correo-texto')?.textContent?.replace(/\s/g, '')).toBe('ana@mail.com');
+  });
+
   // HU-05 RF-2: totales de usuarios y de páginas
   it('informa la página y el total', async () => {
     await abrir();

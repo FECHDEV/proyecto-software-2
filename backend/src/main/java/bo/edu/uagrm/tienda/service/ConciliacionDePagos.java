@@ -104,8 +104,12 @@ public class ConciliacionDePagos {
 					} else {
 						pedido.pagar(fecha);
 					}
+				} else if (pedido.esEnTienda() && pedido.getEstado() == EstadoPedido.CANCELADO) {
+					// HU-23 RF-32: la cancelada se cobró de otra forma o el cliente se fue: el pago se devuelve fuera
+					// del sistema, sin tocar el stock
+					pedido.marcarPagoADevolver(fecha);
 				} else {
-					pedidoService.revivir(pedido, fecha, ahora); // RF-9; HU-23 RF-11
+					pedidoService.revivir(pedido, fecha, ahora); // RF-9; HU-23 RF-11, solo la vencida
 				}
 				if (pedido.esEnTienda()) {
 					// Sin correos por la venta del mostrador: el cliente se lleva el comprobante (CLAUDE.md → Correos)

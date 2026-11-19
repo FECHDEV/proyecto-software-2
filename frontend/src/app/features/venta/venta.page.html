@@ -20,7 +20,14 @@
             @let rechazo = rechazos().get(linea.producto.idProducto);
             <li class="linea" [class.marcada]="error || rechazo || pasaDelDisponible(linea)">
               <p class="nombre">{{ linea.producto.nombre }}</p>
-              <p class="precio">{{ precio(linea.producto.precio) }} / {{ unidadPara(linea.producto.unidad, 1) }}</p>
+              <p class="precio">
+                <app-precio
+                  [precio]="linea.producto.precio"
+                  [precioNormal]="linea.producto.precioNormal"
+                  [descuento]="linea.producto.descuento"
+                />
+                / {{ unidadPara(linea.producto.unidad, 1) }}
+              </p>
               <div class="cantidad">
                 <label class="solo-lectores" [for]="'cantidad-' + linea.producto.idProducto">
                   Cantidad de {{ linea.producto.nombre }}
@@ -163,3 +170,5 @@
     </section>
   </div>
 </div>
+
+<app-dialogo-confirmacion />

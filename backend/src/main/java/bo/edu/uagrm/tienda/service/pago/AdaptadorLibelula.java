@@ -50,7 +50,7 @@ public class AdaptadorLibelula implements IPago {
 	}
 
 	@Override
-	public CobroGenerado generarCobro(Long idPedido, BigDecimal monto, String concepto) {
+	public CobroGenerado generarCobro(Long idPedido, BigDecimal monto, String concepto, String rutaDeRetorno) {
 		String identificador = nuevoIdentificador(idPedido);
 		Map<String, Object> deuda = new LinkedHashMap<>();
 		deuda.put("appkey", cuenta.appkey());
@@ -61,7 +61,7 @@ public class AdaptadorLibelula implements IPago {
 		deuda.put("fecha_vencimiento", vencimiento() + " 23:59");
 		deuda.put("callback_url", cuenta.urlDelSitio() + "/api/pagos/aviso?referencia="
 				+ URLEncoder.encode(identificador, StandardCharsets.UTF_8));
-		deuda.put("url_retorno", cuenta.urlDelSitio() + "/mis-pedidos/" + idPedido);
+		deuda.put("url_retorno", cuenta.urlDelSitio() + (rutaDeRetorno == null ? "/" : rutaDeRetorno));
 		// Una sola línea por el total: el detalle del pedido está en la tienda
 		deuda.put("lineas_detalle_deuda", List.of(Map.of("concepto", concepto, "cantidad", 1, "costo_unitario", monto)));
 

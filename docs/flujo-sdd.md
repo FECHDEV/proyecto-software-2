@@ -95,8 +95,9 @@ proceso, sin inventar fechas.
 5. **`/sdd:cerrar HU-XX`:** la Definition of Done (abajo), con el «Resultado»
    anotado en el plan.
 6. **PR** con la plantilla de `.github/pull_request_template.md` y
-   `Closes #N`. El ruleset de `main` exige PR y los status checks del CI: en
-   rojo no se mergea.
+   `Closes #N`. El ruleset de `main` exige PR y los checks Backend y Frontend
+   del CI; el de extremo a extremo no es obligatorio en el ruleset, pero en
+   rojo tampoco se mergea.
 
 ## Variantes
 

@@ -135,6 +135,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/categorias/categorias.page').then((m) => m.CategoriasPage),
   },
   {
+    path: 'descuentos',
+    title: `Descuentos · ${MARCA.nombre}`,
+    canActivate: [rolGuard],
+    data: { roles: ROLES_DE.descuentos },
+    loadComponent: () => import('./features/descuentos/descuentos.page').then((m) => m.DescuentosPage),
+  },
+  {
     path: 'productos',
     title: `Productos · ${MARCA.nombre}`,
     canActivate: [rolGuard],
@@ -186,6 +193,8 @@ export const routes: Routes = [
     title: `Nueva venta · ${MARCA.nombre}`,
     canActivate: [rolGuard],
     data: { roles: ROLES_DE.ventas },
+    // HU-23 RF-33: con líneas armadas o un QR a la vista, pregunta antes de salir
+    canDeactivate: [cambiosSinGuardarGuard],
     loadComponent: () => import('./features/venta/venta.page').then((m) => m.VentaPage),
   },
   {

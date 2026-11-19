@@ -37,7 +37,7 @@ public interface CobroRepository extends JpaRepository<Cobro, Long> {
 	@Query("select c.idCobro from Cobro c where c.referencia = :referencia")
 	Optional<Long> idPorReferencia(@Param("referencia") String referencia);
 
-	// La tarea de cada minuto (RF-8): la deuda vence por día, así que se mira hasta 24 horas
+	// La tarea de cada minuto (RF-8): la deuda vive hasta unas 24 h 15 min, y se mira hasta 48 horas
 	@Query("""
 			select c.idCobro from Cobro c
 			where c.estado = bo.edu.uagrm.tienda.entity.EstadoCobro.PENDIENTE and c.generado >= :desde

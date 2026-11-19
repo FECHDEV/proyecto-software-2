@@ -99,12 +99,15 @@
               <th scope="row" data-etiqueta="Nombre">{{ usuario.nombre }} {{ usuario.apellido }}</th>
               <!-- Se corta en la arroba antes que en cualquier letra (revisión total) -->
               @let arroba = usuario.correo.indexOf('@');
+              <!-- Un solo elemento: en el celular la celda es flex, y el texto suelto eran dos elementos más (auditoría) -->
               <td data-etiqueta="Correo" class="correo">
-                @if (arroba > 0) {
-                  {{ usuario.correo.slice(0, arroba) }}<wbr />{{ usuario.correo.slice(arroba) }}
-                } @else {
-                  {{ usuario.correo }}
-                }
+                <span class="correo-texto">
+                  @if (arroba > 0) {
+                    {{ usuario.correo.slice(0, arroba) }}<wbr />{{ usuario.correo.slice(arroba) }}
+                  } @else {
+                    {{ usuario.correo }}
+                  }
+                </span>
               </td>
               <td data-etiqueta="Tipo de cuenta">
                 <span>

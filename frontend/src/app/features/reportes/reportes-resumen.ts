@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
 import { ReportesService } from '../../core/api/reportes.service';
-import { FiltrosDeReportes, Totales, VentasDelPeriodo } from '../../core/modelos/reportes';
+import { FiltrosDeReportes, NOMBRES_DE_MEDIO_DEL_RESUMEN, Totales, VentasDelPeriodo } from '../../core/modelos/reportes';
 import { NOMBRES_DE_TIPO } from '../../core/modelos/usuario';
-import { NOMBRES_DE_CANAL, NOMBRES_DE_MEDIO } from '../../core/modelos/venta';
+import { NOMBRES_DE_CANAL } from '../../core/modelos/venta';
 import { fechaCorta } from '../../shared/formato/fechas';
 import { cantidad, precio } from '../../shared/formato/precios';
 import { comparacion, hora, NOMBRES_DE_DIA, nombreDelMes, porcentaje } from './formato';
@@ -97,7 +97,7 @@ export class ReportesResumen {
 	);
 	protected readonly porMedio = computed<FilaDeVentas[]>(() =>
 		(this.ventas()?.porMedio ?? []).map((fila) => ({
-			etiqueta: NOMBRES_DE_MEDIO[fila.medio],
+			etiqueta: NOMBRES_DE_MEDIO_DEL_RESUMEN[fila.medio],
 			pedidos: fila.pedidos,
 			ingresos: fila.ingresos,
 		})),

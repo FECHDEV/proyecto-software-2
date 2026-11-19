@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 import bo.edu.uagrm.tienda.entity.Canal;
-import bo.edu.uagrm.tienda.entity.MedioPago;
 import bo.edu.uagrm.tienda.entity.TipoCliente;
 
 // GET /api/reportes/ventas (HU-18): el resumen del período, sin las listas ni los perdidos (que tienen lo suyo). Un
@@ -46,7 +45,7 @@ public record VentasResponse(PeriodoResponse periodo, Totales actual, Totales an
 	}
 
 	// HU-23 RF-22: efectivo y QR
-	public record PorMedio(MedioPago medio, BigDecimal ingresos, long pedidos) {
+	public record PorMedio(MedioDelResumen medio, BigDecimal ingresos, long pedidos) {
 	}
 
 	// RF-15

@@ -11,6 +11,8 @@ export const ROLES_DE = {
 	usuarios: ['ADMINISTRADOR'],
 	categorias: ['ADMINISTRADOR'],
 	productos: ['ADMINISTRADOR'],
+	// HU-24 RF-7
+	descuentos: ['ADMINISTRADOR'],
 	// HU-08, HU-17: el Contador ve el inventario y los pedidos sin poder registrar
 	inventario: PERSONAL,
 	pedidos: PERSONAL,

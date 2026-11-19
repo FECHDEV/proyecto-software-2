@@ -85,19 +85,19 @@ class CobroRepositoryTest {
 		}).isInstanceOf(RuntimeException.class);
 	}
 
-	// HU-13 RF-8: los pendientes generados en las últimas 24 horas; los procesados, no
+	// HU-13 RF-8: los pendientes generados en las últimas 48 horas; los procesados, no
 	@Test
-	void idsPorConciliarSoloPendientesDeLasUltimas24Horas() {
+	void idsPorConciliarSoloPendientesDeLasUltimas48Horas() {
 		Pedido pedido = pedido(AHORA.minusDays(2));
-		Cobro viejo = cobro(pedido, "TM-viejo", AHORA.minusHours(25));
-		Cobro reciente = cobro(pedido(AHORA.minusHours(3)), "TM-reciente", AHORA.minusHours(3));
+		Cobro viejo = cobro(pedido, "TM-viejo", AHORA.minusHours(49));
+		Cobro reciente = cobro(pedido(AHORA.minusHours(30)), "TM-reciente", AHORA.minusHours(30));
 		Cobro pagado = cobro(pedido(AHORA), "TM-pagado", AHORA);
 		pagado.registrarPago(AHORA);
 		Cobro conError = cobro(pedido(AHORA), "TM-error", AHORA);
 		conError.registrarError();
 		em.flush();
 
-		assertThat(cobroRepository.idsPorConciliar(AHORA.minusHours(24))).containsExactly(reciente.getIdCobro());
+		assertThat(cobroRepository.idsPorConciliar(AHORA.minusHours(48))).containsExactly(reciente.getIdCobro());
 		assertThat(viejo.getEstado()).isEqualTo(EstadoCobro.PENDIENTE);
 	}
 

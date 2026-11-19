@@ -16,6 +16,8 @@ function linea(cambios: Partial<LineaDeCarrito>): LineaDeCarrito {
     nombre: 'Martillo',
     imagen: 'a.webp',
     precio: 85.5,
+    precioNormal: null,
+    descuento: null,
     unidad: 'UNIDAD',
     cantidad: 2,
     subtotal: 171,
@@ -157,6 +159,23 @@ describe('CarritoPage', () => {
     expect(textoDe(cable)).toContain('/ metro');
     expect(cable.querySelector('input')?.value).toBe('2,5');
     expect(textoDe(pantalla().querySelector('.total'))).toContain('Bs 201,00');
+  });
+
+  // HU-24 RF-11: la línea con descuento; el total es el que manda el servidor
+  it('RF-11: la línea con descuento; el total es el del servidor', async () => {
+    await abrir();
+    carrito.carrito.value.set({
+      ...CON_DOS,
+      lineas: [linea({ precio: 72.68, precioNormal: 85.5, descuento: 15, subtotal: 145.36 })],
+      total: 145.36,
+    });
+    await harness.fixture.whenStable();
+
+    const martillo = fila('Martillo');
+    expect(textoDe(martillo.querySelector('s'))).toContain('Bs 85,50');
+    expect(textoDe(martillo.querySelector('.cobrado'))).toContain('Bs 72,68');
+    expect(textoDe(martillo.querySelector('.marca')).trim()).toBe('−15 %');
+    expect(textoDe(pantalla().querySelector('.total'))).toContain('Bs 145,36');
   });
 
   // HU-12 RF-1

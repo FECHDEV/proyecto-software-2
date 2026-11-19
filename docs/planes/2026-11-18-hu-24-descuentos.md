@@ -604,3 +604,59 @@ su total, ahora con el descuento).
 
 **Prueba manual:** con el PR 2 (este PR no tiene pantallas; la API se probó
 con las pruebas de integración).
+
+### PR 2 — La tienda y el mostrador (frontend)
+
+*19/11/2026.* Tareas 7 a 9 con TDD por Claude (Opus); las revisiones, de
+Fable. La tarea 10 (RF-13, filtrar y ordenar por el precio con descuento)
+queda **recortada** por ahora: Fabio la pospuso hasta terminar lo demás
+(19/11/2026). Hasta entonces, el catálogo filtra y ordena por el precio
+normal.
+
+**Cobertura RF → pruebas (frontend):**
+
+| RF | Pruebas |
+|---|---|
+| RF-1, RF-2 | `descuentos.page.spec.ts`: crea de producto y de categoría, pide el producto (y el error se va al escribir), porcentaje y fechas inválidos con foco en el primer error, muestra con cuál se cruza; `mensajes-error.spec.ts` (el cruce con sus fechas) |
+| RF-3 | la lista con sus estados; una página que quedó vacía vuelve a la anterior |
+| RF-4 | Editar y Borrar solo en los programados, borrar pide confirmación, cancelar la edición devuelve el foco a «Editar», «de la categoría» en minúscula |
+| RF-5 | Terminar solo en los vigentes y pide confirmación |
+| RF-6 | avisa los productos bajo el costo, con «Y N más» |
+| RF-7 | `app.routes.spec.ts` y `panel.page.spec.ts`: solo el Administrador |
+| RF-11 | `precio.spec.ts` (cuatro), la tarjeta, el detalle, el carrito, «Nueva venta» y `catalogo.service.spec.ts` |
+| RF-14 | `detalle.page.spec.ts`: `priceValidUntil` con descuento y sin él |
+| RF-15, RF-16 | `venta.page.spec.ts`: el total con descuento y el aviso «El total cambió», que trae el precio y el descuento nuevos (`ventas.service.spec.ts`, `precioDeHoy`) |
+
+**Suites:** frontend **1014 pruebas**, `ng lint` y `ng build` sin avisos
+(después de mezclar `main` con la búsqueda por nombre, #122). El backend no
+cambia en este PR: 926 pruebas con la mezcla.
+
+**Revisiones:**
+
+- **Interfaz (subagente Fable, `playwright-cli` en Edge, escritorio oscuro y
+  iPhone 15 claro, peores datos):** corregidos los nombres largos que se
+  salían del aviso «bajo el costo» (la página pasaba a 509 px en el
+  celular), el anillo de foco cortado en los resultados de la búsqueda, el
+  foco que quedaba en `<body>` al cancelar la edición, el precio con
+  descuento que aplastaba el nombre en la búsqueda de «Nueva venta» (la
+  columna pasa de `max-content` a `auto`) y el tachado de 9,8 px y la marca
+  de tamaño fijo (ahora `max(0.75em, 12px)` y `max(0.55em, 13px)`;
+  `DESIGN.md` al día). También dos de los menores: el error del producto se
+  va al escribir y, dentro de una frase, «de la categoría «X»».
+  **Quedan como estaban:** la unidad fuera del texto oculto del precio en la
+  búsqueda del mostrador; el aviso «bajo el costo» con la caja de error
+  (una caja de aviso sería una decisión nueva de `DESIGN.md`); la búsqueda
+  de producto en `/descuentos` muestra la primera página sin decir que hay
+  más; el «Borrar» amarillo del diálogo compartido (es de antes).
+  Se limpió lo creado para probar.
+- **`/code-review` (subagente Fable):** corregido el importante: después de
+  borrar o terminar el último descuento de una página que no es la primera,
+  la lista quedaba vacía y sin navegación (ahora vuelve a la última página
+  que hay, con su prueba). También el menor: «Recargue la página.» sobraba
+  en `DESCUENTO_NO_EDITABLE` y `DESCUENTO_NO_ENCONTRADO`, porque la lista ya
+  se recarga sola.
+- **`/security-review`:** no corresponde. El PR 2 es solo frontend; el
+  acceso lo valida el backend del PR 1, que ya la tuvo.
+
+**Prueba manual:** pendiente. Fabio la hace al final, junto con las demás.
+La tienda ya corre con esta rama en Docker (`http://localhost`).

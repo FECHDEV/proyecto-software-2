@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 
 import { VentasService } from '../../core/api/ventas.service';
 import { ErrorApi } from '../../core/modelos/error-api';
-import { Comprador, CompradoresEncontrados, ProductoParaVenta, SolicitudDeVenta, Venta } from '../../core/modelos/venta';
+import { Comprador, CompradoresEncontrados, PrecioDeHoy, ProductoParaVenta, SolicitudDeVenta, Venta } from '../../core/modelos/venta';
 import { VentaPage } from './venta.page';
 
 const MARTILLO: ProductoParaVenta = {
@@ -14,6 +14,8 @@ const MARTILLO: ProductoParaVenta = {
   nombre: 'Martillo',
   imagen: null,
   precio: 85,
+  precioNormal: null,
+  descuento: null,
   unidad: 'UNIDAD',
   disponible: 10,
 };
@@ -22,9 +24,13 @@ const CABLE: ProductoParaVenta = {
   nombre: 'Cable',
   imagen: null,
   precio: 4.5,
+  precioNormal: null,
+  descuento: null,
   unidad: 'METRO',
   disponible: 3,
 };
+// HU-24: 4,50 al −15 % = 3,825, que se cobra 3,83
+const CABLE_CON_DESCUENTO: ProductoParaVenta = { ...CABLE, precio: 3.83, precioNormal: 4.5, descuento: 15 };
 
 function venta(cambios: Partial<Venta> = {}): Venta {
   return {
@@ -79,7 +85,9 @@ class VentasFalso {
     (_nombre: string): Promise<CompradoresEncontrados> =>
       Promise.resolve({ cuentas: [{ idUsuario: 7, nombre: 'Eva Rojas', correo: 'ev***@mail.com' }], hayMas: false }),
   );
-  readonly precioDeHoy = vi.fn((_id: number): Promise<number> => Promise.resolve(90));
+  readonly precioDeHoy = vi.fn(
+    (_id: number): Promise<PrecioDeHoy> => Promise.resolve({ precio: 90, precioNormal: null, descuento: null }),
+  );
   productos() {
     return this.resultados;
   }
@@ -281,6 +289,53 @@ describe('VentaPage', () => {
     expect(ventas.registrar).toHaveBeenCalledWith(expect.objectContaining({ totalEsperado: 88.11 }));
   });
 
+  // HU-24 RF-11: la línea y el resultado de la búsqueda con descuento
+  it('RF-11: la línea con descuento', async () => {
+    await abrir();
+    ventas.resultados.value.set([MARTILLO, CABLE_CON_DESCUENTO]);
+    await harness.fixture.whenStable();
+    const resultado = Array.from(pantalla().querySelectorAll<HTMLElement>('.resultado')).find((cada) =>
+      cada.textContent?.includes('Cable'),
+    )!;
+    expect(resultado.querySelector('s')?.textContent).toContain('4,50');
+
+    await tocarProducto('Cable');
+
+    expect(lineas()[0].querySelector('s')?.textContent).toContain('4,50');
+    expect(lineas()[0].querySelector('.cobrado')?.textContent).toContain('3,83');
+    expect(lineas()[0].querySelector('.marca')?.textContent?.trim()).toBe('−15 %');
+  });
+
+  // HU-24 RF-15: la pantalla calcula con el precio con descuento, igual que el servidor: 3,83 × 0,69 = 2,6427 → 2,64
+  it('RF-15: el total con el precio con descuento coincide con el del servidor', async () => {
+    await abrir();
+    ventas.resultados.value.set([CABLE_CON_DESCUENTO]);
+    await harness.fixture.whenStable();
+    await tocarProducto('Cable');
+    await escribirCantidad(0, '0,69');
+    await escribirRecibido('10');
+
+    await tocar('Cobrar en efectivo');
+
+    expect(ventas.registrar).toHaveBeenCalledWith(expect.objectContaining({ totalEsperado: 2.64 }));
+  });
+
+  // HU-24 RF-16: un descuento que empezó mientras se armaba la venta da TOTAL_CAMBIADO; se trae el precio con descuento
+  it('RF-16: ante TOTAL_CAMBIADO trae otra vez el precio con descuento', async () => {
+    await abrir();
+    await tocarProducto('Cable');
+    await escribirRecibido('10');
+    ventas.precioDeHoy.mockResolvedValueOnce({ precio: 3.83, precioNormal: 4.5, descuento: 15 });
+    ventas.registrar.mockRejectedValueOnce({ status: 409, detail: 'x', codigo: 'TOTAL_CAMBIADO', total: 3.83 });
+
+    await tocar('Cobrar en efectivo');
+    await harness.fixture.whenStable();
+
+    expect(lineas()[0].querySelector('.cobrado')?.textContent).toContain('3,83');
+    expect(lineas()[0].querySelector('s')?.textContent).toContain('4,50');
+    expect(pantalla().querySelector('.aviso')?.textContent).toContain('Cambió un precio');
+  });
+
   // HU-23 RF-6: en efectivo registra con el total que se vio y va al comprobante
   it('enEfectivoVaAlComprobante', async () => {
     await abrir();
@@ -403,5 +458,126 @@ describe('VentaPage', () => {
     expect(ventas.registrar).toHaveBeenCalledTimes(1);
     terminar(venta());
     await harness.fixture.whenStable();
+  });
+
+  // --- RF-31, RF-33 (auditoría): salir de la venta y cancelar el QR ---
+
+  const pagina = (): VentaPage => harness.routeDebugElement!.componentInstance as VentaPage;
+  const dialogo = (): HTMLDialogElement => pantalla().querySelector('app-dialogo-confirmacion dialog')!;
+
+  async function preguntaAlSalir(): Promise<{ pregunta: boolean; texto: string }> {
+    if (!pagina().tieneCambiosSinGuardar()) {
+      return { pregunta: false, texto: '' };
+    }
+    const respuesta = pagina().confirmarSalida();
+    await harness.fixture.whenStable();
+    const texto = dialogo().textContent?.replace(/\s+/g, ' ') ?? '';
+    dialogo().querySelector<HTMLButtonElement>('button.secundario')!.click();
+    await respuesta;
+    return { pregunta: true, texto };
+  }
+
+  it('RF-33: sin líneas no pregunta al salir', async () => {
+    await abrir();
+
+    expect((await preguntaAlSalir()).pregunta).toBe(false);
+  });
+
+  it('RF-33: con líneas armadas pregunta, y «Seguir con la venta» se queda', async () => {
+    await abrir();
+    await tocarProducto('Martillo');
+
+    const respuesta = pagina().confirmarSalida();
+    await harness.fixture.whenStable();
+    expect(dialogo().textContent).toContain('La venta no se cobró');
+    const seguir = dialogo().querySelector<HTMLButtonElement>('button.secundario')!;
+    expect(seguir.textContent?.trim()).toBe('Seguir con la venta');
+    seguir.click();
+
+    expect(await respuesta).toBe(false);
+    expect(lineas()).toHaveLength(1);
+  });
+
+  it('RF-33: con el QR a la vista pregunta con su propio texto', async () => {
+    await abrir();
+    ventas.registrar.mockResolvedValueOnce(CON_QR);
+    await tocarProducto('Martillo');
+    await tocar('Cobrar con QR');
+
+    const { pregunta, texto } = await preguntaAlSalir();
+
+    expect(pregunta).toBe(true);
+    expect(texto).toContain('Hay un cobro con QR en curso');
+    expect(texto).toContain('sigue esperando el pago hasta que venza a los 10 minutos');
+  });
+
+  it('RF-33: después de cobrar en efectivo va al comprobante sin preguntar', async () => {
+    await abrir();
+    await tocarProducto('Martillo');
+    await escribirRecibido('100');
+    const componente = pagina();
+
+    await tocar('Cobrar en efectivo');
+
+    expect(componente.tieneCambiosSinGuardar()).toBe(false);
+    expect(TestBed.inject(Router).url).toBe('/ventas/31');
+  });
+
+  it('RF-33: con el QR pagado va al comprobante sin preguntar', async () => {
+    await abrir();
+    ventas.registrar.mockResolvedValueOnce(CON_QR);
+    await tocarProducto('Martillo');
+    await tocar('Cobrar con QR');
+    ventas.consultar.mockResolvedValueOnce(venta({ medio: 'QR' }));
+    const componente = pagina();
+
+    await tocar('Ya pagó');
+
+    expect(componente.tieneCambiosSinGuardar()).toBe(false);
+    expect(TestBed.inject(Router).url).toBe('/ventas/31');
+  });
+
+  it('RF-33: al cerrar la pestaña con líneas, beforeunload se cancela', async () => {
+    await abrir();
+    const sinLineas = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(sinLineas);
+    expect(sinLineas.defaultPrevented).toBe(false);
+
+    await tocarProducto('Martillo');
+    const conLineas = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(conLineas);
+
+    expect(conLineas.defaultPrevented).toBe(true);
+  });
+
+  it('RF-31: si al cancelar el pago ya llegó (409), va al comprobante', async () => {
+    await abrir();
+    ventas.registrar.mockResolvedValueOnce(CON_QR);
+    await tocarProducto('Martillo');
+    await tocar('Cobrar con QR');
+    ventas.cancelar.mockRejectedValueOnce({ status: 409, codigo: 'PEDIDO_NO_PENDIENTE', detail: 'x' } as ErrorApi);
+    ventas.consultar.mockResolvedValueOnce(venta({ medio: 'QR' }));
+
+    await tocar('Cancelar venta');
+
+    expect(TestBed.inject(Router).url).toBe('/ventas/31');
+  });
+
+  it('RF-31: «Cancelar venta» dice «Cancelando…» mientras espera', async () => {
+    await abrir();
+    ventas.registrar.mockResolvedValueOnce(CON_QR);
+    await tocarProducto('Martillo');
+    await tocar('Cobrar con QR');
+    let responder!: (venta: Venta) => void;
+    ventas.cancelar.mockReturnValueOnce(new Promise((resolver) => (responder = resolver)));
+
+    boton('Cancelar venta').click();
+    await harness.fixture.whenStable();
+    expect(boton('Cancelando…')).toBeDefined();
+    expect(boton('Cancelando…').getAttribute('aria-disabled')).toBe('true');
+
+    responder({ ...CON_QR, estado: 'CANCELADO' });
+    await harness.fixture.whenStable();
+    expect(pantalla().querySelector('app-codigo-qr')).toBeNull();
   });
 });
