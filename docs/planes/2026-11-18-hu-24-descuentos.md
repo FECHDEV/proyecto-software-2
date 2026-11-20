@@ -672,7 +672,7 @@ cambia en este PR: 926 pruebas con la mezcla.
 - **`/security-review`:** no corresponde. El PR 2 es solo frontend; el
   acceso lo valida el backend del PR 1, que ya la tuvo.
 
-**Prueba manual:** pendiente. Fabio la hace al final, junto con las demás.
+**Prueba manual:** *19/11/2026, Fabio:* aprobada, junto con las demás pruebas del cierre (compra en línea con pago real, mostrador, descuentos, reportes y permisos). Los vencimientos y el pago tardío no se volvieron a probar a mano: los da por cumplidos porque ya andaban; los cubren las pruebas automáticas.
 La tienda ya corre con esta rama en Docker (`http://localhost`).
 
 ### PR 3 — Ticket y reportes
@@ -715,4 +715,4 @@ lugar de `ReportesExportarIntegracionTest`, que arma el mismo `Totales`.
   el precio normal (RF-18 no lo pide). No se probó el comprobante del
   Cliente en el navegador (usa el mismo ticket).
 
-**Prueba manual:** pendiente. Fabio la hace al final, junto con las demás.
+**Prueba manual:** *19/11/2026, Fabio:* aprobada, junto con las demás pruebas del cierre (compra en línea con pago real, mostrador, descuentos, reportes y permisos). Los vencimientos y el pago tardío no se volvieron a probar a mano: los da por cumplidos porque ya andaban; los cubren las pruebas automáticas.

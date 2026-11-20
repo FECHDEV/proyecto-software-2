@@ -217,7 +217,9 @@ public class ReportesService {
 			return null;
 		}
 		long dias = ChronoUnit.DAYS.between(fila.primera().toLocalDate(), fila.ultima().toLocalDate());
-		return BigDecimal.valueOf(dias).divide(BigDecimal.valueOf(fila.compras() - 1), 1, RoundingMode.HALF_UP);
+		BigDecimal cada = BigDecimal.valueOf(dias).divide(BigDecimal.valueOf(fila.compras() - 1), 1, RoundingMode.HALF_UP);
+		// 0 es «El mismo día»: compras en días distintos dan como mínimo 0,1 aunque el redondeo diga 0,0 (revisión final)
+		return dias > 0 && cada.signum() == 0 ? new BigDecimal("0.1") : cada;
 	}
 
 	// RF-18: por importe perdido, de mayor a menor

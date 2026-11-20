@@ -36,12 +36,7 @@ export class ReportesCompradores {
 		return fila.enTienda > 0 ? 'En tienda' : 'En línea';
 	}
 
-	// La primera y la última compra; si son del mismo día, una sola fecha
-	protected fechas(fila: ClienteQueCompra): string {
-		const primera = fechaCorta(fila.primera);
-		const ultima = fechaCorta(fila.ultima);
-		return primera === ultima ? ultima : `${primera} a ${ultima}`;
-	}
+	protected readonly fecha = fechaCorta;
 
 	// RF-24
 	protected cadaCuanto(fila: ClienteQueCompra): string {
@@ -51,6 +46,6 @@ export class ReportesCompradores {
 		if (fila.diasEntreCompras === 0) {
 			return 'El mismo día';
 		}
-		return `Cada ${cantidad(fila.diasEntreCompras)} ${fila.diasEntreCompras === 1 ? 'día' : 'días'}`;
+		return fila.diasEntreCompras === 1 ? 'Cada día' : `Cada ${cantidad(fila.diasEntreCompras)} días`;
 	}
 }

@@ -46,19 +46,27 @@
                 </span>
               </td>
               <td class="numero" data-etiqueta="Compras">
-                <span class="cifra">
+                <span class="apilado">
                   {{ fila.compras }}
                   <span class="codigo">{{ canal(fila) }}</span>
                 </span>
               </td>
               <td class="numero" data-etiqueta="Total">
-                <span class="cifra">
+                <span class="apilado">
                   {{ precio(fila.total) }}
                   <span class="codigo">promedio {{ precio(fila.promedio) }}</span>
                 </span>
               </td>
-              <td data-etiqueta="Primera y última">{{ fechas(fila) }}</td>
-              <td data-etiqueta="Cada cuánto">{{ cadaCuanto(fila) }}</td>
+              <!-- Cada fecha sin cortarse; si son del mismo día, una sola (revisión de interfaz) -->
+              <td data-etiqueta="Primera y última">
+                @if (fecha(fila.primera) === fecha(fila.ultima)) {
+                  <span class="sin-corte">{{ fecha(fila.ultima) }}</span>
+                } @else {
+                  <span class="sin-corte">{{ fecha(fila.primera) }}</span> a
+                  <span class="sin-corte">{{ fecha(fila.ultima) }}</span>
+                }
+              </td>
+              <td data-etiqueta="Cada cuánto"><span class="sin-corte">{{ cadaCuanto(fila) }}</span></td>
             </tr>
           }
         </tbody>
